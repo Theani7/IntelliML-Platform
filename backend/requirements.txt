@@ -1,0 +1,98 @@
+# ============================================
+# CORE FRAMEWORK
+# ============================================
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+python-multipart==0.0.6
+
+# ============================================
+# VOICE & AUDIO PROCESSING
+# ============================================
+groq==0.4.2
+sounddevice==0.4.6
+scipy==1.11.4
+pydub==0.25.1
+python-speech-features==0.6
+
+# ============================================
+# MACHINE LEARNING - CORE
+# ============================================
+scikit-learn==1.4.0
+pandas==2.1.4
+numpy==1.26.3
+
+# ============================================
+# MACHINE LEARNING - BOOSTING
+# ============================================
+xgboost==2.0.3
+lightgbm==4.3.0
+
+# ============================================
+# MACHINE LEARNING - DEEP LEARNING
+# ============================================
+torch==2.1.2
+torchvision==0.16.2
+
+# ============================================
+# MODEL INTERPRETABILITY
+# ============================================
+shap==0.44.1
+lime==0.2.0.1
+
+# ============================================
+# IMAGE PROCESSING & OCR
+# ============================================
+pillow==10.2.0
+pytesseract==0.3.10
+opencv-python==4.9.0.80
+
+# ============================================
+# WEB SCRAPING & URLs
+# ============================================
+requests==2.31.0
+beautifulsoup4==4.12.3
+aiohttp==3.9.1
+
+# ============================================
+# DATA PROCESSING
+# ============================================
+openpyxl==3.1.2          # Excel files
+python-jose==3.3.0        # JWT tokens
+passlib==1.7.4            # Password hashing
+python-dateutil==2.8.2    # Date parsing
+
+# ============================================
+# VISUALIZATION
+# ============================================
+plotly==5.18.0
+matplotlib==3.8.2
+seaborn==0.13.1
+
+# ============================================
+# PDF GENERATION
+# ============================================
+reportlab==4.0.9
+pypdf2==3.0.1
+
+# ============================================
+# UTILITIES
+# ============================================
+python-dotenv==1.0.0      # Environment variables
+loguru==0.7.2             # Better logging
+tenacity==8.2.3           # Retry logic
+validators==0.22.0        # URL/email validation
+
+# ============================================
+# ASYNC & BACKGROUND TASKS
+# ============================================
+celery==5.3.6             # Task queue (optional)
+redis==5.0.1              # Caching (optional)
+
+# ============================================
+# TESTING
+# ============================================
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0             # For testing FastAPI
