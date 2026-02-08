@@ -58,7 +58,12 @@ async function apiCall<T>(
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.detail || errorData.error || `API Error: ${response.status} ${response.statusText}`;
 
-      console.error(`[API Error] ${response.status}:`, errorMessage);
+      // Suppress 404 errors from console.error as they are often handled by the UI (session expiry)
+      if (response.status !== 404) {
+        console.error(`[API Error] ${response.status}:`, errorMessage);
+      } else {
+        console.warn(`[API Info] ${response.status}:`, errorMessage);
+      }
 
       throw new APIError(
         errorMessage,
@@ -319,15 +324,26 @@ export async function analyzeData() {
   });
 }
 
+
+
 /**
  * Train models
  */
-export async function trainModels(targetColumn: string, modelTypes?: string[]) {
+export async function trainModels(
+  targetColumn: string,
+  modelTypes?: string[],
+  testSize: number = 0.2,
+  cvFolds: number = 5,
+  enableTuning: boolean = false
+) {
   return apiCall<any>('/api/models/train', {
     method: 'POST',
     body: JSON.stringify({
       target_column: targetColumn,
-      model_types: modelTypes
+      model_types: modelTypes,
+      test_size: testSize,
+      cv_folds: cvFolds,
+      enable_tuning: enableTuning
     }),
   });
 }
@@ -355,6 +371,39 @@ export async function getExplanations(jobId: string, modelName?: string) {
     : `/api/data/explain/${jobId}`;
 
   return apiCall<any>(endpoint);
+}
+
+/**
+ * Download EDA Report
+ */
+export async function downloadReport() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/data/report`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('No dataset loaded. Please upload a file first.');
+      }
+      throw new Error('Failed to download report');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'eda_report.pdf';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error: any) {
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      throw new Error('Unable to connect to server. The backend might be restarting.');
+    }
+    throw error;
+  }
 }
 
 /**

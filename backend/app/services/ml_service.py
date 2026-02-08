@@ -34,13 +34,16 @@ class MLService:
     def train_models(
         self, 
         target_column: str,
-        model_types: Optional[List[str]] = None
+        model_types: Optional[List[str]] = None,
+        test_size: float = 0.2,
+        cv_folds: int = 5,
+        enable_tuning: bool = False
     ) -> Dict[str, Any]:
         """
         Start model training job
         """
         try:
-            logger.info(f"Starting model training for target: {target_column}")
+            logger.info(f"Starting model training for target: {target_column}, test_size: {test_size}, cv_folds: {cv_folds}, enable_tuning: {enable_tuning}")
             
             # Get dataset
             df = self.data_service.get_dataframe()
@@ -62,7 +65,12 @@ class MLService:
             # Create trainer and train
             trainer = ModelTrainer()
             logger.info("Training models...")
-            results = trainer.train_all(df, target_column, model_types)
+            results = trainer.train_all(
+                df, target_column, model_types, 
+                test_size=test_size, 
+                cv_folds=cv_folds, 
+                enable_tuning=enable_tuning
+            )
             logger.info(f"Training complete. Trained {len(results['results'])} models")
             
             # Generate AI explanation

@@ -1,6 +1,5 @@
-'use client';
-
 import { useState } from 'react';
+import { downloadReport } from '@/lib/api';
 import DistributionChart from '../charts/DistributionChart';
 import CategoricalChart from '../charts/CategoricalChart';
 import CorrelationHeatmap from '../charts/CorrelationHeatmap';
@@ -13,10 +12,11 @@ interface InsightsDashboardProps {
   analysisResults: any;
 }
 
-type TabType = 'overview' | 'distributions' | 'relationships' | 'quality' | 'advanced';
+type TabType = 'overview' | 'distributions' | 'relationships' | 'quality' | 'advanced' | 'statistics';
 
 export default function InsightsDashboard({ analysisResults }: InsightsDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!analysisResults || !analysisResults.analysis) {
     return null;
@@ -24,6 +24,18 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
 
   const { analysis } = analysisResults;
   const chartData = analysis.chart_data || {};
+
+  const handleDownloadReport = async () => {
+    try {
+      setIsDownloading(true);
+      await downloadReport();
+    } catch (error) {
+      console.error("Failed to download report", error);
+      alert("Failed to generate report. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="bg-slate-950 border border-blue-500/10 rounded-2xl shadow-xl shadow-blue-500/5 overflow-hidden">
@@ -36,18 +48,45 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-wide">Data Insights</h2>
+            <h2 className="text-lg font-bold text-white tracking-wide">EDA Dashboard</h2>
             <p className="text-cyan-200/60 text-xs font-medium uppercase tracking-wider">
               Comprehensive Analysis
             </p>
           </div>
         </div>
-        <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-          <div className="text-2xl font-bold text-white">
-            {analysis.data_quality?.quality_score || 0}
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleDownloadReport}
+            disabled={isDownloading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDownloading ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generating...</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Download Report</span>
+              </>
+            )}
+          </button>
+
+          <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+            <div className="text-2xl font-bold text-white">
+              {analysis.data_quality?.quality_score || 0}
+            </div>
+            <div className="text-[10px] text-cyan-200/60 uppercase tracking-widest font-bold">Quality Score</div>
           </div>
-          <div className="text-[10px] text-cyan-200/60 uppercase tracking-widest font-bold">Quality Score</div>
         </div>
+
       </div>
 
       {/* Tab Navigation */}
@@ -83,6 +122,13 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
             icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
             label="Advanced"
           />
+          <TabButton
+            active={activeTab === 'statistics'}
+            onClick={() => setActiveTab('statistics')}
+            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
+            label="Statistics"
+          />
+
         </div>
       </div>
 
@@ -100,13 +146,59 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
         {activeTab === 'quality' && (
           <QualityTab analysis={analysis} chartData={chartData} />
         )}
+        {activeTab === 'statistics' && (
+          <StatisticsTab stats={analysis.descriptive_stats} />
+        )}
         {activeTab === 'advanced' && (
           <AdvancedTab chartData={chartData} />
         )}
+
       </div>
     </div>
   );
 }
+
+// --- Sub-components ---
+
+function StatisticsTab({ stats }: { stats: any }) {
+  if (!stats || Object.keys(stats).length === 0) {
+    return <div className="text-gray-400 text-center py-8">No statistics available for this dataset.</div>;
+  }
+
+  const columns = Object.keys(stats);
+  const metrics = ['count', 'mean', 'std', 'min', '25%', '50%', '75%', 'max', 'skew', 'kurtosis'];
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm text-left text-gray-400">
+        <thead className="text-xs text-gray-300 uppercase bg-slate-900/50">
+          <tr>
+            <th className="px-6 py-3 rounded-tl-lg">Metric</th>
+            {columns.map(col => (
+              <th key={col} className="px-6 py-3 font-semibold text-white">{col}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {metrics.map((metric, i) => (
+            <tr key={metric} className={`border-b border-white/5 ${i % 2 === 0 ? 'bg-white/5' : 'bg-transparent'}`}>
+              <td className="px-6 py-4 font-medium text-white bg-slate-900/30 sticky left-0 uppercase tracking-wider text-xs">
+                {metric}
+              </td>
+              {columns.map(col => (
+                <td key={`${col}-${metric}`} className="px-6 py-4 font-mono text-cyan-200">
+                  {stats[col]?.[metric] !== undefined ? stats[col][metric] : '-'}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
 
 // Tab Button Component
 function TabButton({ active, onClick, icon, label }: {

@@ -7,55 +7,46 @@ interface FileUploaderProps {
   onUploadSuccess?: (data: any) => void;
 }
 
-// Icon Components
-const UploadIcon = () => (
-  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+// --- Icons ---
+const CloudUploadIcon = () => (
+  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
   </svg>
 );
 
-const CheckIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+const FileIcon = () => (
+  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const AlertIcon = () => (
+  <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
   </svg>
 );
 
 const SpinnerIcon = () => (
-  <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+  <svg className="w-10 h-10 animate-spin text-cyan-400" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
   </svg>
 );
 
-const CsvIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-  </svg>
-);
-
-const ExcelIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-  </svg>
-);
-
-const JsonIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-  </svg>
-);
-
-const AlertIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-  </svg>
-);
+// --- Component ---
 
 export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -70,33 +61,38 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      await handleFileUpload(files[0]);
-    }
+    if (files.length > 0) await handleFileUpload(files[0]);
   }, []);
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      await handleFileUpload(files[0]);
-    }
+    if (files && files.length > 0) await handleFileUpload(files[0]);
   }, []);
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
     setUploadError(null);
+    setProgress(0);
+
+    // Simulate progress for better UX
+    const interval = setInterval(() => {
+      setProgress(p => Math.min(p + 10, 90));
+    }, 200);
 
     try {
       const result = await uploadDataFile(file);
+      clearInterval(interval);
+      setProgress(100);
       setUploadedFile(file.name);
 
-      if (onUploadSuccess) {
-        onUploadSuccess(result);
-      }
+      // Slight delay to show 100% before success callback
+      setTimeout(() => {
+        if (onUploadSuccess) onUploadSuccess(result);
+      }, 500);
 
     } catch (error: any) {
+      clearInterval(interval);
       setUploadError(error.message || 'Upload failed');
     } finally {
       setIsUploading(false);
@@ -104,25 +100,23 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full max-w-2xl mx-auto">
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          relative overflow-hidden
-          border-2 border-dashed rounded-2xl p-8 text-center
-          transition-all duration-300 ease-out
+          relative overflow-hidden group
+          rounded-3xl p-10 text-center
+          transition-all duration-500 ease-out
+          border-2 border-dashed
           ${isDragging
-            ? 'border-cyan-500 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 scale-[1.02]'
-            : 'border-blue-300/30 bg-gradient-to-br from-slate-900/50 to-blue-900/20 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/10'
+            ? 'border-cyan-400 bg-cyan-900/10 scale-[1.02] shadow-[0_0_40px_rgba(34,211,238,0.2)]'
+            : 'border-white/10 bg-slate-900/50 hover:border-cyan-500/30 hover:bg-slate-900/80 hover:shadow-2xl'
           }
-          ${isUploading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}
+          ${isUploading ? 'opacity-90 cursor-wait' : 'cursor-pointer'}
         `}
       >
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
-
         <input
           type="file"
           id="file-upload"
@@ -132,86 +126,83 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
           disabled={isUploading}
         />
 
-        <label htmlFor="file-upload" className="cursor-pointer relative z-10">
-          {isUploading ? (
-            <div className="py-4">
-              <div className="flex justify-center mb-4 text-cyan-500">
-                <SpinnerIcon />
+        <label htmlFor="file-upload" className="block relative z-10 cursor-pointer">
+
+          {/* Default State */}
+          {!isUploading && !uploadedFile && (
+            <div className="space-y-6 animate-fade-in-up">
+              <div className={`
+                w-24 h-24 mx-auto rounded-full 
+                bg-gradient-to-tr from-blue-600/20 to-cyan-400/20 
+                flex items-center justify-center 
+                text-cyan-300 group-hover:text-cyan-200
+                transition-all duration-500 group-hover:scale-110
+                shadow-[0_0_30px_rgba(34,211,238,0.1)]
+              `}>
+                <CloudUploadIcon />
               </div>
-              <p className="text-lg font-semibold text-cyan-400 mb-3">
-                Uploading your file...
-              </p>
-              <div className="w-full bg-slate-800 rounded-full h-2 max-w-xs mx-auto overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full animate-pulse w-3/4"></div>
+
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  Upload your dataset
+                </h3>
+                <p className="text-gray-400 text-lg">
+                  Drag & drop or <span className="text-cyan-400 underline decoration-cyan-400/30 hover:decoration-cyan-400 underline-offset-4 transition-all">browse</span>
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3 pt-2">
+                <FileTypeBadge ext="CSV" color="bg-blue-500/10 text-blue-400 border-blue-500/20" />
+                <FileTypeBadge ext="Excel" color="bg-emerald-500/10 text-emerald-400 border-emerald-500/20" />
+                <FileTypeBadge ext="JSON" color="bg-amber-500/10 text-amber-400 border-amber-500/20" />
               </div>
             </div>
-          ) : uploadedFile ? (
-            <div className="py-4">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-green-500/30">
-                <CheckIcon />
+          )}
+
+          {/* Uploading State */}
+          {isUploading && (
+            <div className="py-8 animate-pulse">
+              <div className="mb-6 flex justify-center"><SpinnerIcon /></div>
+              <h3 className="text-xl font-bold text-white mb-2">Processing Data...</h3>
+              <div className="w-64 mx-auto h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-              <p className="text-lg font-semibold text-green-700 mb-1">
-                Successfully uploaded!
-              </p>
-              <p className="text-sm font-medium text-green-600 mb-3">
+            </div>
+          )}
+
+          {/* Success State */}
+          {uploadedFile && !isUploading && (
+            <div className="py-4 animate-scale-in">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+                <CheckCircleIcon />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-1">Upload Complete!</h3>
+              <p className="text-emerald-400/80 font-mono text-sm bg-emerald-900/20 py-1 px-3 rounded-full inline-block border border-emerald-500/20">
                 {uploadedFile}
               </p>
-              <p className="text-sm text-gray-500">
-                Click or drag to upload a different file
-              </p>
-            </div>
-          ) : (
-            <div className="py-4">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
-                <UploadIcon />
-              </div>
-              <p className="text-xl font-bold text-white mb-2">
-                Drop your data file here
-              </p>
-              <p className="text-gray-400 mb-4">
-                or <span className="text-cyan-400 font-medium hover:underline">browse files</span>
-              </p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full text-xs text-gray-400 border border-white/10">
-                <span>Supported:</span>
-                <span className="font-medium text-gray-700">CSV, Excel, JSON</span>
-              </div>
             </div>
           )}
         </label>
       </div>
 
+      {/* Error Message */}
       {uploadError && (
-        <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-center gap-3">
-          <div className="flex-shrink-0 text-red-400">
-            <AlertIcon />
-          </div>
-          <p className="text-red-300 text-sm font-medium">{uploadError}</p>
+        <div className="mt-6 mx-auto max-w-md bg-rose-950/30 border border-rose-500/30 rounded-xl p-4 flex items-center gap-3 animate-shake">
+          <AlertIcon />
+          <span className="text-rose-200 text-sm font-medium">{uploadError}</span>
         </div>
       )}
-
-      <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="group text-center p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm hover:shadow-md hover:border-cyan-500/30 transition-all">
-          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-blue-500/80 to-blue-600/80 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
-            <CsvIcon />
-          </div>
-          <div className="text-sm font-medium text-gray-300">CSV</div>
-          <div className="text-xs text-gray-500">Comma-separated</div>
-        </div>
-        <div className="group text-center p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm hover:shadow-md hover:border-cyan-500/30 transition-all">
-          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-emerald-500/80 to-emerald-600/80 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/20">
-            <ExcelIcon />
-          </div>
-          <div className="text-sm font-medium text-gray-300">Excel</div>
-          <div className="text-xs text-gray-500">.xlsx, .xls</div>
-        </div>
-        <div className="group text-center p-4 bg-white/5 rounded-xl border border-white/10 shadow-sm hover:shadow-md hover:border-cyan-500/30 transition-all">
-          <div className="w-12 h-12 mx-auto mb-2 rounded-xl bg-gradient-to-br from-amber-500/80 to-orange-600/80 flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-lg shadow-orange-500/20">
-            <JsonIcon />
-          </div>
-          <div className="text-sm font-medium text-gray-300">JSON</div>
-          <div className="text-xs text-gray-500">Data objects</div>
-        </div>
-      </div>
     </div>
+  );
+}
+
+function FileTypeBadge({ ext, color }: { ext: string, color: string }) {
+  return (
+    <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${color} uppercase tracking-wider`}>
+      {ext}
+    </span>
   );
 }

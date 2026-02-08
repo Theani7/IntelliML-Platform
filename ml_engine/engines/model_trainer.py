@@ -4,7 +4,7 @@ sys.path.append('/home/claude/intelliml-platform/ml_engine')
 from ml_engine.mcp_servers.linear_models import LinearModelsServer
 from ml_engine.mcp_servers.tree_models import TreeModelsServer
 from ml_engine.mcp_servers.boosting_models import BoostingModelsServer
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 import pandas as pd
@@ -37,10 +37,21 @@ class ModelTrainer:
         self, 
         df: pd.DataFrame, 
         target_column: str,
-        model_types: List[str] = None
+        model_types: List[str] = None,
+        test_size: float = 0.2,
+        cv_folds: int = 5,
+        enable_tuning: bool = False
     ) -> Dict[str, Any]:
         """
         Train multiple models and compare results
+        
+        Args:
+            df: Input DataFrame
+            target_column: Target column name
+            model_types: List of model types to train
+            test_size: Proportion of data for testing
+            cv_folds: Number of cross-validation folds (3, 5, or 10)
+            enable_tuning: Whether to enable hyperparameter tuning
         """
         try:
             logger.info(f"Starting training for target: {target_column}")
@@ -57,19 +68,42 @@ class ModelTrainer:
             
             # Train-test split
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42
+                X, y, test_size=test_size, random_state=42
             )
             
             logger.info(f"Train size: {X_train.shape[0]}, Test size: {X_test.shape[0]}")
             
             # Determine which models to train
             if model_types is None:
-                models_to_train = [
-                    ('linear', 'auto'),
-                    ('tree', 'random_forest'),
-                    ('boosting', 'xgboost'),
-                    ('boosting', 'lightgbm'),
-                ]
+                # Classification-specific models
+                if self.problem_type == 'classification':
+                    models_to_train = [
+                        ('linear', 'auto'),           # Logistic Regression
+                        ('linear', 'svc'),            # Support Vector Classifier
+                        ('linear', 'knn'),            # K-Nearest Neighbors
+                        ('linear', 'naive_bayes'),    # Gaussian Naive Bayes
+                        ('tree', 'random_forest'),    # Random Forest
+                        ('tree', 'decision_tree'),    # Decision Tree
+                        ('boosting', 'xgboost'),      # XGBoost
+                        ('boosting', 'lightgbm'),     # LightGBM
+                        ('boosting', 'gradient_boosting'),  # Sklearn GradientBoosting
+                        # ('boosting', 'catboost'),   # CatBoost (optional, needs install)
+                    ]
+                else:  # Regression
+                    models_to_train = [
+                        ('linear', 'auto'),           # Linear Regression
+                        ('linear', 'ridge'),          # Ridge Regression
+                        ('linear', 'lasso'),          # Lasso Regression
+                        ('linear', 'elasticnet'),     # ElasticNet
+                        ('linear', 'svr'),            # Support Vector Regressor
+                        ('linear', 'knn'),            # K-Nearest Neighbors
+                        ('tree', 'random_forest'),    # Random Forest
+                        ('tree', 'decision_tree'),    # Decision Tree
+                        ('boosting', 'xgboost'),      # XGBoost
+                        ('boosting', 'lightgbm'),     # LightGBM
+                        ('boosting', 'gradient_boosting'),  # Sklearn GradientBoosting
+                        # ('boosting', 'catboost'),   # CatBoost (optional, needs install)
+                    ]
             else:
                 models_to_train = [(mt.split('_')[0], mt) for mt in model_types]
             
@@ -82,7 +116,9 @@ class ModelTrainer:
                     logger.info(f"Training model {idx}/{len(models_to_train)}: {model_name}")
                     result = self._train_single_model(
                         server_name, model_name, 
-                        X_train, X_test, y_train, y_test
+                        X_train, X_test, y_train, y_test,
+                        cv_folds=cv_folds,
+                        enable_tuning=enable_tuning
                     )
                     results.append(result)
                     logger.info(f"Model {model_name} trained. Score: {result['test_score']:.4f}")
@@ -111,6 +147,7 @@ class ModelTrainer:
                 'problem_type': self.problem_type,
                 'num_features': X.shape[1],
                 'num_samples': len(df),
+                'feature_names': self.feature_names,
             }
             
         except Exception as e:
@@ -165,13 +202,31 @@ class ModelTrainer:
         self, 
         server_name: str, 
         model_name: str,
-        X_train, X_test, y_train, y_test
+        X_train, X_test, y_train, y_test,
+        cv_folds: int = 5,
+        enable_tuning: bool = False
     ) -> Dict[str, Any]:
-        """Train a single model and evaluate"""
+        """Train a single model and evaluate with configurable CV"""
         server = self.servers[server_name]
         
-        # Train
-        train_info = server.train(X_train, y_train, self.problem_type, model_name)
+        # Train (optionally with tuning)
+        if enable_tuning:
+            train_info = self._train_with_tuning(
+                server, model_name, X_train, y_train, cv_folds
+            )
+        else:
+            train_info = server.train(X_train, y_train, self.problem_type, model_name)
+            
+            # Re-calculate CV score with specified folds
+            if cv_folds != 5:
+                from sklearn.model_selection import cross_val_score
+                if self.problem_type == 'classification':
+                    cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
+                else:
+                    cv = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
+                cv_scores = cross_val_score(server.trained_model, X_train, y_train, cv=cv)
+                train_info['cv_score_mean'] = float(cv_scores.mean())
+                train_info['cv_score_std'] = float(cv_scores.std())
         
         # Predict on test set
         y_pred = server.predict(X_test)
@@ -277,3 +332,78 @@ class ModelTrainer:
         if self.best_model is None:
             return None
         return self.servers[self.best_model['server']]
+    
+    def _train_with_tuning(
+        self,
+        server,
+        model_name: str,
+        X_train,
+        y_train,
+        cv_folds: int = 5
+    ) -> Dict[str, Any]:
+        """
+        Train with hyperparameter tuning using RandomizedSearchCV
+        """
+        from sklearn.model_selection import RandomizedSearchCV
+        
+        logger.info(f"Training with hyperparameter tuning: {model_name}")
+        
+        # Define parameter grids for each model
+        param_grids = {
+            'auto': {'C': [0.01, 0.1, 1, 10], 'solver': ['lbfgs', 'saga']},
+            'svc': {'C': [0.1, 1, 10], 'kernel': ['rbf', 'linear'], 'gamma': ['scale', 'auto']},
+            'knn': {'n_neighbors': [3, 5, 7, 11], 'weights': ['uniform', 'distance']},
+            'random_forest': {'n_estimators': [50, 100, 200], 'max_depth': [5, 10, 15, None]},
+            'decision_tree': {'max_depth': [5, 10, 15, None], 'min_samples_split': [2, 5, 10]},
+            'xgboost': {'n_estimators': [50, 100], 'max_depth': [3, 6, 10], 'learning_rate': [0.01, 0.1]},
+            'lightgbm': {'n_estimators': [50, 100], 'max_depth': [3, 6, 10], 'learning_rate': [0.01, 0.1]},
+            'gradient_boosting': {'n_estimators': [50, 100], 'max_depth': [3, 6], 'learning_rate': [0.01, 0.1]},
+            'ridge': {'alpha': [0.01, 0.1, 1, 10, 100]},
+            'lasso': {'alpha': [0.01, 0.1, 1, 10, 100]},
+            'elasticnet': {'alpha': [0.01, 0.1, 1, 10], 'l1_ratio': [0.2, 0.5, 0.8]},
+            'svr': {'C': [0.1, 1, 10], 'kernel': ['rbf', 'linear']},
+        }
+        
+        # First train normally to get base model
+        train_info = server.train(X_train, y_train, self.problem_type, model_name)
+        base_model = server.trained_model
+        param_grid = param_grids.get(model_name, {})
+        
+        if not param_grid:
+            logger.info(f"No param grid for {model_name}, using default")
+            return train_info
+        
+        # Setup CV
+        if self.problem_type == 'classification':
+            cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=42)
+            scoring = 'accuracy'
+        else:
+            cv = KFold(n_splits=cv_folds, shuffle=True, random_state=42)
+            scoring = 'r2'
+        
+        try:
+            model_class = type(base_model)
+            fresh_model = model_class()
+            
+            search = RandomizedSearchCV(
+                fresh_model, param_distributions=param_grid,
+                n_iter=8, cv=cv, scoring=scoring,
+                random_state=42, n_jobs=-1
+            )
+            search.fit(X_train, y_train)
+            
+            server.trained_model = search.best_estimator_
+            server.model_type = f"{train_info['model_name']} (Tuned)"
+            
+            logger.info(f"Best params: {search.best_params_}, Best score: {search.best_score_:.4f}")
+            
+            return {
+                "model_name": server.model_type,
+                "cv_score_mean": float(search.best_score_),
+                "cv_score_std": float(search.cv_results_['std_test_score'][search.best_index_]),
+                "num_features": X_train.shape[1],
+                "training_samples": X_train.shape[0],
+            }
+        except Exception as e:
+            logger.warning(f"Tuning failed for {model_name}: {e}")
+            return train_info

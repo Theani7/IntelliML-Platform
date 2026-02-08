@@ -222,6 +222,35 @@ async def analyze_data():
             "duplicate_rows": duplicate_count,
             "completeness": round(100 - (total_missing / (rows * cols) * 100), 2) if rows * cols > 0 else 100
         }
+
+        # ========== 3b. Descriptive Statistics ==========
+        descriptive_stats = {}
+        if len(numeric_cols) > 0:
+            try:
+                # Basic describe
+                desc = df[numeric_cols].describe().T
+                
+                # Skewness and Kurtosis
+                skew = df[numeric_cols].skew()
+                kurt = df[numeric_cols].kurtosis()
+                
+                for col in numeric_cols:
+                    stats_dict = desc.loc[col].to_dict()
+                    stats_dict['skew'] = round(skew.get(col, 0), 4)
+                    stats_dict['kurtosis'] = round(kurt.get(col, 0), 4)
+                for col in numeric_cols:
+                    stats_dict = desc.loc[col].to_dict()
+                    stats_dict['skew'] = round(skew.get(col, 0), 4)
+                    stats_dict['kurtosis'] = round(kurt.get(col, 0), 4)
+                    
+                    # Round other values
+                    for k, v in stats_dict.items():
+                        if isinstance(v, float):
+                            stats_dict[k] = round(v, 4)
+                    descriptive_stats[col] = stats_dict
+
+            except Exception as e:
+                logger.warning(f"Could not calculate descriptive stats: {e}")
         
         # ========== 4. Generate Chart Data ==========
         chart_data = {}
@@ -395,6 +424,7 @@ async def analyze_data():
                 "basic_info": basic_info,
                 "data_quality": data_quality,
                 "missing_values": missing_values,
+                "descriptive_stats": descriptive_stats,
                 "chart_data": chart_data,
                 "recommendations": recommendations
             },
@@ -408,8 +438,101 @@ async def analyze_data():
         return result
         
     except Exception as e:
-        logger.error(f"Analysis error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        logger.error(f"Analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+
+
+
+
+@router.get("/report")
+def get_report():
+    """
+    Generate and download EDA PDF Report with AI Analysis
+    """
+    from fastapi.responses import StreamingResponse
+    from app.utils.pdf_generator import generate_eda_pdf
+    from app.core.groq_client import groq_client
+    import json
+
+    df = data_service.get_dataframe()
+    if df is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded")
+    
+    # 1. Prepare Data Summary for AI
+    description = df.describe().to_dict()
+    missing = df.isnull().sum().to_dict()
+    
+    # Calculate correlations for context
+    numeric_df = df.select_dtypes(include=[np.number])
+    correlations = {}
+    if not numeric_df.empty:
+        corr_matrix = numeric_df.corr().abs()
+        # Get top pairs
+        pairs = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+                 .stack()
+                 .sort_values(ascending=False))
+        if not pairs.empty:
+            # Convert tuple keys to string for JSON serialization
+            top_corr = pairs.head(5).to_dict()
+            correlations = {f"{k[0]} vs {k[1]}": v for k, v in top_corr.items()}
+
+    # 2. Generate AI Analysis
+    ai_analysis_text = "AI Analysis unavailable."
+    try:
+        prompt = f"""
+        You are an expert Senior Data Scientist. Write a detailed Exploratory Data Analysis (EDA) report based on this dataset summary:
+        
+        Dataset Info: {len(df)} rows, {len(df.columns)} columns.
+        Columns: {', '.join(df.columns)}
+        
+        Descriptive Statistics:
+        {json.dumps(description, indent=2)}
+        
+        Missing Values:
+        {json.dumps(missing, indent=2)}
+        
+        Top Correlations (Absolute Values):
+        {json.dumps(correlations, indent=2)}
+        
+        Instructions:
+        1. Write a comprehensive "Executive Summary" analyzing the data quality, distributions, and relationships.
+        2. Specifically explain what the charts (Distribution, Heatmap, Boxplots) would likely show based on these stats.
+        3. Highlight any anomalies, outliers, or strong relationships.
+        4. Use professional, markdown-free formatting (paragraphs only).
+        5. Keep it under 400 words.
+        """
+        
+        response = groq_client.chat_completion([
+            {"role": "system", "content": "You are a helpful data science assistant."},
+            {"role": "user", "content": prompt}
+        ])
+        ai_analysis_text = response
+        
+    except Exception as e:
+        logger.error(f"AI Report Generation Failed: {e}")
+        ai_analysis_text = f"Could not generate AI analysis due to an error: {str(e)}"
+
+    analysis_results = {
+        'descriptive_stats': description,
+        'data_quality': {
+            'quality_score': 'N/A', 
+            'missing_values': missing
+        },
+        'ai_analysis': ai_analysis_text
+    }
+    
+    # generate_eda_pdf now handles chart generation internally using the df
+    pdf_buffer = generate_eda_pdf(df, analysis_results)
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=eda_report.pdf"}
+    )
 
 
 def generate_insights(df: pd.DataFrame, analysis: Dict) -> List[str]:
@@ -1085,6 +1208,189 @@ async def analyze_quality():
 
     except Exception as e:
         logger.error(f"Quality analysis error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== OUTLIER DETECTION ====================
+
+from pydantic import BaseModel
+from typing import Optional
+
+class OutlierRequest(BaseModel):
+    columns: Optional[List[str]] = None
+    method: str = "iqr"  # iqr or zscore
+    threshold: float = 1.5  # IQR multiplier or Z-score threshold
+
+@router.post("/outliers/detect")
+async def detect_outliers(request: OutlierRequest):
+    """Detect outliers in numeric columns using IQR or Z-score method"""
+    if current_dataset["df"] is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded")
+    
+    try:
+        df = current_dataset["df"]
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Filter to requested columns or use all numeric
+        target_cols = request.columns if request.columns else numeric_cols
+        target_cols = [c for c in target_cols if c in numeric_cols]
+        
+        outlier_info = []
+        total_outlier_rows = set()
+        
+        for col in target_cols:
+            col_data = df[col].dropna()
+            
+            if request.method == "zscore":
+                from scipy import stats
+                z_scores = np.abs(stats.zscore(col_data))
+                outlier_mask = z_scores > request.threshold
+            else:  # IQR
+                q1 = col_data.quantile(0.25)
+                q3 = col_data.quantile(0.75)
+                iqr = q3 - q1
+                lower = q1 - request.threshold * iqr
+                upper = q3 + request.threshold * iqr
+                outlier_mask = (col_data < lower) | (col_data > upper)
+            
+            outlier_indices = col_data[outlier_mask].index.tolist()
+            total_outlier_rows.update(outlier_indices)
+            
+            outlier_info.append({
+                "column": col,
+                "outlier_count": int(outlier_mask.sum()),
+                "percentage": round((outlier_mask.sum() / len(col_data)) * 100, 2),
+                "sample_values": col_data[outlier_mask].head(5).tolist()
+            })
+        
+        return {
+            "method": request.method,
+            "threshold": request.threshold,
+            "total_outlier_rows": len(total_outlier_rows),
+            "columns_analyzed": len(target_cols),
+            "details": outlier_info
+        }
+    except Exception as e:
+        logger.error(f"Outlier detection error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/outliers/remove")
+async def remove_outliers(request: OutlierRequest):
+    """Remove outliers from dataset"""
+    if current_dataset["df"] is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded")
+    
+    try:
+        df = current_dataset["df"].copy()
+        original_rows = len(df)
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        
+        target_cols = request.columns if request.columns else numeric_cols
+        target_cols = [c for c in target_cols if c in numeric_cols]
+        
+        rows_to_remove = set()
+        
+        for col in target_cols:
+            col_data = df[col]
+            
+            if request.method == "zscore":
+                from scipy import stats
+                z_scores = np.abs(stats.zscore(col_data.dropna()))
+                mask = pd.Series(False, index=df.index)
+                mask.loc[col_data.dropna().index] = z_scores > request.threshold
+            else:  # IQR
+                q1 = col_data.quantile(0.25)
+                q3 = col_data.quantile(0.75)
+                iqr = q3 - q1
+                lower = q1 - request.threshold * iqr
+                upper = q3 + request.threshold * iqr
+                mask = (col_data < lower) | (col_data > upper)
+            
+            rows_to_remove.update(df[mask].index.tolist())
+        
+        # Remove outlier rows
+        df = df.drop(index=list(rows_to_remove))
+        
+        # Update global dataset
+        current_dataset["df"] = df
+        DataService._dataframe = df
+        
+        return {
+            "status": "success",
+            "original_rows": original_rows,
+            "removed_rows": len(rows_to_remove),
+            "remaining_rows": len(df),
+            "columns_processed": target_cols
+        }
+    except Exception as e:
+        logger.error(f"Outlier removal error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== FEATURE ENGINEERING ====================
+
+class FeatureEngineeringRequest(BaseModel):
+    operation: str  # polynomial, log, interaction, binning
+    columns: List[str]
+    params: Optional[Dict[str, Any]] = None
+
+@router.post("/engineer")
+async def engineer_features(request: FeatureEngineeringRequest):
+    """Create new features from existing columns"""
+    if current_dataset["df"] is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded")
+    
+    try:
+        df = current_dataset["df"].copy()
+        new_columns = []
+        params = request.params or {}
+        
+        if request.operation == "polynomial":
+            degree = params.get("degree", 2)
+            for col in request.columns:
+                if col in df.columns and df[col].dtype in [np.float64, np.int64]:
+                    new_col = f"{col}_pow{degree}"
+                    df[new_col] = df[col] ** degree
+                    new_columns.append(new_col)
+        
+        elif request.operation == "log":
+            for col in request.columns:
+                if col in df.columns and df[col].dtype in [np.float64, np.int64]:
+                    new_col = f"{col}_log"
+                    # Add small value to avoid log(0)
+                    df[new_col] = np.log1p(df[col].clip(lower=0))
+                    new_columns.append(new_col)
+        
+        elif request.operation == "interaction":
+            if len(request.columns) >= 2:
+                col1, col2 = request.columns[0], request.columns[1]
+                if col1 in df.columns and col2 in df.columns:
+                    new_col = f"{col1}_x_{col2}"
+                    df[new_col] = df[col1] * df[col2]
+                    new_columns.append(new_col)
+        
+        elif request.operation == "binning":
+            n_bins = params.get("bins", 5)
+            for col in request.columns:
+                if col in df.columns and df[col].dtype in [np.float64, np.int64]:
+                    new_col = f"{col}_binned"
+                    df[new_col] = pd.cut(df[col], bins=n_bins, labels=False)
+                    new_columns.append(new_col)
+        
+        # Update global dataset
+        current_dataset["df"] = df
+        DataService._dataframe = df
+        
+        return {
+            "status": "success",
+            "operation": request.operation,
+            "new_columns": new_columns,
+            "total_columns": len(df.columns),
+            "preview": df[new_columns].head(5).to_dict() if new_columns else {}
+        }
+    except Exception as e:
+        logger.error(f"Feature engineering error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -13,6 +13,9 @@ import DataCleaning from '@/components/data/DataCleaning';
 import ModelTraining from '@/components/models/ModelTraining';
 import ModelComparison from '@/components/models/ModelComparison';
 import SHAPPlots from '@/components/explanations/SHAPPlots';
+import OutlierDetection from '@/components/data/OutlierDetection';
+import FeatureEngineering from '@/components/data/FeatureEngineering';
+import BatchPrediction from '@/components/models/BatchPrediction';
 import {
   checkBackendHealth,
   testGroqConnection,
@@ -120,7 +123,7 @@ export default function Home() {
 
   const handleDataUpload = async (data: any) => {
     setDatasetInfo(data);
-    setActiveTab('chat');
+    setActiveTab('clean');
   };
 
   const handleAnalyze = async () => {
@@ -129,8 +132,17 @@ export default function Home() {
       const results = await analyzeData();
       setAnalysisResults(results);
       setActiveTab('analyze');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Analysis failed:', error);
+      // Handle session expiry (backend restart)
+      if (error.message && (error.message.includes('404') || error.message.includes('No dataset'))) {
+        alert("Session expired or dataset lost. Please re-upload your file.");
+        setDatasetInfo(null);
+        setAnalysisResults(null);
+        setActiveTab('upload');
+      } else {
+        alert("Analysis failed. Please try again.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -165,13 +177,13 @@ export default function Home() {
     return <LandingPage onGetStarted={() => setShowApp(true)} />;
   }
 
-  const tabs = [
+  const mainTabs = [
     { id: 'upload', label: 'Upload', icon: <UploadIcon />, available: true },
     { id: 'clean', label: 'Data Prep', icon: <SparklesIcon />, available: !!datasetInfo },
-    { id: 'chat', label: 'AI Chat', icon: <ChatIcon />, available: !!datasetInfo },
-    { id: 'analyze', label: 'Insights', icon: <ChartIcon />, available: !!datasetInfo },
+    { id: 'analyze', label: 'EDA', icon: <ChartIcon />, available: !!datasetInfo },
     { id: 'train', label: 'Train', icon: <BrainIcon />, available: !!datasetInfo },
     { id: 'results', label: 'Results', icon: <TargetIcon />, available: !!trainingResults },
+    { id: 'chat', label: 'AI Assistant', icon: <ChatIcon />, available: !!datasetInfo },
   ];
 
   return (
@@ -211,9 +223,11 @@ export default function Home() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-80px)] bg-black/20 backdrop-blur-sm border-r border-white/10 p-4">
+        <aside className="w-64 min-h-[calc(100vh-80px)] bg-black/20 backdrop-blur-sm border-r border-white/10 p-4 flex flex-col">
+
+          {/* Main Workflow Steps */}
           <nav className="space-y-2">
-            {tabs.map((tab) => (
+            {mainTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => tab.available && setActiveTab(tab.id as Tab)}
@@ -235,9 +249,6 @@ export default function Home() {
                 {tab.id === 'upload' && datasetInfo && (
                   <span className="ml-auto text-green-400"><CheckIcon /></span>
                 )}
-                {tab.id === 'analyze' && analysisResults && (
-                  <span className="ml-auto text-green-400"><CheckIcon /></span>
-                )}
               </button>
             ))}
           </nav>
@@ -257,131 +268,150 @@ export default function Home() {
         {/* Main Content */}
         <main className="flex-1 p-6">
           {/* Upload Tab */}
-          {activeTab === 'upload' && (
-            <div className="animate-fadeIn">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Upload Your Data</h2>
-                <p className="text-gray-400">Start by uploading a CSV, Excel, or JSON file</p>
-              </div>
-
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-                  <FileUploader onUploadSuccess={handleDataUpload} />
+          {
+            activeTab === 'upload' && (
+              <div className="animate-fadeIn">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Upload Your Data</h2>
+                  <p className="text-gray-400">Start by uploading a CSV, Excel, or JSON file</p>
                 </div>
-              </div>
 
-              <div className="mt-12 max-w-4xl mx-auto">
-                <h3 className="text-lg font-semibold text-white mb-4 text-center">How It Works</h3>
-                <div className="grid md:grid-cols-4 gap-4">
-                  {[
-                    { icon: <UploadIcon />, title: 'Upload', desc: 'Add your dataset' },
-                    { icon: <ChatIcon />, title: 'Chat', desc: 'Ask AI questions' },
-                    { icon: <ChartIcon />, title: 'Analyze', desc: 'View insights' },
-                    { icon: <BrainIcon />, title: 'Train', desc: 'Build ML models' },
-                  ].map((step, i) => (
-                    <div key={i} className="text-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400">
-                        {step.icon}
+                <div className="max-w-2xl mx-auto">
+                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+                    <FileUploader onUploadSuccess={handleDataUpload} />
+                  </div>
+                </div>
+
+                <div className="mt-12 max-w-4xl mx-auto">
+                  <h3 className="text-lg font-semibold text-white mb-4 text-center">How It Works</h3>
+                  <div className="grid md:grid-cols-4 gap-4">
+                    {[
+                      { icon: <UploadIcon />, title: 'Upload', desc: 'Add your dataset' },
+                      { icon: <ChatIcon />, title: 'Chat', desc: 'Ask AI questions' },
+                      { icon: <ChartIcon />, title: 'Analyze', desc: 'View insights' },
+                      { icon: <BrainIcon />, title: 'Train', desc: 'Build ML models' },
+                    ].map((step, i) => (
+                      <div key={i} className="text-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400">
+                          {step.icon}
+                        </div>
+                        <h4 className="text-white font-medium mt-3">{step.title}</h4>
+                        <p className="text-sm text-gray-400 mt-1">{step.desc}</p>
                       </div>
-                      <h4 className="text-white font-medium mt-3">{step.title}</h4>
-                      <p className="text-sm text-gray-400 mt-1">{step.desc}</p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Clean Tab */}
-          {activeTab === 'clean' && datasetInfo && (
-            <div className="animate-fadeIn">
-              <div className="text-center mb-6">
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Data Cleaning Station</h2>
-                <p className="text-gray-400">Transform and prepare your data for analysis</p>
-              </div>
-              <DataCleaning
-                data={datasetInfo}
-                onDataUpdate={(newData) => setDatasetInfo(newData)}
-              />
-            </div>
-          )}
-
-          {/* Chat Tab */}
-          {activeTab === 'chat' && datasetInfo && (
-            <div className="animate-fadeIn h-full">
-              <VoiceChat />
-            </div>
-          )}
-
-          {/* Analyze Tab */}
-          {activeTab === 'analyze' && datasetInfo && (
-            <div className="animate-fadeIn space-y-6">
-              {!analysisResults ? (
-                <div className="text-center py-16">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600/30 to-pink-600/30 flex items-center justify-center mx-auto mb-6 border border-purple-500/30 text-white">
-                    <ChartIcon />
-                  </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Analyze Your Data</h2>
-                  <p className="text-gray-400 mb-6">Get AI-powered insights, statistics, and visualizations</p>
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={isAnalyzing}
-                    className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <SpinnerIcon /> Analyzing...
-                      </>
-                    ) : (
-                      'Start Analysis'
-                    )}
-                  </button>
+          {
+            activeTab === 'clean' && datasetInfo && (
+              <div className="animate-fadeIn">
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Data Cleaning Station</h2>
+                  <p className="text-gray-400">Transform and prepare your data for analysis</p>
                 </div>
-              ) : (
+
                 <div className="space-y-6">
-                  <DataPreview data={datasetInfo} />
-                  <DataStats analysis={analysisResults.analysis} />
-                  <AIInsights insights={analysisResults.ai_insights} />
-                  <InsightsDashboard analysisResults={analysisResults} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Train Tab */}
-          {activeTab === 'train' && datasetInfo && (
-            <div className="animate-fadeIn">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Train ML Models</h2>
-                <p className="text-gray-400">Select a target column and train multiple models</p>
-              </div>
-
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-                  <ModelTraining
-                    columns={datasetInfo.columns}
-                    onTrainingComplete={handleTrainingComplete}
+                  <OutlierDetection />
+                  <FeatureEngineering columns={datasetInfo.columns || []} />
+                  <DataCleaning
+                    data={datasetInfo}
+                    onDataUpdate={(newData) => setDatasetInfo(newData)}
                   />
                 </div>
               </div>
-            </div>
-          )}
+            )
+          }
+
+          {/* Chat Tab */}
+          {
+            activeTab === 'chat' && datasetInfo && (
+              <div className="animate-fadeIn h-full">
+                <VoiceChat />
+              </div>
+            )
+          }
+
+          {/* Analyze Tab */}
+          {
+            activeTab === 'analyze' && datasetInfo && (
+              <div className="animate-fadeIn space-y-6">
+                {!analysisResults ? (
+                  <div className="text-center py-16">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600/30 to-pink-600/30 flex items-center justify-center mx-auto mb-6 border border-purple-500/30 text-white">
+                      <ChartIcon />
+                    </div>
+                    <h2 className="text-2xl font-bold text-white mb-2">Exploratory Data Analysis (EDA)</h2>
+                    <p className="text-gray-400 mb-6">Get AI-powered insights, statistics, and visualizations</p>
+                    <button
+                      onClick={handleAnalyze}
+                      disabled={isAnalyzing}
+                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <SpinnerIcon /> Analyzing...
+                        </>
+                      ) : (
+                        'Start Analysis'
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <DataPreview data={datasetInfo} />
+                    <DataStats analysis={analysisResults.analysis} />
+                    <AIInsights insights={analysisResults.ai_insights} />
+                    <InsightsDashboard analysisResults={analysisResults} />
+                  </div>
+                )}
+              </div>
+            )
+          }
+
+          {/* Train Tab */}
+          {
+            activeTab === 'train' && datasetInfo && (
+              <div className="animate-fadeIn">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Train ML Models</h2>
+                  <p className="text-gray-400">Select a target column and train multiple models</p>
+                </div>
+
+                <div className="max-w-2xl mx-auto">
+                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+                    <ModelTraining
+                      columns={datasetInfo.columns}
+                      onTrainingComplete={handleTrainingComplete}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          }
 
           {/* Results Tab */}
-          {activeTab === 'results' && trainingResults && (
-            <div className="animate-fadeIn space-y-6">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Training Complete</h2>
-                <p className="text-gray-400">View model performance and explanations</p>
+          {
+            activeTab === 'results' && trainingResults && (
+              <div className="animate-fadeIn space-y-6">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Training Complete</h2>
+                  <p className="text-gray-400">View model performance and explanations</p>
+                </div>
+
+                <ModelComparison results={trainingResults} />
+
+                {explanations && <SHAPPlots explanations={explanations} />}
+
+                <BatchPrediction jobId={trainingResults.job_id || trainingResults.results?.job_id || null} />
               </div>
-
-              <ModelComparison results={trainingResults} />
-
-              {explanations && <SHAPPlots explanations={explanations} />}
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+            )
+          }
+        </main >
+      </div >
+    </div >
   );
 }

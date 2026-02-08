@@ -84,18 +84,42 @@ class DataChatService:
     
     def _build_dataset_context(self, df: pd.DataFrame) -> str:
         """Build context string describing the dataset"""
-        # Basic info
+        # Truncate to save tokens
+        max_cols = 20
+        max_rows_sample = 5
+        
+        # Column info
+        cols = df.columns.tolist()
+        if len(cols) > max_cols:
+            col_info = ', '.join(cols[:max_cols]) + f"... (+{len(cols)-max_cols} more)"
+        else:
+            col_info = ', '.join(cols)
+            
+        # Data types (summary)
+        dtype_counts = df.dtypes.value_counts().to_string()
+        
+        # Sample data
+        sample_data = df.head(max_rows_sample).to_markdown(index=False, numalign="left", stralign="left")
+        
+        # Statistics
+        # Only describe numeric columns to save space, and limit to top columns
+        numeric_df = df.select_dtypes(include=[np.number])
+        if not numeric_df.empty:
+            stats = numeric_df.iloc[:, :max_cols].describe().to_markdown(numalign="left", stralign="left")
+        else:
+            stats = "No numeric columns."
+
         context = f"""Dataset Information:
 - Shape: {df.shape[0]} rows, {df.shape[1]} columns
-- Columns: {', '.join(df.columns.tolist())}
-- Data Types:
-{df.dtypes.to_string()}
+- Columns: {col_info}
+- Data Types Summary:
+{dtype_counts}
 
-Sample Data (first 3 rows):
-{df.head(3).to_string()}
+Sample Data (First {max_rows_sample} rows):
+{sample_data}
 
-Statistics for numeric columns:
-{df.describe().to_string()}
+Statistics (Top {max_cols} numeric columns):
+{stats}
 """
         return context
     

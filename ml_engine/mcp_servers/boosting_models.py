@@ -1,16 +1,24 @@
 import xgboost as xgb
 from lightgbm import LGBMClassifier, LGBMRegressor
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.model_selection import cross_val_score
 import numpy as np
 from typing import Dict, Any, Optional
 import logging
+
+# Try to import CatBoost (optional dependency)
+try:
+    from catboost import CatBoostClassifier, CatBoostRegressor
+    CATBOOST_AVAILABLE = True
+except ImportError:
+    CATBOOST_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
 class BoostingModelsServer:
     """
     MCP Server for Gradient Boosting Model Family
-    Handles XGBoost and LightGBM
+    Handles XGBoost, LightGBM, CatBoost, and sklearn GradientBoosting
     """
     
     def __init__(self):
@@ -31,7 +39,7 @@ class BoostingModelsServer:
             X_train: Training features
             y_train: Training target
             problem_type: 'classification' or 'regression'
-            model_name: 'xgboost' or 'lightgbm'
+            model_name: 'xgboost', 'lightgbm', 'catboost', or 'gradient_boosting'
             
         Returns:
             Training results
@@ -49,7 +57,7 @@ class BoostingModelsServer:
                         n_jobs=-1
                     )
                     self.model_type = "XGBoost"
-                else:
+                elif model_name == "lightgbm":
                     model = LGBMClassifier(
                         n_estimators=100,
                         max_depth=6,
@@ -59,7 +67,36 @@ class BoostingModelsServer:
                         verbose=-1
                     )
                     self.model_type = "LightGBM"
-            else:
+                elif model_name == "catboost":
+                    if not CATBOOST_AVAILABLE:
+                        raise ImportError("CatBoost is not installed. Run: pip install catboost")
+                    model = CatBoostClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42,
+                        verbose=0
+                    )
+                    self.model_type = "CatBoost"
+                elif model_name == "gradient_boosting":
+                    model = GradientBoostingClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42
+                    )
+                    self.model_type = "Gradient Boosting"
+                else:
+                    # Default to XGBoost
+                    model = xgb.XGBClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42,
+                        n_jobs=-1
+                    )
+                    self.model_type = "XGBoost"
+            else:  # regression
                 if model_name == "xgboost":
                     model = xgb.XGBRegressor(
                         n_estimators=100,
@@ -69,7 +106,7 @@ class BoostingModelsServer:
                         n_jobs=-1
                     )
                     self.model_type = "XGBoost"
-                else:
+                elif model_name == "lightgbm":
                     model = LGBMRegressor(
                         n_estimators=100,
                         max_depth=6,
@@ -79,6 +116,35 @@ class BoostingModelsServer:
                         verbose=-1
                     )
                     self.model_type = "LightGBM"
+                elif model_name == "catboost":
+                    if not CATBOOST_AVAILABLE:
+                        raise ImportError("CatBoost is not installed. Run: pip install catboost")
+                    model = CatBoostRegressor(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42,
+                        verbose=0
+                    )
+                    self.model_type = "CatBoost"
+                elif model_name == "gradient_boosting":
+                    model = GradientBoostingRegressor(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42
+                    )
+                    self.model_type = "Gradient Boosting"
+                else:
+                    # Default to XGBoost
+                    model = xgb.XGBRegressor(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        random_state=42,
+                        n_jobs=-1
+                    )
+                    self.model_type = "XGBoost"
             
             # Train
             model.fit(X_train, y_train)

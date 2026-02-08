@@ -35,6 +35,9 @@ const ChevronDownIcon = () => (
 
 export default function ModelTraining({ columns, onTrainingComplete }: ModelTrainingProps) {
   const [targetColumn, setTargetColumn] = useState('');
+  const [testSize, setTestSize] = useState(0.2);
+  const [cvFolds, setCvFolds] = useState(5);
+  const [enableTuning, setEnableTuning] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +51,7 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
     setError(null);
 
     try {
-      const result = await trainModels(targetColumn);
+      const result = await trainModels(targetColumn, undefined, testSize, cvFolds, enableTuning);
 
       if (onTrainingComplete) {
         onTrainingComplete(result);
@@ -99,6 +102,89 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
           <p className="text-xs text-gray-500 mt-2">
             The column you want the AI to learn to predict.
           </p>
+        </div>
+
+        {/* Test Size Configuration */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-gray-300">
+              Test Set Size: <span className="text-cyan-400">{Math.round(testSize * 100)}%</span>
+            </label>
+            <span className="text-xs text-gray-500">
+              Training: {100 - Math.round(testSize * 100)}%
+            </span>
+          </div>
+
+          <input
+            type="range"
+            min="0.1"
+            max="0.5"
+            step="0.05"
+            value={testSize}
+            onChange={(e) => setTestSize(parseFloat(e.target.value))}
+            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            disabled={isTraining}
+          />
+
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <span>10%</span>
+            <span>50%</span>
+          </div>
+
+          <div className="mt-2 text-xs">
+            {testSize > 0.3 ? (
+              <div className="flex items-start gap-2 text-amber-400 bg-amber-500/10 p-2 rounded">
+                <AlertIcon />
+                <span>Warning: Large test set. This leaves less data for training, which might reduce model performance.</span>
+              </div>
+            ) : (
+              <p className="text-gray-500">Recommended: 20%. Defines how much data is set aside for validation.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Cross-Validation Folds */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Cross-Validation Folds
+          </label>
+          <div className="flex gap-2">
+            {[3, 5, 10].map((folds) => (
+              <button
+                key={folds}
+                onClick={() => setCvFolds(folds)}
+                disabled={isTraining}
+                className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${cvFolds === folds
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
+                  } disabled:opacity-50`}
+              >
+                {folds}-Fold
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Higher folds = more reliable scores but slower training.
+          </p>
+        </div>
+
+        {/* Hyperparameter Tuning Toggle */}
+        <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
+          <div>
+            <label className="text-sm font-medium text-gray-300">Hyperparameter Tuning</label>
+            <p className="text-xs text-gray-500">Automatically optimize model parameters (slower)</p>
+          </div>
+          <button
+            onClick={() => setEnableTuning(!enableTuning)}
+            disabled={isTraining}
+            className={`relative w-12 h-6 rounded-full transition-colors ${enableTuning ? 'bg-cyan-600' : 'bg-slate-700'
+              } disabled:opacity-50`}
+          >
+            <span
+              className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${enableTuning ? 'translate-x-6' : 'translate-x-0'
+                }`}
+            />
+          </button>
         </div>
 
         <button
