@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { downloadReport } from '@/lib/api';
 import DistributionChart from '../charts/DistributionChart';
 import CategoricalChart from '../charts/CategoricalChart';
@@ -18,38 +19,36 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isDownloading, setIsDownloading] = useState(false);
 
-  if (!analysisResults || !analysisResults.analysis) {
-    return null;
-  }
-
-  const { analysis } = analysisResults;
+  // Extract data from props
+  const analysis = analysisResults?.analysis || {};
   const chartData = analysis.chart_data || {};
 
   const handleDownloadReport = async () => {
+    setIsDownloading(true);
     try {
-      setIsDownloading(true);
       await downloadReport();
     } catch (error) {
-      console.error("Failed to download report", error);
-      alert("Failed to generate report. Please try again.");
+      console.error('Failed to download report:', error);
+      // Optional: Add toast notification here
+      alert('Failed to download report. Please try again.');
     } finally {
       setIsDownloading(false);
     }
   };
 
   return (
-    <div className="bg-slate-950 border border-blue-500/10 rounded-2xl shadow-xl shadow-blue-500/5 overflow-hidden">
+    <GlassCard className="rounded-2xl shadow-xl shadow-[#470102]/5 overflow-hidden border border-[#FFEDC1]">
       {/* Header */}
-      <div className="px-6 py-5 bg-slate-900/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between">
+      <div className="px-6 py-5 bg-[#FFF7EA] backdrop-blur-md border-b border-[#FFEDC1] flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
+          <div className="w-10 h-10 rounded-xl bg-[#FEB229] flex items-center justify-center shadow-lg shadow-[#FEB229]/20 text-[#470102]">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white tracking-wide">EDA Dashboard</h2>
-            <p className="text-cyan-200/60 text-xs font-medium uppercase tracking-wider">
+            <h2 className="text-lg font-bold text-[#470102] tracking-wide">EDA Dashboard</h2>
+            <p className="text-[#8A5A5A] text-xs font-medium uppercase tracking-wider">
               Comprehensive Analysis
             </p>
           </div>
@@ -59,7 +58,7 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
           <button
             onClick={handleDownloadReport}
             disabled={isDownloading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-[#FEB229] hover:bg-[#FEB229]/90 text-[#470102] text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#FEB229]/20"
           >
             {isDownloading ? (
               <>
@@ -79,18 +78,18 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
             )}
           </button>
 
-          <div className="text-right bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-            <div className="text-2xl font-bold text-white">
+          <div className="text-right bg-white px-4 py-2 rounded-xl border border-[#FFEDC1] shadow-sm">
+            <div className="text-2xl font-bold text-[#470102]">
               {analysis.data_quality?.quality_score || 0}
             </div>
-            <div className="text-[10px] text-cyan-200/60 uppercase tracking-widest font-bold">Quality Score</div>
+            <div className="text-[10px] text-[#8A5A5A] uppercase tracking-widest font-bold">Quality Score</div>
           </div>
         </div>
 
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-white/10 bg-slate-900/50">
+      <div className="border-b border-[#FFEDC1] bg-[#FFF7EA]">
         <div className="flex space-x-1 p-2">
           <TabButton
             active={activeTab === 'overview'}
@@ -154,7 +153,7 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
         )}
 
       </div>
-    </div>
+    </GlassCard>
   );
 }
 
@@ -162,7 +161,7 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
 
 function StatisticsTab({ stats }: { stats: any }) {
   if (!stats || Object.keys(stats).length === 0) {
-    return <div className="text-gray-400 text-center py-8">No statistics available for this dataset.</div>;
+    return <div className="text-[#8A5A5A] text-center py-8">No statistics available for this dataset.</div>;
   }
 
   const columns = Object.keys(stats);
@@ -170,23 +169,23 @@ function StatisticsTab({ stats }: { stats: any }) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left text-gray-400">
-        <thead className="text-xs text-gray-300 uppercase bg-slate-900/50">
+      <table className="w-full text-sm text-left text-[#8A5A5A]">
+        <thead className="text-xs text-[#470102] uppercase bg-[#FFF7EA] border-b border-[#FFEDC1]">
           <tr>
             <th className="px-6 py-3 rounded-tl-lg">Metric</th>
             {columns.map(col => (
-              <th key={col} className="px-6 py-3 font-semibold text-white">{col}</th>
+              <th key={col} className="px-6 py-3 font-semibold text-[#470102]">{col}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {metrics.map((metric, i) => (
-            <tr key={metric} className={`border-b border-white/5 ${i % 2 === 0 ? 'bg-white/5' : 'bg-transparent'}`}>
-              <td className="px-6 py-4 font-medium text-white bg-slate-900/30 sticky left-0 uppercase tracking-wider text-xs">
+            <tr key={metric} className={`border-b border-[#FFEDC1] ${i % 2 === 0 ? 'bg-white' : 'bg-[#FFF7EA]'}`}>
+              <td className="px-6 py-4 font-bold text-[#470102] bg-[#FFF7EA] sticky left-0 uppercase tracking-wider text-xs border-r border-[#FFEDC1]">
                 {metric}
               </td>
               {columns.map(col => (
-                <td key={`${col}-${metric}`} className="px-6 py-4 font-mono text-cyan-200">
+                <td key={`${col}-${metric}`} className="px-6 py-4 font-mono text-[#8A5A5A]">
                   {stats[col]?.[metric] !== undefined ? stats[col][metric] : '-'}
                 </td>
               ))}
@@ -213,8 +212,8 @@ function TabButton({ active, onClick, icon, label }: {
       className={`
         flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all
         ${active
-          ? 'bg-blue-500/10 text-cyan-400 border border-blue-500/20 shadow-lg shadow-blue-500/10'
-          : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+          ? 'bg-[#FEB229] text-[#470102] shadow-md shadow-[#FEB229]/20'
+          : 'text-[#8A5A5A] hover:bg-[#FFF7EA] hover:text-[#470102]'
         }
       `}
     >
@@ -295,14 +294,14 @@ function OverviewTab({ analysis, chartData }: { analysis: any; chartData: any })
 function DistributionsTab({ chartData }: { chartData: any }) {
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-white mb-4">
+      <h3 className="text-xl font-bold text-[#470102] mb-4">
         Distribution Analysis
       </h3>
 
       {/* Numeric Distributions */}
       {chartData.distributions && chartData.distributions.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3">
             Numeric Columns
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
@@ -316,7 +315,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
       {/* Categorical Distributions */}
       {chartData.categorical_counts && chartData.categorical_counts.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3 mt-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 mt-6">
             Categorical Columns
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
@@ -330,7 +329,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
       {/* Box Plots */}
       {chartData.box_plots && chartData.box_plots.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3 mt-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 mt-6">
             Box Plots - Outlier Detection
           </h4>
           <BoxPlotChart data={chartData.box_plots} />
@@ -344,7 +343,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
 function RelationshipsTab({ chartData }: { chartData: any }) {
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-white mb-4">
+      <h3 className="text-xl font-bold text-[#470102] mb-4">
         Variable Relationships
       </h3>
 
@@ -357,7 +356,7 @@ function RelationshipsTab({ chartData }: { chartData: any }) {
       {/* Scatter Plots */}
       {chartData.scatter_matrix && chartData.scatter_matrix.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3 mt-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 mt-6">
             Scatter Plot Matrix
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
@@ -376,7 +375,7 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
   // Return placeholder if data_quality is missing
   if (!analysis?.data_quality) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-[#8A5A5A]">
         <p>Quality analysis data not available</p>
       </div>
     );
@@ -384,38 +383,38 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-white mb-4">Data Quality Analysis</h3>
+      <h3 className="text-xl font-bold text-[#470102] mb-4">Data Quality Analysis</h3>
 
       {/* Quality Score Card */}
-      <div className="bg-slate-900/50 border border-green-500/20 rounded-lg p-6">
+      <div className="bg-[#FFF7EA] border border-[#FFEDC1] rounded-lg p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h4 className="text-lg font-semibold text-white mb-2">
+            <h4 className="text-lg font-semibold text-[#470102] mb-2">
               Overall Quality Score
             </h4>
-            <p className="text-gray-400">
+            <p className="text-[#8A5A5A]">
               Based on missing values, duplicates, and data consistency
             </p>
           </div>
           <div className="text-center">
-            <div className="text-5xl font-bold text-green-600">
+            <div className="text-5xl font-bold text-[#FEB229]">
               {analysis.data_quality.quality_score || 0}
             </div>
-            <div className="text-sm text-gray-600">out of 100</div>
+            <div className="text-sm text-[#8A5A5A]">out of 100</div>
           </div>
         </div>
       </div>
 
       {/* Issues */}
       {analysis.data_quality.issues && analysis.data_quality.issues.length > 0 && (
-        <div className="bg-yellow-900/20 border border-yellow-500/20 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h4 className="text-lg font-semibold text-yellow-900 mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             Issues Found
           </h4>
           <ul className="space-y-2">
             {analysis.data_quality.issues.map((issue: string, idx: number) => (
-              <li key={idx} className="flex items-start space-x-2 text-yellow-200/80">
+              <li key={idx} className="flex items-start space-x-2 text-yellow-800">
                 <span>•</span>
                 <span>{issue}</span>
               </li>
@@ -431,14 +430,14 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 
       {/* Recommendations */}
       {analysis.recommendations && analysis.recommendations.length > 0 && (
-        <div className="bg-blue-900/20 border border-blue-500/20 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-blue-400 mb-3 flex items-center gap-2">
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6">
+          <h4 className="text-lg font-semibold text-teal-900 mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
             Recommendations
           </h4>
           <ul className="space-y-2">
             {analysis.recommendations.map((rec: string, idx: number) => (
-              <li key={idx} className="flex items-start space-x-2 text-blue-200/80">
+              <li key={idx} className="flex items-start space-x-2 text-teal-800">
                 <span>•</span>
                 <span>{rec}</span>
               </li>
@@ -454,12 +453,12 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 function AdvancedTab({ chartData }: { chartData: any }) {
   return (
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-white mb-4">Advanced Analysis</h3>
+      <h3 className="text-xl font-bold text-[#470102] mb-4">Advanced Analysis</h3>
 
       {/* Time Series */}
       {chartData.time_series && chartData.time_series.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3">
             Time Series Analysis
           </h4>
           <div className="space-y-6">
@@ -473,7 +472,7 @@ function AdvancedTab({ chartData }: { chartData: any }) {
       {/* Box Plots for Outlier Detection */}
       {chartData.box_plots && chartData.box_plots.length > 0 && (
         <div>
-          <h4 className="text-lg font-semibold text-white mb-3 mt-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 mt-6">
             Outlier Detection
           </h4>
           <BoxPlotChart data={chartData.box_plots} />
@@ -481,8 +480,8 @@ function AdvancedTab({ chartData }: { chartData: any }) {
       )}
 
       {!chartData.time_series?.length && !chartData.box_plots?.length && (
-        <div className="text-center py-12 text-gray-500">
-          <div className="text-4xl mb-3 text-white/20">
+        <div className="text-center py-12 text-[#8A5A5A]">
+          <div className="text-4xl mb-3 text-[#470102]/20">
             <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
           </div>
           <p>No advanced visualizations available for this dataset</p>
@@ -500,19 +499,19 @@ function MetricCard({ icon, label, value, color }: {
   color: 'blue' | 'cyan' | 'green' | 'yellow';
 }) {
   const colors = {
-    blue: 'from-blue-500/10 to-blue-600/10 border-blue-500/20 text-blue-400',
-    cyan: 'from-cyan-500/10 to-cyan-600/10 border-cyan-500/20 text-cyan-400',
-    green: 'from-green-500/10 to-green-600/10 border-green-500/20 text-green-400',
-    yellow: 'from-yellow-500/10 to-yellow-600/10 border-yellow-500/20 text-yellow-400',
+    blue: 'bg-white border-[#FFEDC1] text-[#470102]',
+    cyan: 'bg-white border-[#FFEDC1] text-[#470102]',
+    green: 'bg-white border-[#FFEDC1] text-[#470102]',
+    yellow: 'bg-white border-[#FFEDC1] text-[#470102]',
   };
 
   return (
     <div className={`bg-gradient-to-br ${colors[color]} border rounded-xl p-4 flex items-center justify-between group hover:brightness-110 transition-all`}>
       <div>
-        <div className="text-2xl font-bold text-white mb-1">{value}</div>
-        <div className="text-xs text-gray-400 font-medium tracking-wide uppercase">{label}</div>
+        <div className="text-2xl font-bold text-[#470102] mb-1">{value}</div>
+        <div className="text-xs text-[#8A5A5A] font-medium tracking-wide uppercase">{label}</div>
       </div>
-      <div className="p-3 bg-white/5 rounded-lg text-white/80 group-hover:scale-110 transition-transform">{icon}</div>
+      <div className="p-3 bg-[#FFF7EA] rounded-lg text-[#FEB229] border border-[#FFEDC1] group-hover:scale-110 transition-transform">{icon}</div>
     </div>
   );
 }

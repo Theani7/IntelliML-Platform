@@ -41,18 +41,18 @@ export default function MissingValuesChart({ data }: MissingValuesChartProps) {
   }));
 
   return (
-    <div id={chartId} className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
+    <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="w-1 h-5 bg-red-500 rounded-full"></span>
+          <h4 className="text-lg font-bold text-[#470102] flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
             Missing Values
           </h4>
-          <p className="text-xs text-gray-500 ml-3">Data Quality Analysis</p>
+          <p className="text-xs text-[#8A5A5A] ml-3">Data Quality Analysis</p>
         </div>
         <button
           onClick={() => downloadChart(chartId, 'missing-values')}
-          className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="p-2 hover:bg-[#FFF7EA] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors"
           title="Download Chart"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,31 +63,31 @@ export default function MissingValuesChart({ data }: MissingValuesChartProps) {
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
           <XAxis
             dataKey="column"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
             angle={-45}
             textAnchor="end"
             height={60}
-            stroke="#334155"
+            stroke="#cbd5e1"
           />
-          <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} stroke="#334155" />
+          <YAxis tick={{ fontSize: 11, fill: '#8A5A5A' }} stroke="#cbd5e1" />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #1e293b',
+              backgroundColor: '#FFF7EA',
+              border: '1px solid #FFEDC1',
               borderRadius: '8px',
-              color: '#f8fafc',
+              color: '#470102',
             }}
-            labelStyle={{ color: '#94a3b8' }}
+            labelStyle={{ color: '#470102' }}
             formatter={(value: any, name: string) => {
               if (name === 'percentage') {
                 return [`${value.toFixed(2)}%`, 'Missing %'];
               }
               return [value, 'Missing Count'];
             }}
-            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+            cursor={{ fill: 'rgba(71, 1, 2, 0.05)' }}
           />
           <Legend />
           <Bar dataKey="count" fill="#ef4444" name="Missing Count" radius={[4, 4, 0, 0]} />

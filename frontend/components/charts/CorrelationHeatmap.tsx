@@ -24,34 +24,33 @@ export default function CorrelationHeatmap({ data }: CorrelationHeatmapProps) {
   const cellSize = Math.min(width / data.columns.length, height / data.columns.length);
 
   const getColor = (value: number) => {
-    // Obsidian/Blue theme colors
-    // Positive: Blue/Cyan
-    // Negative: Red/Pink
-    // Zero: Slate
+    // Warm Retro theme colors
+    // Positive: Maroon
+    // Negative: Muted Teal/Grey
     if (value > 0) {
-      // Blue-600 to Cyan-400
+      // Maroon scale
       const opacity = Math.abs(value);
-      return `rgba(6, 182, 212, ${opacity})`; // Cyan-500
+      return `rgba(71, 1, 2, ${opacity})`; // Maroon #470102
     } else {
-      // Red-600 to Pink-500
+      // Teal scale for contrast
       const opacity = Math.abs(value);
-      return `rgba(239, 68, 68, ${opacity})`; // Red-500
+      return `rgba(20, 184, 166, ${opacity})`; // Teal-500
     }
   };
 
   return (
-    <div id={chartId} className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
+    <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="w-1 h-5 bg-cyan-500 rounded-full"></span>
+          <h4 className="text-lg font-bold text-[#470102] flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
             Correlation Matrix
           </h4>
-          <p className="text-xs text-gray-500 ml-3">Feature Relationships</p>
+          <p className="text-xs text-[#8A5A5A] ml-3">Feature Relationships</p>
         </div>
         <button
           onClick={() => downloadChart(chartId, 'correlation-heatmap')}
-          className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="p-2 hover:bg-[#FFF7EA] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors"
           title="Download Chart"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +70,7 @@ export default function CorrelationHeatmap({ data }: CorrelationHeatmapProps) {
                   y={rowIdx * cellSize + cellSize / 2}
                   dy=".32em"
                   textAnchor="end"
-                  className="text-[10px] fill-gray-400 font-medium"
+                  className="text-[10px] fill-[#8A5A5A] font-medium"
                 >
                   {data.columns[rowIdx].length > 12
                     ? data.columns[rowIdx].substring(0, 10) + '..'
@@ -87,7 +86,7 @@ export default function CorrelationHeatmap({ data }: CorrelationHeatmapProps) {
                         y={-10}
                         transform={`rotate(-45, ${colIdx * cellSize + cellSize / 2}, -10)`}
                         textAnchor="start"
-                        className="text-[10px] fill-gray-400 font-medium"
+                        className="text-[10px] fill-[#8A5A5A] font-medium"
                       >
                         {data.columns[colIdx].length > 12
                           ? data.columns[colIdx].substring(0, 10) + '..'
@@ -103,7 +102,7 @@ export default function CorrelationHeatmap({ data }: CorrelationHeatmapProps) {
                       height={cellSize - 2}
                       rx={2}
                       fill={getColor(value)}
-                      stroke="#1e293b"
+                      stroke="#FFEDC1"
                       strokeWidth={1}
                       className="transition-all hover:opacity-80"
                     />
@@ -132,22 +131,22 @@ export default function CorrelationHeatmap({ data }: CorrelationHeatmapProps) {
         </svg>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-400 border-t border-white/5 pt-3">
+      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#8A5A5A] border-t border-[#FFEDC1] pt-3">
         <div className="flex items-center gap-2">
           <div className="flex gap-0.5">
-            <div className="w-2 h-2 rounded-sm bg-red-500/20"></div>
-            <div className="w-2 h-2 rounded-sm bg-red-500/60"></div>
-            <div className="w-2 h-2 rounded-sm bg-red-500"></div>
+            <div className="w-2 h-2 rounded-sm bg-teal-500/20" />
+            <div className="w-2 h-2 rounded-sm bg-teal-500/60" />
+            <div className="w-2 h-2 rounded-sm bg-teal-500" />
           </div>
           <span>Negative</span>
         </div>
-        <span className="text-gray-600">|</span>
+        <span className="text-[#FFEDC1]">|</span>
         <div className="flex items-center gap-2">
           <span>Positive</span>
           <div className="flex gap-0.5">
-            <div className="w-2 h-2 rounded-sm bg-cyan-500/20"></div>
-            <div className="w-2 h-2 rounded-sm bg-cyan-500/60"></div>
-            <div className="w-2 h-2 rounded-sm bg-cyan-500"></div>
+            <div className="w-2 h-2 rounded-sm bg-[#470102]/20" />
+            <div className="w-2 h-2 rounded-sm bg-[#470102]/60" />
+            <div className="w-2 h-2 rounded-sm bg-[#470102]" />
           </div>
         </div>
       </div>

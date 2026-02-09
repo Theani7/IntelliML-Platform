@@ -33,7 +33,9 @@ router = APIRouter(
 # Global storage for current dataset (in production, use proper database)
 current_dataset = {
     "df": None,
-    "info": None
+    "info": None,
+    "history": [], # Stack of (df, info) tuples
+    "future": []   # Stack of (df, info) tuples
 }
 
 
@@ -910,6 +912,65 @@ async def clean_data(request: Dict[str, Any]):
         df = current_dataset["df"]
         logger.info(f"Applying operation '{operation}' with params: {params}")
 
+        # Helper to get history status
+        def get_history_status():
+            return {
+                "can_undo": len(current_dataset["history"]) > 0,
+                "can_redo": len(current_dataset["future"]) > 0
+            }
+
+        # --- UNDO / REDO LOGIC ---
+        if operation == "undo":
+            if not current_dataset["history"]:
+                raise HTTPException(status_code=400, detail="Nothing to undo")
+            
+            # Save current to future
+            current_dataset["future"].append((df.copy(), current_dataset["info"]))
+            
+            # Pop from history
+            prev_df, prev_info = current_dataset["history"].pop()
+            current_dataset["df"] = prev_df
+            current_dataset["info"] = prev_info
+            DataService._dataframe = prev_df # Sync
+            
+            return {
+                "status": "success",
+                "message": "Undone last operation",
+                "dataset_info": prev_info,
+                "history_status": get_history_status()
+            }
+
+        elif operation == "redo":
+            if not current_dataset["future"]:
+                raise HTTPException(status_code=400, detail="Nothing to redo")
+            
+            # Save current to history
+            current_dataset["history"].append((df.copy(), current_dataset["info"]))
+            
+            # Pop from future
+            next_df, next_info = current_dataset["future"].pop()
+            current_dataset["df"] = next_df
+            current_dataset["info"] = next_info
+            DataService._dataframe = next_df # Sync
+            
+            return {
+                "status": "success",
+                "message": "Redone last operation",
+                "dataset_info": next_info,
+                "history_status": get_history_status()
+            }
+        
+        # --- NORMAL OPERATIONS ---
+        # Save state before modification
+        if operation in ["drop_column", "fill_na", "drop_na", "drop_duplicates", "rename", "cast", "encode", "handle_outliers", "scale"]:
+             # Limit history size to 20 to prevent memory explosion
+            if len(current_dataset["history"]) >= 20:
+                current_dataset["history"].pop(0)
+            
+            current_dataset["history"].append((df.copy(), current_dataset["info"]))
+            # Clear future stack on new operation
+            current_dataset["future"] = []
+
         if operation == "drop_column":
             col = params.get("column")
             if col and col in df.columns:
@@ -955,10 +1016,14 @@ async def clean_data(request: Dict[str, Any]):
 
         elif operation == "cast":
             col = params.get("column")
-            dtype = params.get("type") # 'numeric', 'categorical', 'datetime', 'string'
+            dtype = params.get("type") # 'numeric', 'int', 'float', 'categorical', 'datetime', 'string'
             if col in df.columns:
                 try:
-                    if dtype == 'numeric':
+                    if dtype == 'int':
+                        # Convert to numeric first to handle strings/floats, coerce errors to NaN
+                        # Then fill NaN with 0 (or drop? usually fill 0 for strict int cast) to allow int cast
+                        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+                    elif dtype == 'float' or dtype == 'numeric':
                         df[col] = pd.to_numeric(df[col], errors='coerce')
                     elif dtype == 'datetime':
                         df[col] = pd.to_datetime(df[col], errors='coerce')
@@ -1059,7 +1124,8 @@ async def clean_data(request: Dict[str, Any]):
         return {
             "status": "success",
             "message": f"Operation {operation} applied successfully",
-            "dataset_info": new_info
+            "dataset_info": new_info,
+            "history_status": get_history_status()
         }
 
     except Exception as e:

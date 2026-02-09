@@ -18,9 +18,9 @@ export default function BoxPlotChart({ data }: BoxPlotChartProps) {
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
-      <h4 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-        <span className="w-1 h-5 bg-yellow-500 rounded-full"></span>
+    <div className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
+      <h4 className="text-lg font-bold text-[#470102] mb-6 flex items-center gap-2">
+        <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
         Box Plots - Distribution Overview
       </h4>
 
@@ -43,14 +43,14 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
   };
 
   return (
-    <div id={chartId} className="border border-white/10 rounded-xl p-4 bg-slate-800/50 hover:bg-slate-800/80 transition-colors relative group">
+    <div id={chartId} className="border border-[#FFEDC1] rounded-xl p-4 bg-[#FFF7EA] hover:bg-[#FFF7EA]/80 transition-colors relative group">
       <div className="flex justify-between items-start mb-4">
-        <h5 className="text-sm font-semibold text-gray-300 truncate pr-8">
+        <h5 className="text-sm font-semibold text-[#8A5A5A] truncate pr-8">
           {data.column}
         </h5>
         <button
           onClick={() => downloadChart(chartId, `boxplot-${data.column}`)}
-          className="absolute top-2 right-2 p-1.5 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute top-2 right-2 p-1.5 hover:bg-[#FFEDC1] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors opacity-0 group-hover:opacity-100"
           title="Download Plot"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,26 +133,26 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
         ))}
       </svg>
 
-      <div className="mt-4 text-[10px] text-gray-500 space-y-1.5 font-mono">
-        <div className="flex justify-between border-b border-white/5 pb-1">
+      <div className="mt-4 text-[10px] text-[#8A5A5A] space-y-1.5 font-mono">
+        <div className="flex justify-between border-b border-[#FFEDC1] pb-1">
           <span>Max</span>
-          <span className="font-medium text-gray-400">{data.max.toFixed(2)}</span>
+          <span className="font-medium text-[#470102]">{data.max.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between border-b border-white/5 pb-1">
+        <div className="flex justify-between border-b border-[#FFEDC1] pb-1">
           <span>Q3</span>
-          <span className="font-medium text-gray-400">{data.q3.toFixed(2)}</span>
+          <span className="font-medium text-[#470102]">{data.q3.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between border-b border-white/5 pb-1">
-          <span className="text-purple-400">Median</span>
-          <span className="font-bold text-purple-400">{data.median.toFixed(2)}</span>
+        <div className="flex justify-between border-b border-[#FFEDC1] pb-1">
+          <span className="text-[#470102] font-bold">Median</span>
+          <span className="font-bold text-[#470102]">{data.median.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between border-b border-white/5 pb-1">
+        <div className="flex justify-between border-b border-[#FFEDC1] pb-1">
           <span>Q1</span>
-          <span className="font-medium text-gray-400">{data.q1.toFixed(2)}</span>
+          <span className="font-medium text-[#470102]">{data.q1.toFixed(2)}</span>
         </div>
         <div className="flex justify-between">
           <span>Min</span>
-          <span className="font-medium text-gray-400">{data.min.toFixed(2)}</span>
+          <span className="font-medium text-[#470102]">{data.min.toFixed(2)}</span>
         </div>
         {data.outliers.length > 0 && (
           <div className="flex justify-between text-red-400 pt-1">

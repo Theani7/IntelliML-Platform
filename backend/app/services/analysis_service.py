@@ -1,11 +1,6 @@
-import sys
 import logging
 import json
 from pathlib import Path
-
-# Add project root to Python path to access ml_engine
-project_root = Path(__file__).parent.parent.parent  # Goes up to project root
-sys.path.insert(0, str(project_root))
 
 from app.services.data_service import DataService
 from app.core.groq_client import groq_client

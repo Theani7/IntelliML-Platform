@@ -36,30 +36,30 @@ export default function DistributionChart({ data }: DistributionChartProps) {
   }));
 
   return (
-    <div id={chartId} className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
+    <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="w-1 h-5 bg-blue-500 rounded-full"></span>
+          <h4 className="text-lg font-bold text-[#470102] flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
             {data.column}
           </h4>
-          <p className="text-xs text-gray-500 ml-3">Distribution Analysis</p>
+          <p className="text-xs text-[#8A5A5A] ml-3">Distribution Analysis</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center space-x-3 text-xs">
             <div className="flex flex-col items-end">
-              <span className="text-gray-500 uppercase tracking-wider font-bold text-[10px]">Mean</span>
-              <span className="text-blue-400 font-mono font-medium">{data.mean.toFixed(2)}</span>
+              <span className="text-[#8A5A5A] uppercase tracking-wider font-bold text-[10px]">Mean</span>
+              <span className="text-[#470102] font-mono font-medium">{data.mean.toFixed(2)}</span>
             </div>
-            <div className="w-px h-6 bg-white/10"></div>
+            <div className="w-px h-6 bg-[#FFEDC1]"></div>
             <div className="flex flex-col items-end">
-              <span className="text-gray-500 uppercase tracking-wider font-bold text-[10px]">Median</span>
-              <span className="text-cyan-400 font-mono font-medium">{data.median.toFixed(2)}</span>
+              <span className="text-[#8A5A5A] uppercase tracking-wider font-bold text-[10px]">Median</span>
+              <span className="text-[#470102] font-mono font-medium">{data.median.toFixed(2)}</span>
             </div>
           </div>
           <button
             onClick={() => downloadChart(chartId, `distribution-${data.column}`)}
-            className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+            className="p-2 hover:bg-[#FFF7EA] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors"
             title="Download Chart"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,38 +71,38 @@ export default function DistributionChart({ data }: DistributionChartProps) {
 
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
           <XAxis
             dataKey="bin"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
             angle={-45}
             textAnchor="end"
             height={60}
-            stroke="#334155"
+            stroke="#cbd5e1"
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
-            stroke="#334155"
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
+            stroke="#cbd5e1"
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #1e293b',
+              backgroundColor: '#FFF7EA',
+              border: '1px solid #FFEDC1',
               borderRadius: '8px',
-              color: '#f8fafc',
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              color: '#470102',
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
             }}
-            itemStyle={{ color: '#cbd5e1' }}
-            labelStyle={{ color: '#94a3b8', marginBottom: '0.5rem' }}
+            itemStyle={{ color: '#8A5A5A' }}
+            labelStyle={{ color: '#470102', marginBottom: '0.5rem' }}
           />
-          <Bar dataKey="count" fill="#3b82f6" opacity={0.8} radius={[4, 4, 0, 0]} name="Frequency" />
+          <Bar dataKey="count" fill="#FEB229" opacity={0.8} radius={[4, 4, 0, 0]} name="Frequency" />
           <Line
             type="monotone"
             dataKey="count"
-            stroke="#22d3ee"
+            stroke="#470102"
             strokeWidth={3}
-            dot={{ r: 4, fill: '#22d3ee', strokeWidth: 0 }}
-            activeDot={{ r: 6, fill: '#fff' }}
+            dot={{ r: 4, fill: '#470102', strokeWidth: 0 }}
+            activeDot={{ r: 6, fill: '#FFF7EA', stroke: '#470102' }}
             name="Trend"
           />
         </ComposedChart>

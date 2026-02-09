@@ -60,33 +60,33 @@ export default function OutlierDetection() {
     };
 
     return (
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-6">
+        <div className="bg-[#FFF7EA] rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-rose-500/20 flex items-center justify-center text-rose-400">
+                <div className="w-8 h-8 rounded-lg bg-[#FEB229]/20 flex items-center justify-center text-[#470102]">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                 </div>
                 <div>
-                    <h3 className="text-lg font-bold text-white">Outlier Detection</h3>
-                    <p className="text-xs text-gray-500">Detect and remove extreme values</p>
+                    <h3 className="text-lg font-bold text-[#470102]">Outlier Detection</h3>
+                    <p className="text-xs text-[#8A5A5A]">Detect and remove extreme values</p>
                 </div>
             </div>
 
             <div className="flex flex-wrap gap-4 mb-4">
                 <div>
-                    <label className="text-xs text-gray-400 block mb-1">Method</label>
+                    <label className="text-xs text-[#8A5A5A] block mb-1">Method</label>
                     <select
                         value={method}
                         onChange={(e) => setMethod(e.target.value as 'iqr' | 'zscore')}
-                        className="bg-slate-800 border border-white/10 rounded px-3 py-2 text-white text-sm"
+                        className="bg-white border border-[#FFEDC1] rounded px-3 py-2 text-[#470102] text-sm focus:border-[#FEB229] outline-none"
                     >
                         <option value="iqr">IQR (Interquartile Range)</option>
                         <option value="zscore">Z-Score</option>
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs text-gray-400 block mb-1">
+                    <label className="text-xs text-[#8A5A5A] block mb-1">
                         Threshold ({method === 'iqr' ? 'IQR multiplier' : 'Z-score'})
                     </label>
                     <input
@@ -96,14 +96,14 @@ export default function OutlierDetection() {
                         step={0.1}
                         min={0.5}
                         max={method === 'iqr' ? 3 : 5}
-                        className="bg-slate-800 border border-white/10 rounded px-3 py-2 text-white text-sm w-24"
+                        className="bg-white border border-[#FFEDC1] rounded px-3 py-2 text-[#470102] text-sm w-24 focus:border-[#FEB229] outline-none"
                     />
                 </div>
                 <div className="flex items-end gap-2">
                     <button
                         onClick={detectOutliers}
                         disabled={isDetecting}
-                        className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+                        className="px-4 py-2 bg-[#FEB229] hover:bg-[#FEB229]/90 disabled:opacity-50 rounded-lg text-[#470102] text-sm font-bold transition-colors shadow-sm"
                     >
                         {isDetecting ? 'Detecting...' : 'Detect Outliers'}
                     </button>
@@ -113,14 +113,14 @@ export default function OutlierDetection() {
             {results && (
                 <div className="mt-4 space-y-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-400">
-                            Found <span className="text-rose-400 font-bold">{results.total_outlier_rows}</span> rows with outliers
+                        <span className="text-sm text-[#8A5A5A]">
+                            Found <span className="text-[#470102] font-bold">{results.total_outlier_rows}</span> rows with outliers
                         </span>
                         {results.total_outlier_rows > 0 && (
                             <button
                                 onClick={removeOutliers}
                                 disabled={isRemoving}
-                                className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+                                className="px-4 py-2 bg-[#470102] hover:bg-[#470102]/90 disabled:opacity-50 rounded-lg text-[#FFF7EA] text-sm font-medium transition-colors shadow-sm"
                             >
                                 {isRemoving ? 'Removing...' : 'Remove Outliers'}
                             </button>
@@ -129,15 +129,15 @@ export default function OutlierDetection() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {results.details.slice(0, 6).map((detail) => (
-                            <div key={detail.column} className="bg-slate-800/50 rounded-lg p-3">
+                            <div key={detail.column} className="bg-white border border-[#FFEDC1] rounded-lg p-3 shadow-sm">
                                 <div className="flex justify-between items-center mb-1">
-                                    <span className="text-sm font-medium text-white">{detail.column}</span>
-                                    <span className={`text-xs px-2 py-0.5 rounded ${detail.outlier_count > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                    <span className="text-sm font-medium text-[#470102]">{detail.column}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded ${detail.outlier_count > 0 ? 'bg-[#FEB229]/20 text-[#470102]' : 'bg-green-100 text-green-700'}`}>
                                         {detail.outlier_count} outliers ({detail.percentage}%)
                                     </span>
                                 </div>
                                 {detail.sample_values.length > 0 && (
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-[#8A5A5A]">
                                         Sample: {detail.sample_values.slice(0, 3).map(v => v.toFixed(2)).join(', ')}
                                     </p>
                                 )}
@@ -148,8 +148,8 @@ export default function OutlierDetection() {
             )}
 
             {removeResult && (
-                <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                    <p className="text-emerald-400 text-sm">
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-800 text-sm">
                         ✓ Removed {removeResult.removed_rows} outlier rows. Dataset now has {removeResult.remaining_rows} rows.
                     </p>
                 </div>

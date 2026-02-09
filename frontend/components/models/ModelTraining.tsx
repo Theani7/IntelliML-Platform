@@ -65,41 +65,41 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
   };
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-blue-500/10 p-6 shadow-lg shadow-blue-500/5">
+    <div className="bg-white rounded-[24px] border border-[#FFEDC1] p-6 shadow-sm">
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#FEB229] shadow-sm">
           <BrainIcon />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-white">Train ML Models</h3>
-          <p className="text-sm text-gray-400">Select a target column to predict</p>
+          <h3 className="text-xl font-bold text-[#470102]">Train ML Models</h3>
+          <p className="text-sm text-[#8A5A5A]">Select a target column to predict</p>
         </div>
       </div>
 
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-[#470102] mb-2">
             Target Column
           </label>
           <div className="relative">
             <select
               value={targetColumn}
               onChange={(e) => setTargetColumn(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-950 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none cursor-pointer hover:bg-slate-800 transition-colors"
+              className="w-full px-4 py-3 bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl text-[#470102] focus:ring-2 focus:ring-[#FEB229]/50 focus:border-[#FEB229] appearance-none cursor-pointer hover:bg-[#FFEDC1]/20 transition-colors"
               disabled={isTraining}
             >
-              <option value="" className="bg-slate-900 text-gray-400">-- Choose target variable --</option>
+              <option value="" className="bg-white text-[#8A5A5A]">-- Choose target variable --</option>
               {columns.map((col) => (
-                <option key={col} value={col} className="bg-slate-900 text-white">
+                <option key={col} value={col} className="bg-white text-[#470102]">
                   {col}
                 </option>
               ))}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A5A5A] pointer-events-none">
               <ChevronDownIcon />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#8A5A5A] mt-2">
             The column you want the AI to learn to predict.
           </p>
         </div>
@@ -107,10 +107,10 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
         {/* Test Size Configuration */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-300">
-              Test Set Size: <span className="text-cyan-400">{Math.round(testSize * 100)}%</span>
+            <label className="text-sm font-medium text-[#470102]">
+              Test Set Size: <span className="text-[#FEB229] font-bold">{Math.round(testSize * 100)}%</span>
             </label>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-[#8A5A5A]">
               Training: {100 - Math.round(testSize * 100)}%
             </span>
           </div>
@@ -122,30 +122,30 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
             step="0.05"
             value={testSize}
             onChange={(e) => setTestSize(parseFloat(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+            className="w-full h-2 bg-[#FFEDC1] rounded-lg appearance-none cursor-pointer accent-[#FEB229]"
             disabled={isTraining}
           />
 
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs text-[#8A5A5A] mt-1">
             <span>10%</span>
             <span>50%</span>
           </div>
 
           <div className="mt-2 text-xs">
             {testSize > 0.3 ? (
-              <div className="flex items-start gap-2 text-amber-400 bg-amber-500/10 p-2 rounded">
+              <div className="flex items-start gap-2 text-amber-600 bg-amber-50 p-2 rounded border border-amber-100">
                 <AlertIcon />
                 <span>Warning: Large test set. This leaves less data for training, which might reduce model performance.</span>
               </div>
             ) : (
-              <p className="text-gray-500">Recommended: 20%. Defines how much data is set aside for validation.</p>
+              <p className="text-[#8A5A5A]">Recommended: 20%. Defines how much data is set aside for validation.</p>
             )}
           </div>
         </div>
 
         {/* Cross-Validation Folds */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-[#470102] mb-2">
             Cross-Validation Folds
           </label>
           <div className="flex gap-2">
@@ -155,29 +155,29 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
                 onClick={() => setCvFolds(folds)}
                 disabled={isTraining}
                 className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${cvFolds === folds
-                    ? 'bg-cyan-600 text-white'
-                    : 'bg-slate-800 text-gray-400 hover:bg-slate-700'
+                  ? 'bg-[#FEB229] text-[#470102] shadow-sm'
+                  : 'bg-white border border-[#FFEDC1] text-[#8A5A5A] hover:bg-[#FFF7EA]'
                   } disabled:opacity-50`}
               >
                 {folds}-Fold
               </button>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-[#8A5A5A] mt-2">
             Higher folds = more reliable scores but slower training.
           </p>
         </div>
 
         {/* Hyperparameter Tuning Toggle */}
-        <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl">
+        <div className="flex items-center justify-between p-4 bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl">
           <div>
-            <label className="text-sm font-medium text-gray-300">Hyperparameter Tuning</label>
-            <p className="text-xs text-gray-500">Automatically optimize model parameters (slower)</p>
+            <label className="text-sm font-medium text-[#470102]">Hyperparameter Tuning</label>
+            <p className="text-xs text-[#8A5A5A]">Automatically optimize model parameters (slower)</p>
           </div>
           <button
             onClick={() => setEnableTuning(!enableTuning)}
             disabled={isTraining}
-            className={`relative w-12 h-6 rounded-full transition-colors ${enableTuning ? 'bg-cyan-600' : 'bg-slate-700'
+            className={`relative w-12 h-6 rounded-full transition-colors ${enableTuning ? 'bg-[#FEB229]' : 'bg-[#E6D5AA]'
               } disabled:opacity-50`}
           >
             <span
@@ -190,7 +190,7 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
         <button
           onClick={handleTrain}
           disabled={isTraining || !targetColumn}
-          className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:scale-[1.01] active:scale-[0.99]"
+          className="w-full py-4 bg-[#FEB229] hover:bg-[#FCA408] text-[#470102] font-bold rounded-xl shadow-lg shadow-[#FEB229]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:scale-[1.01] active:scale-[0.99]"
         >
           {isTraining ? (
             <>
@@ -212,16 +212,17 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
         )}
 
         {isTraining && (
-          <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl p-5 animate-fadeIn">
+          <div className="bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl p-5 animate-fadeIn shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-cyan-300 text-sm font-medium">
+              <p className="text-[#470102] text-sm font-bold flex items-center gap-2">
+                <SpinnerIcon />
                 Training in progress...
               </p>
-              <span className="text-xs text-blue-400 animate-pulse">Running</span>
+              <span className="text-xs text-[#FEB229] font-bold animate-pulse bg-[#470102] px-2 py-0.5 rounded">RUNNING</span>
             </div>
 
-            <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden mb-4">
-              <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-2 rounded-full animate-progress w-full origin-left"></div>
+            <div className="w-full bg-white border border-[#FFEDC1] rounded-full h-3 overflow-hidden mb-4">
+              <div className="bg-[#FEB229] h-3 rounded-full animate-progress w-full origin-left shadow-sm"></div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -230,9 +231,9 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
                 { name: 'XGBoost', color: 'bg-amber-500' },
                 { name: 'LightGBM', color: 'bg-blue-500' }
               ].map((model, idx) => (
-                <div key={idx} className="bg-slate-900/50 rounded-lg p-2 flex items-center gap-2 border border-white/5">
-                  <div className={`w-2 h-2 rounded-full ${model.color} animate-ping`}></div>
-                  <span className="text-xs text-gray-300">{model.name}</span>
+                <div key={idx} className="bg-white rounded-lg p-3 flex items-center gap-3 border border-[#FFEDC1] shadow-sm">
+                  <div className={`w-2.5 h-2.5 rounded-full ${model.color} animate-ping`}></div>
+                  <span className="text-sm font-medium text-[#470102]">{model.name}</span>
                 </div>
               ))}
             </div>

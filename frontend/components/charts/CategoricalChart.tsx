@@ -36,18 +36,18 @@ export default function CategoricalChart({ data }: CategoricalChartProps) {
   }));
 
   return (
-    <div id={chartId} className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
+    <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="w-1 h-5 bg-purple-500 rounded-full"></span>
+          <h4 className="text-lg font-bold text-[#470102] flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
             {data.column}
           </h4>
-          <p className="text-xs text-gray-500 ml-3">Top Categories</p>
+          <p className="text-xs text-[#8A5A5A] ml-3">Top Categories</p>
         </div>
         <button
           onClick={() => downloadChart(chartId, `categories-${data.column}`)}
-          className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="p-2 hover:bg-[#FFF7EA] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors"
           title="Download Chart"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,24 +58,24 @@ export default function CategoricalChart({ data }: CategoricalChartProps) {
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} layout="vertical">
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} stroke="#334155" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: '#8A5A5A' }} stroke="#cbd5e1" />
           <YAxis
             dataKey="category"
             type="category"
             width={100}
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
-            stroke="#334155"
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
+            stroke="#cbd5e1"
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #1e293b',
+              backgroundColor: '#FFF7EA',
+              border: '1px solid #FFEDC1',
               borderRadius: '8px',
-              color: '#f8fafc',
+              color: '#470102',
             }}
-            itemStyle={{ color: '#cbd5e1' }}
-            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+            itemStyle={{ color: '#8A5A5A' }}
+            cursor={{ fill: 'rgba(71, 1, 2, 0.05)' }}
           />
           <Legend />
           <Bar dataKey="count" name="Count" radius={[0, 4, 4, 0]}>

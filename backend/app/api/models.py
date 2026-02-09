@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File
 from pydantic import BaseModel
 from app.services.ml_service import MLService
 from typing import Optional, List
@@ -68,6 +68,27 @@ async def get_model_results(job_id: str):
     except Exception as e:
         logger.error(f"Get results error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/experiments")
+async def get_experiments():
+    """Get list of past training experiments"""
+    try:
+        import os
+        import json
+        
+        if not os.path.exists("experiments.json"):
+            return []
+            
+        with open("experiments.json", "r") as f:
+            experiments = json.load(f)
+            
+        # Reverse sort by timestamp (newest first)
+        experiments.reverse()
+        return experiments
+    except Exception as e:
+        logger.error(f"Get experiments error: {str(e)}")
+        # Return empty list on error to avoid breaking UI
+        return []
 
 @router.get("/export/{job_id}")
 async def export_model(job_id: str):

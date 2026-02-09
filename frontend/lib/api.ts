@@ -363,6 +363,14 @@ export async function getModelResults(jobId: string) {
 }
 
 /**
+ * Get list of experiments
+ */
+export async function getExperiments() {
+  return apiCall<any[]>('/api/models/experiments');
+}
+
+
+/**
  * Get SHAP explanations
  */
 export async function getExplanations(jobId: string, modelName?: string) {

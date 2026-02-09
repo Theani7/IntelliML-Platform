@@ -67,8 +67,8 @@ export default function AnimatedSphere() {
 
         // Color based on z-position (depth)
         const depth = (this.z + radius) / (2 * radius);
-        // Cyan (180) to Blue (240) gradient
-        const hue = 190 + depth * 40;
+        // Gold (35) to Red (10) gradient
+        const hue = 35 - depth * 25;
         const opacity = 0.3 + depth * 0.7;
         const size = 1 + depth * 2;
 
@@ -94,8 +94,8 @@ export default function AnimatedSphere() {
       height = canvas.height;
       radius = Math.min(width, height) * 0.35;
 
-      // Clear canvas with fade effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Slightly stronger fade for better trails
+      // Clear canvas with fade effect - Cream
+      ctx.fillStyle = 'rgba(255, 247, 234, 0.2)'; // Cream with opacity for trails
       ctx.fillRect(0, 0, width, height);
 
       // Update rotation
@@ -111,8 +111,8 @@ export default function AnimatedSphere() {
       });
 
       // Draw connections between nearby particles
-      // Blue/Cyan connection lines
-      ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)'; // Cyan-500 low opacity
+      // Sunray/Gold connection lines
+      ctx.strokeStyle = 'rgba(254, 178, 41, 0.15)'; // Sunray low opacity
       ctx.lineWidth = 0.5;
 
       // Only connect a subset to save performance

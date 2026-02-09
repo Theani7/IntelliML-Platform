@@ -107,12 +107,12 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
         onDrop={handleDrop}
         className={`
           relative overflow-hidden group
-          rounded-3xl p-10 text-center
+          rounded-[24px] p-12 text-center
           transition-all duration-500 ease-out
           border-2 border-dashed
           ${isDragging
-            ? 'border-cyan-400 bg-cyan-900/10 scale-[1.02] shadow-[0_0_40px_rgba(34,211,238,0.2)]'
-            : 'border-white/10 bg-slate-900/50 hover:border-cyan-500/30 hover:bg-slate-900/80 hover:shadow-2xl'
+            ? 'border-[#FEB229] bg-[#FFF7EA] scale-[1.02] shadow-xl shadow-[#FEB229]/10'
+            : 'border-[#470102]/20 bg-[#FFF7EA]/50 hover:border-[#FEB229]/50 hover:bg-[#FFF7EA] hover:shadow-xl hover:shadow-[#FEB229]/5'
           }
           ${isUploading ? 'opacity-90 cursor-wait' : 'cursor-pointer'}
         `}
@@ -132,29 +132,28 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
           {!isUploading && !uploadedFile && (
             <div className="space-y-6 animate-fade-in-up">
               <div className={`
-                w-24 h-24 mx-auto rounded-full 
-                bg-gradient-to-tr from-blue-600/20 to-cyan-400/20 
+                w-24 h-24 mx-auto rounded-full
+                bg-[#FFF7EA] border border-[#FFEDC1] shadow-lg shadow-[#FEB229]/10
                 flex items-center justify-center 
-                text-cyan-300 group-hover:text-cyan-200
-                transition-all duration-500 group-hover:scale-110
-                shadow-[0_0_30px_rgba(34,211,238,0.1)]
+                text-[#FEB229] group-hover:scale-110
+                transition-all duration-500
               `}>
                 <CloudUploadIcon />
               </div>
 
               <div>
-                <h3 className="text-2xl font-bold text-white mb-2">
+                <h3 className="text-2xl font-bold text-[#470102] mb-2">
                   Upload your dataset
                 </h3>
-                <p className="text-gray-400 text-lg">
-                  Drag & drop or <span className="text-cyan-400 underline decoration-cyan-400/30 hover:decoration-cyan-400 underline-offset-4 transition-all">browse</span>
+                <p className="text-[#8A5A5A] text-lg">
+                  Drag & drop or <span className="text-[#FEB229] underline decoration-[#FFEDC1] hover:decoration-[#FEB229] underline-offset-4 transition-all">browse</span>
                 </p>
               </div>
 
               <div className="flex justify-center gap-3 pt-2">
-                <FileTypeBadge ext="CSV" color="bg-blue-500/10 text-blue-400 border-blue-500/20" />
-                <FileTypeBadge ext="Excel" color="bg-emerald-500/10 text-emerald-400 border-emerald-500/20" />
-                <FileTypeBadge ext="JSON" color="bg-amber-500/10 text-amber-400 border-amber-500/20" />
+                <FileTypeBadge ext="CSV" color="bg-[#FEB229]/10 text-[#470102] border-[#FEB229]/20" />
+                <FileTypeBadge ext="Excel" color="bg-emerald-500/10 text-emerald-700 border-emerald-500/20" />
+                <FileTypeBadge ext="JSON" color="bg-[#8A5A5A]/10 text-[#470102] border-[#8A5A5A]/20" />
               </div>
             </div>
           )}
@@ -162,8 +161,8 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
           {/* Uploading State */}
           {isUploading && (
             <div className="py-8 animate-pulse">
-              <div className="mb-6 flex justify-center"><SpinnerIcon /></div>
-              <h3 className="text-xl font-bold text-white mb-2">Processing Data...</h3>
+              <div className="mb-6 flex justify-center text-[var(--primary)]"><SpinnerIcon /></div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Processing Data...</h3>
               <div className="w-64 mx-auto h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300"
@@ -176,11 +175,11 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
           {/* Success State */}
           {uploadedFile && !isUploading && (
             <div className="py-4 animate-scale-in">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-50 flex items-center justify-center text-green-500 border border-green-100 shadow-sm">
                 <CheckCircleIcon />
               </div>
-              <h3 className="text-xl font-bold text-white mb-1">Upload Complete!</h3>
-              <p className="text-emerald-400/80 font-mono text-sm bg-emerald-900/20 py-1 px-3 rounded-full inline-block border border-emerald-500/20">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">Upload Complete!</h3>
+              <p className="text-green-600 font-mono text-sm bg-green-50 py-1 px-3 rounded-full inline-block border border-green-100">
                 {uploadedFile}
               </p>
             </div>

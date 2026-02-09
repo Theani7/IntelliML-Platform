@@ -37,28 +37,28 @@ export default function DataPreview({ data }: DataPreviewProps) {
   const numCols = data.columns.length;
 
   return (
-    <div className="w-full bg-slate-950 rounded-xl border border-blue-500/10 overflow-hidden shadow-xl shadow-blue-500/5">
-      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-slate-900/50">
+    <div className="w-full bg-white rounded-xl border border-[#FFEDC1] overflow-hidden shadow-sm">
+      <div className="flex items-center justify-between p-4 border-b border-[#FFEDC1] bg-[#FFF7EA]">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+          <div className="w-10 h-10 rounded-xl bg-[#FEB229] flex items-center justify-center text-[#470102] shadow-lg shadow-[#FEB229]/20">
             <TableIcon />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white tracking-wide">
+            <h3 className="text-lg font-bold text-[#470102] tracking-wide">
               Data Preview
             </h3>
             {data.filename && (
-              <p className="text-sm text-cyan-200/60 font-medium">{data.filename}</p>
+              <p className="text-sm text-[#8A5A5A] font-medium">{data.filename}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">Showing first 5 columns</p>
+            <p className="text-xs text-[#8A5A5A]/70 mt-1">Showing first 5 columns</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 rounded-lg text-cyan-300 text-xs font-medium border border-cyan-500/10">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FFF7EA] rounded-lg text-[#8A5A5A] text-xs font-medium border border-[#FFEDC1]">
             <RowsIcon />
             <span>{numRows.toLocaleString()} rows</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 rounded-lg text-blue-300 text-xs font-medium border border-blue-500/10">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#FFF7EA] rounded-lg text-[#8A5A5A] text-xs font-medium border border-[#FFEDC1]">
             <ColumnsIcon />
             <span>{numCols} columns</span>
           </div>
@@ -67,9 +67,9 @@ export default function DataPreview({ data }: DataPreviewProps) {
 
       <div className="w-full overflow-hidden">
         <table className="w-full border-separate border-spacing-0 table-fixed">
-          <thead className="bg-slate-950">
+          <thead className="bg-[#FFF7EA]">
             <tr>
-              <th className="w-12 px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider sticky left-0 bg-slate-950 border-b border-white/5 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)]">
+              <th className="w-12 px-4 py-3 text-left text-xs font-medium text-[#470102] uppercase tracking-wider sticky left-0 bg-[#FFF7EA] border-b border-[#FFEDC1] z-20 shadow-[2px_0_5px_-2px_rgba(71,1,2,0.1)]">
                 #
               </th>
               {(() => {
@@ -81,16 +81,16 @@ export default function DataPreview({ data }: DataPreviewProps) {
                 return visibleCols.map((col, idx) => (
                   <th
                     key={idx}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-white/5 bg-slate-950 truncate"
+                    className="px-4 py-3 text-left text-xs font-medium text-[#470102] uppercase tracking-wider border-b border-[#FFEDC1] bg-[#FFF7EA] truncate"
                   >
                     {col === '...' ? (
-                      <div className="text-gray-500 font-bold text-lg text-center">...</div>
+                      <div className="text-[#8A5A5A] font-bold text-lg text-center">...</div>
                     ) : (
                       <>
-                        <div className="text-white font-semibold normal-case flex items-center gap-2 truncate" title={col}>
+                        <div className="text-[#470102] font-semibold normal-case flex items-center gap-2 truncate" title={col}>
                           {col}
                         </div>
-                        <div className="text-xs text-cyan-400 font-normal mt-0.5 truncate">
+                        <div className="text-xs text-[#8A5A5A] font-normal mt-0.5 truncate">
                           {data.dtypes[col]}
                         </div>
                       </>
@@ -100,25 +100,25 @@ export default function DataPreview({ data }: DataPreviewProps) {
               })()}
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5 bg-slate-950">
+          <tbody className="divide-y divide-[#FFEDC1] bg-white">
             {data.preview.slice(0, 5).map((row, rowIdx) => {
               const visibleCols = data.columns.length > 6
                 ? [...data.columns.slice(0, 4), '...', data.columns[data.columns.length - 1]]
                 : data.columns;
 
               return (
-                <tr key={rowIdx} className="hover:bg-slate-900 transition-colors group">
-                  <td className="px-4 py-3 text-sm text-gray-500 group-hover:text-gray-300 sticky left-0 bg-slate-950 group-hover:bg-slate-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.5)] transition-colors border-b border-white/5">
+                <tr key={rowIdx} className="hover:bg-[#FFF7EA] transition-colors group">
+                  <td className="px-4 py-3 text-sm text-[#8A5A5A] group-hover:text-[#470102] sticky left-0 bg-white group-hover:bg-[#FFF7EA] z-10 shadow-[2px_0_5px_-2px_rgba(71,1,2,0.1)] transition-colors border-b border-[#FFEDC1]">
                     {rowIdx + 1}
                   </td>
                   {visibleCols.map((col, cellIdx) => (
                     <td
                       key={cellIdx}
-                      className="px-4 py-3 text-sm text-gray-300 border-b border-white/5 truncate max-w-[150px]"
+                      className="px-4 py-3 text-sm text-[#470102] border-b border-[#FFEDC1] truncate max-w-[150px]"
                       title={col !== '...' && row[col] ? String(row[col]) : undefined}
                     >
                       {col === '...' ? (
-                        <div className="text-gray-500 text-center">...</div>
+                        <div className="text-[#8A5A5A] text-center">...</div>
                       ) : (
                         row[col] === null || row[col] === undefined ? (
                           <span className="text-red-400/70 italic text-xs px-2 py-0.5 bg-red-500/10 rounded">null</span>
@@ -136,8 +136,8 @@ export default function DataPreview({ data }: DataPreviewProps) {
       </div>
 
       {numRows > 5 && (
-        <div className="px-4 py-3 bg-white/5 border-t border-white/5 text-center">
-          <p className="text-sm text-gray-500">
+        <div className="px-4 py-3 bg-[#FFF7EA] border-t border-[#FFEDC1] text-center">
+          <p className="text-sm text-[#8A5A5A]">
             Showing first 5 rows of {numRows.toLocaleString()}
           </p>
         </div>

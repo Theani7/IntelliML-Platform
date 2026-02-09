@@ -1,6 +1,3 @@
-import sys
-sys.path.append('/home/claude/intelliml-platform/ml_engine')
-
 from app.services.ml_service import MLService
 from ml_engine.engines.explainer import ModelExplainer
 from app.core.groq_client import groq_client

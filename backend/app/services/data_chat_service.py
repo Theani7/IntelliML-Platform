@@ -228,13 +228,22 @@ Please analyze the data and provide:
             # Get output
             output = sys.stdout.getvalue()
             
-            # Check for plot data
+            # Check for plot data in output (legacy method)
             if "PLOT:" in output:
                 lines = output.split('\n')
                 for line in lines:
                     if line.startswith("PLOT:"):
                         visualization = "data:image/png;base64," + line[5:]
                         output = output.replace(line, "[Visualization generated]")
+            
+            # Auto-capture any open matplotlib figures (new method)
+            if visualization is None and plt.get_fignums():
+                buf = BytesIO()
+                plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white', edgecolor='none')
+                buf.seek(0)
+                img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+                visualization = f"data:image/png;base64,{img_base64}"
+                buf.close()
             
             return output.strip(), visualization
             

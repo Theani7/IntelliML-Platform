@@ -1,6 +1,3 @@
-import sys
-sys.path.append('/home/claude/intelliml-platform/ml_engine')
-
 from app.services.data_service import DataService
 from app.core.groq_client import groq_client
 from ml_engine.engines.model_trainer import ModelTrainer
@@ -8,6 +5,8 @@ from typing import Dict, Any, Optional, List
 import logging
 import uuid
 import json
+import datetime
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +30,36 @@ class MLService:
             self.jobs = {}  # Store training jobs
             self._initialized = True
     
+    def _log_experiment(self, job_data: Dict[str, Any]):
+        """Log experiment to JSON file"""
+        try:
+            experiment_entry = {
+                "job_id": job_data['job_id'],
+                "timestamp": datetime.datetime.now().isoformat(),
+                "target_column": job_data['target_column'],
+                "problem_type": job_data['results']['problem_type'],
+                "best_model": job_data['results']['best_model']['model_name'],
+                "score": job_data['results']['best_model']['test_score'],
+                "metric": job_data['results']['best_model']['metric_name'],
+                "models_trained": len(job_data['results']['results'])
+            }
+            
+            experiments = []
+            if os.path.exists("experiments.json"):
+                try:
+                    with open("experiments.json", "r") as f:
+                        experiments = json.load(f)
+                except:
+                    pass
+            
+            experiments.append(experiment_entry)
+            
+            with open("experiments.json", "w") as f:
+                json.dump(experiments, f, indent=2)
+                
+        except Exception as e:
+            logger.error(f"Failed to log experiment: {e}")
+
     def train_models(
         self, 
         target_column: str,
@@ -106,7 +135,7 @@ class MLService:
                 else:
                     if best['test_score'] < 0.5:
                          suggestions.append("R² score is low (< 0.5). The model explains less than 50% of the variance.")
-
+ 
             # General suggestions
             suggestions.append("Try removing noisy features to improve generalization.")
             suggestions.append("Collect more diverse training samples if possible.")
@@ -125,6 +154,7 @@ class MLService:
             }
             
             self.jobs[job_id] = job_result
+            self._log_experiment(job_result) # Log to history
             logger.info(f"Job {job_id} completed and stored")
             
             # Return JSON-safe response (without trainer)

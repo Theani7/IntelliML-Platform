@@ -39,11 +39,11 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
         : 'text-gray-400';
 
   return (
-    <div id={chartId} className="bg-slate-900 rounded-xl border border-blue-500/10 p-5 shadow-lg shadow-blue-500/5">
+    <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-            <span className="w-1 h-5 bg-pink-500 rounded-full"></span>
+          <h4 className="text-lg font-bold text-[#470102] flex items-center gap-2">
+            <span className="w-1 h-5 bg-[#FEB229] rounded-full"></span>
             {data.x_column} vs {data.y_column}
           </h4>
           <div className={`text-xs font-bold mt-1 ${correlationColor} flex items-center gap-1`}>
@@ -52,7 +52,7 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
         </div>
         <button
           onClick={() => downloadChart(chartId, `scatter-${data.x_column}-${data.y_column}`)}
-          className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+          className="p-2 hover:bg-[#FFF7EA] rounded-lg text-[#8A5A5A] hover:text-[#470102] transition-colors"
           title="Download Chart"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,18 +63,18 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
 
       <ResponsiveContainer width="100%" height={300}>
         <ScatterChart>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             type="number"
             dataKey="x"
             name={data.x_column}
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
-            stroke="#334155"
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
+            stroke="#cbd5e1"
             label={{
               value: data.x_column,
               position: 'insideBottom',
               offset: -5,
-              fill: '#64748b',
+              fill: '#470102',
               fontSize: 10
             }}
             height={40}
@@ -83,25 +83,25 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
             type="number"
             dataKey="y"
             name={data.y_column}
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
-            stroke="#334155"
+            tick={{ fontSize: 11, fill: '#8A5A5A' }}
+            stroke="#cbd5e1"
             label={{
               value: data.y_column,
               angle: -90,
               position: 'insideLeft',
-              fill: '#64748b',
+              fill: '#470102',
               fontSize: 10
             }}
           />
           <Tooltip
             cursor={{ strokeDasharray: '3 3', stroke: '#cbd5e1' }}
             contentStyle={{
-              backgroundColor: '#0f172a',
-              border: '1px solid #1e293b',
+              backgroundColor: '#FFF7EA',
+              border: '1px solid #FFEDC1',
               borderRadius: '8px',
-              color: '#f8fafc',
+              color: '#470102',
             }}
-            itemStyle={{ color: '#cbd5e1' }}
+            itemStyle={{ color: '#8A5A5A' }}
           />
           <Legend />
           <Scatter

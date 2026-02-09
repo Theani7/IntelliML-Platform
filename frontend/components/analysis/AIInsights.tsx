@@ -18,18 +18,26 @@ export default function AIInsights({ insights }: AIInsightsProps) {
   if (!insightText) return null;
 
   return (
-    <div className="bg-gradient-to-br from-slate-900/50 to-blue-900/50 backdrop-blur-sm rounded-xl border border-blue-500/30 p-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+    <div className="bg-white/80 backdrop-blur-md rounded-[24px] border border-[#FFEDC1] p-6 shadow-sm relative overflow-hidden group">
+      {/* Ambient Glow */}
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FEB229]/10 blur-[80px] rounded-full pointer-events-none group-hover:bg-[#FEB229]/20 transition-colors duration-500"></div>
+
+      <div className="flex items-center gap-4 mb-5 relative z-10">
+        <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#FEB229] shadow-sm">
           <BotIcon />
         </div>
-        <h3 className="text-lg font-semibold text-white">
-          AI-Generated Insights
-        </h3>
+        <div>
+          <h3 className="text-lg font-bold text-[#470102] tracking-wide">
+            AI-Generated Insights
+          </h3>
+          <p className="text-xs text-[#8A5A5A] font-medium uppercase tracking-wider">
+            Automated Analysis
+          </p>
+        </div>
       </div>
 
-      <div className="prose prose-invert prose-sm max-w-none">
-        <p className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+      <div className="prose prose-sm max-w-none relative z-10">
+        <p className="text-[#470102] whitespace-pre-wrap leading-relaxed font-normal">
           {insightText}
         </p>
       </div>

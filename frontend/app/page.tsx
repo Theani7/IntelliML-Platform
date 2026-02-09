@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { GlassCard } from '@/components/ui/GlassCard';
 import Header from '@/components/layout/Header';
 import LandingPage from '@/components/landing/LandingPage';
 import VoiceChat from '@/components/chat/VoiceChat';
@@ -16,6 +17,8 @@ import SHAPPlots from '@/components/explanations/SHAPPlots';
 import OutlierDetection from '@/components/data/OutlierDetection';
 import FeatureEngineering from '@/components/data/FeatureEngineering';
 import BatchPrediction from '@/components/models/BatchPrediction';
+import ExperimentLeaderboard from '@/components/ml/ExperimentLeaderboard';
+import ResetModal from '@/components/ui/ResetModal';
 import {
   checkBackendHealth,
   testGroqConnection,
@@ -26,7 +29,7 @@ import {
 
 // ... other imports
 
-type Tab = 'upload' | 'chat' | 'analyze' | 'train' | 'results' | 'clean';
+type Tab = 'upload' | 'chat' | 'analyze' | 'train' | 'results' | 'cleaning' | 'engineering' | 'history';
 type Status = 'checking' | 'connected' | 'error';
 
 
@@ -92,8 +95,22 @@ const SparklesIcon = () => (
   </svg>
 );
 
+const WrenchIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
 export default function Home() {
   const [showApp, setShowApp] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [backendStatus, setBackendStatus] = useState<Status>('checking');
   const [groqStatus, setGroqStatus] = useState<Status>('checking');
 
@@ -123,7 +140,7 @@ export default function Home() {
 
   const handleDataUpload = async (data: any) => {
     setDatasetInfo(data);
-    setActiveTab('clean');
+    setActiveTab('cleaning');
   };
 
   const handleAnalyze = async () => {
@@ -164,13 +181,15 @@ export default function Home() {
   };
 
   const handleReset = () => {
-    if (confirm('Start over? This will clear all data.')) {
-      setDatasetInfo(null);
-      setAnalysisResults(null);
-      setTrainingResults(null);
-      setExplanations(null);
-      setActiveTab('upload');
-    }
+    setShowResetModal(true);
+  };
+
+  const confirmReset = () => {
+    setDatasetInfo(null);
+    setAnalysisResults(null);
+    setTrainingResults(null);
+    setExplanations(null);
+    setActiveTab('upload');
   };
 
   if (!showApp) {
@@ -179,41 +198,43 @@ export default function Home() {
 
   const mainTabs = [
     { id: 'upload', label: 'Upload', icon: <UploadIcon />, available: true },
-    { id: 'clean', label: 'Data Prep', icon: <SparklesIcon />, available: !!datasetInfo },
+    { id: 'cleaning', label: 'Data Cleaning', icon: <SparklesIcon />, available: !!datasetInfo },
     { id: 'analyze', label: 'EDA', icon: <ChartIcon />, available: !!datasetInfo },
+    { id: 'engineering', label: 'Feature Engineering', icon: <WrenchIcon />, available: !!datasetInfo },
     { id: 'train', label: 'Train', icon: <BrainIcon />, available: !!datasetInfo },
     { id: 'results', label: 'Results', icon: <TargetIcon />, available: !!trainingResults },
+    { id: 'history', label: 'History', icon: <ClockIcon />, available: !!datasetInfo },
     { id: 'chat', label: 'AI Assistant', icon: <ChatIcon />, available: !!datasetInfo },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-[#FFF7EA]/80 backdrop-blur-xl border-b border-[#FFEDC1] transition-colors duration-300">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div>
-                <h1 className="text-xl font-bold text-white tracking-tight">IntelliML</h1>
-                <p className="text-xs text-cyan-400">AI-Powered Analytics</p>
+                <h1 className="text-3xl font-display font-bold text-[#470102] tracking-tight">IntelliML</h1>
+                <p className="text-xs text-[#8A5A5A] font-bold tracking-wider uppercase">AI-Powered Analytics Platform</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${backendStatus === 'connected' ? 'bg-green-500' : backendStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`}></div>
-                <span className="text-xs text-gray-400">Backend</span>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
+                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${backendStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : backendStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className="text-xs font-bold text-[#470102] tracking-wide">Backend</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${groqStatus === 'connected' ? 'bg-green-500' : groqStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500 animate-pulse'}`}></div>
-                <span className="text-xs text-gray-400">AI</span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
+                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${groqStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : groqStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className="text-xs font-bold text-[#470102] tracking-wide">AI Engine</span>
               </div>
               {datasetInfo && (
                 <button
                   onClick={handleReset}
-                  className="px-3 py-1.5 text-xs bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all"
+                  className="px-4 py-1.5 text-xs font-bold bg-[#470102] hover:bg-[#5D0203] text-[#FFEDC1] rounded-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
-                  Reset
+                  Reset Session
                 </button>
               )}
             </div>
@@ -223,7 +244,7 @@ export default function Home() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-80px)] bg-black/20 backdrop-blur-sm border-r border-white/10 p-4 flex flex-col">
+        <aside className="w-64 min-h-[calc(100vh-80px)] bg-[#FFF7EA] border-r border-[#FFEDC1] p-5 flex flex-col transition-colors duration-300">
 
           {/* Main Workflow Steps */}
           <nav className="space-y-2">
@@ -232,71 +253,83 @@ export default function Home() {
                 key={tab.id}
                 onClick={() => tab.available && setActiveTab(tab.id as Tab)}
                 disabled={!tab.available}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/20'
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group ${activeTab === tab.id
+                  ? 'bg-[#FEB229] text-[#470102] shadow-lg shadow-[#FEB229]/20 font-bold translate-x-1'
                   : tab.available
-                    ? 'text-gray-300 hover:bg-white/10 hover:text-white'
-                    : 'text-gray-600 cursor-not-allowed'
+                    ? 'text-[#8A5A5A] hover:bg-[#FFEDC1]/50 hover:text-[#470102] hover:translate-x-1'
+                    : 'text-[#8A5A5A]/40 cursor-not-allowed'
                   }`}
               >
-                {tab.icon}
-                <span className="font-medium">{tab.label}</span>
+                <div className={`transition-transform duration-300 ${activeTab === tab.id ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  {tab.icon}
+                </div>
+                <span className="font-semibold tracking-wide text-sm">{tab.label}</span>
                 {!tab.available && tab.id !== 'upload' && (
-                  <span className="ml-auto flex items-center gap-1 text-xs bg-white/10 px-2 py-0.5 rounded">
+                  <span className="ml-auto flex items-center gap-1 text-xs opacity-50">
                     <LockIcon />
                   </span>
                 )}
                 {tab.id === 'upload' && datasetInfo && (
-                  <span className="ml-auto text-green-400"><CheckIcon /></span>
+                  <span className="ml-auto text-emerald-500 bg-emerald-50 rounded-full p-0.5"><CheckIcon /></span>
                 )}
               </button>
             ))}
           </nav>
 
           {datasetInfo && (
-            <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
-              <h3 className="text-sm font-semibold text-white mb-2">Current Dataset</h3>
-              <p className="text-xs text-gray-400 truncate">{datasetInfo.filename}</p>
-              <div className="mt-2 flex gap-2 text-xs">
-                <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded border border-cyan-500/30">{datasetInfo.rows} rows</span>
-                <span className="px-2 py-1 bg-blue-500/30 text-blue-300 rounded">{datasetInfo.columns?.length} cols</span>
+            <div className="mt-6 pt-6 text-center">
+              <div className="p-4 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-full h-1 bg-[#FEB229]"></div>
+                <div className="w-10 h-10 bg-[#FFF7EA] border border-[#FFEDC1] rounded-full flex items-center justify-center mx-auto mb-3 text-[#470102] font-bold text-lg shadow-sm">
+                  {datasetInfo.filename.charAt(0).toUpperCase()}
+                </div>
+                <h3 className="text-sm font-bold text-[#470102] mb-1 truncate">{datasetInfo.filename}</h3>
+                <p className="text-[10px] text-[#8A5A5A] uppercase tracking-wider font-bold mb-3">Active Dataset</p>
+
+                <div className="flex justify-center gap-2 text-[10px] font-medium">
+                  <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
+                    {datasetInfo.rows} rows
+                  </span>
+                  <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
+                    {datasetInfo.columns?.length} cols
+                  </span>
+                </div>
               </div>
             </div>
           )}
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-8 bg-[var(--background)]">
           {/* Upload Tab */}
           {
             activeTab === 'upload' && (
               <div className="animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Upload Your Data</h2>
-                  <p className="text-gray-400">Start by uploading a CSV, Excel, or JSON file</p>
+                <div className="text-center mb-10">
+                  <h2 className="text-5xl font-medium tracking-tight text-display mb-3 text-[#470102]">Upload Your Data</h2>
+                  <p className="text-lg text-[#8A5A5A] max-w-2xl mx-auto">Start by uploading a CSV, Excel, or JSON file to begin your analysis.</p>
                 </div>
 
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-                    <FileUploader onUploadSuccess={handleDataUpload} />
-                  </div>
+                <div className="max-w-2xl mx-auto mb-16">
+                  <FileUploader onUploadSuccess={handleDataUpload} />
                 </div>
 
                 <div className="mt-12 max-w-4xl mx-auto">
-                  <h3 className="text-lg font-semibold text-white mb-4 text-center">How It Works</h3>
-                  <div className="grid md:grid-cols-4 gap-4">
+                  <h3 className="text-lg font-semibold text-[#470102] mb-4 text-center">How It Works</h3>
+                  <div className="grid md:grid-cols-5 gap-6">
                     {[
-                      { icon: <UploadIcon />, title: 'Upload', desc: 'Add your dataset' },
-                      { icon: <ChatIcon />, title: 'Chat', desc: 'Ask AI questions' },
-                      { icon: <ChartIcon />, title: 'Analyze', desc: 'View insights' },
-                      { icon: <BrainIcon />, title: 'Train', desc: 'Build ML models' },
+                      { key: 'upload', icon: <UploadIcon />, title: 'Upload', desc: 'Add your dataset' },
+                      { key: 'clean', icon: <SparklesIcon />, title: 'Clean', desc: 'Handle missing/outliers' },
+                      { key: 'eda', icon: <ChartIcon />, title: 'EDA', desc: 'View insights' },
+                      { key: 'eng', icon: <WrenchIcon />, title: 'Engineer', desc: 'Create features' },
+                      { key: 'train', icon: <BrainIcon />, title: 'Train', desc: 'Build ML models' },
                     ].map((step, i) => (
-                      <div key={i} className="text-center p-4 bg-white/5 rounded-xl border border-white/10 hover:border-cyan-500/30 transition-colors">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center mx-auto text-cyan-400">
+                      <div key={i} className="text-center p-6 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
+                        <div className="w-12 h-12 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center mx-auto text-[#FEB229] mb-4 shadow-sm">
                           {step.icon}
                         </div>
-                        <h4 className="text-white font-medium mt-3">{step.title}</h4>
-                        <p className="text-sm text-gray-400 mt-1">{step.desc}</p>
+                        <h4 className="text-[#470102] font-semibold mb-1">{step.title}</h4>
+                        <p className="text-sm text-[#8A5A5A] leading-relaxed">{step.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -305,18 +338,17 @@ export default function Home() {
             )
           }
 
-          {/* Clean Tab */}
+          {/* Data Cleaning Tab */}
           {
-            activeTab === 'clean' && datasetInfo && (
-              <div className="animate-fadeIn">
-                <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Data Cleaning Station</h2>
-                  <p className="text-gray-400">Transform and prepare your data for analysis</p>
+            activeTab === 'cleaning' && datasetInfo && (
+              <div className="animate-fadeIn max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Data Cleaning Station</h2>
+                  <p className="text-gray-500">Handle missing values and remove outliers</p>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-8">
                   <OutlierDetection />
-                  <FeatureEngineering columns={datasetInfo.columns || []} />
                   <DataCleaning
                     data={datasetInfo}
                     onDataUpdate={(newData) => setDatasetInfo(newData)}
@@ -326,10 +358,26 @@ export default function Home() {
             )
           }
 
+          {/* Feature Engineering Tab */}
+          {
+            activeTab === 'engineering' && datasetInfo && (
+              <div className="animate-fadeIn max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Feature Engineering</h2>
+                  <p className="text-gray-500">Transform variables and create new features</p>
+                </div>
+
+                <div className="space-y-3">
+                  <FeatureEngineering columns={datasetInfo.columns || []} />
+                </div>
+              </div>
+            )
+          }
+
           {/* Chat Tab */}
           {
             activeTab === 'chat' && datasetInfo && (
-              <div className="animate-fadeIn h-full">
+              <div className="animate-fadeIn h-[calc(100vh-140px)] rounded-[24px] overflow-hidden shadow-2xl shadow-black/5 border border-gray-200 bg-white">
                 <VoiceChat />
               </div>
             )
@@ -338,30 +386,71 @@ export default function Home() {
           {/* Analyze Tab */}
           {
             activeTab === 'analyze' && datasetInfo && (
-              <div className="animate-fadeIn space-y-6">
+              <div className="animate-fadeIn space-y-8 max-w-7xl mx-auto">
                 {!analysisResults ? (
-                  <div className="text-center py-16">
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-600/30 to-pink-600/30 flex items-center justify-center mx-auto mb-6 border border-purple-500/30 text-white">
-                      <ChartIcon />
+                  <div className="animate-fadeIn">
+                    <div className="bg-[#FFF7EA] rounded-[24px] border border-[#FFEDC1] p-12 text-center shadow-lg shadow-[#FEB229]/5">
+                      {/* Hero Content */}
+                      <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#FEB229] to-[#F59E0B] flex items-center justify-center mx-auto mb-8 text-[#470102] shadow-xl shadow-[#FEB229]/20 rotate-3 transition-transform hover:rotate-6">
+                        <div className="scale-150">
+                          <ChartIcon />
+                        </div>
+                      </div>
+
+                      <h2 className="text-4xl font-bold text-[#470102] mb-4 tracking-tight">Exploratory Data Analysis</h2>
+                      <p className="text-lg text-[#8A5A5A] mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Unlock the power of your data. Our AI automatically discovers patterns, detects anomalies, and generates interactive visualizations to help you understand your dataset instantly.
+                      </p>
+
+                      <button
+                        onClick={handleAnalyze}
+                        disabled={isAnalyzing}
+                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-[#470102] text-[#FFEDC1] text-lg font-bold rounded-xl hover:bg-[#5D0203] transition-all shadow-lg shadow-[#470102]/20 hover:shadow-xl hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                      >
+                        {isAnalyzing ? (
+                          <>
+                            <SpinnerIcon />
+                            <span>Running Analysis...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Start Automated Analysis</span>
+                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Exploratory Data Analysis (EDA)</h2>
-                    <p className="text-gray-400 mb-6">Get AI-powered insights, statistics, and visualizations</p>
-                    <button
-                      onClick={handleAnalyze}
-                      disabled={isAnalyzing}
-                      className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center gap-2 mx-auto"
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <SpinnerIcon /> Analyzing...
-                        </>
-                      ) : (
-                        'Start Analysis'
-                      )}
-                    </button>
+
+                    {/* Feature Grid */}
+                    <div className="grid md:grid-cols-3 gap-6 mt-8">
+                      {/* Feature 1 */}
+                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <ChartIcon />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#470102] mb-2">Smart Visualizations</h3>
+                        <p className="text-[#8A5A5A] text-sm">Automatically generated distributions, correlation heatmaps, and scatter matrices.</p>
+                      </div>
+                      {/* Feature 2 */}
+                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <BrainIcon />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#470102] mb-2">AI Insights</h3>
+                        <p className="text-[#8A5A5A] text-sm">Natural language summaries and key findings extracted directly from your data.</p>
+                      </div>
+                      {/* Feature 3 */}
+                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                          <CheckIcon />
+                        </div>
+                        <h3 className="text-lg font-bold text-[#470102] mb-2">Data Quality</h3>
+                        <p className="text-[#8A5A5A] text-sm">Instant detection of missing values, outliers, and data type inconsistencies.</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     <DataPreview data={datasetInfo} />
                     <DataStats analysis={analysisResults.analysis} />
                     <AIInsights insights={analysisResults.ai_insights} />
@@ -375,14 +464,14 @@ export default function Home() {
           {/* Train Tab */}
           {
             activeTab === 'train' && datasetInfo && (
-              <div className="animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Train ML Models</h2>
-                  <p className="text-gray-400">Select a target column and train multiple models</p>
+              <div className="animate-fadeIn max-w-4xl mx-auto">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Train ML Models</h2>
+                  <p className="text-gray-500">Select a target column and train multiple models</p>
                 </div>
 
-                <div className="max-w-2xl mx-auto">
-                  <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+                <div className="bg-white p-1 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+                  <div className="bg-[var(--background)] p-8 rounded-[20px]">
                     <ModelTraining
                       columns={datasetInfo.columns}
                       onTrainingComplete={handleTrainingComplete}
@@ -396,10 +485,10 @@ export default function Home() {
           {/* Results Tab */}
           {
             activeTab === 'results' && trainingResults && (
-              <div className="animate-fadeIn space-y-6">
+              <div className="animate-fadeIn space-y-8 max-w-6xl mx-auto">
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Training Complete</h2>
-                  <p className="text-gray-400">View model performance and explanations</p>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Training Complete</h2>
+                  <p className="text-gray-500">View model performance and explanations</p>
                 </div>
 
                 <ModelComparison results={trainingResults} />
@@ -410,8 +499,29 @@ export default function Home() {
               </div>
             )
           }
+
+          {/* History Tab */}
+          {
+            activeTab === 'history' && datasetInfo && (
+              <div className="animate-fadeIn max-w-6xl mx-auto">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Experiment History</h2>
+                  <p className="text-gray-500">Track and compare your model training runs</p>
+                </div>
+                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+                  <ExperimentLeaderboard />
+                </div>
+              </div>
+            )
+          }
         </main >
-      </div >
-    </div >
+      </div>
+
+      <ResetModal
+        isOpen={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        onConfirm={confirmReset}
+      />
+    </div>
   );
 }

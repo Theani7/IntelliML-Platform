@@ -62,10 +62,10 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
     };
 
     return (
-        <div className="flex h-[calc(100vh-140px)] gap-0 animate-fadeIn overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+        <div className="flex h-[calc(100vh-140px)] gap-0 animate-fadeIn overflow-hidden rounded-2xl border border-[#FFEDC1] bg-white">
 
             {/* 1. Left Nav Rail (Icons Only) */}
-            <div className="w-16 flex flex-col items-center py-4 gap-4 border-r border-white/10 bg-slate-900/50">
+            <div className="w-16 flex flex-col items-center py-4 gap-4 border-r border-[#FFEDC1] bg-[#FFF7EA]">
                 <NavRailItem
                     active={activeMode === 'cleaning'}
                     onClick={() => setActiveMode('cleaning')}
@@ -92,26 +92,26 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
             </div>
 
             {/* 2. Center: Data Preview (Flex-1) */}
-            <div className="flex-1 flex flex-col overflow-hidden bg-slate-900/10">
-                <div className="h-12 border-b border-white/5 flex items-center px-4 justify-between bg-white/5">
-                    <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+            <div className="flex-1 flex flex-col overflow-hidden bg-[#FFF7EA]/30">
+                <div className="h-12 border-b border-[#FFEDC1] flex items-center px-4 justify-between bg-white">
+                    <h3 className="font-semibold text-[#470102] text-sm flex items-center gap-2">
                         Dataset Preview
                     </h3>
-                    <span className="text-xs text-gray-500 font-mono">
+                    <span className="text-xs text-[#8A5A5A] font-mono">
                         {data?.rows} rows × {columns.length} cols
                     </span>
                 </div>
 
                 <div className="flex-1 overflow-auto custom-scrollbar">
-                    <table className="w-full text-left text-sm text-gray-400">
-                        <thead className="bg-slate-950 text-gray-200 sticky top-0 z-10 font-medium shadow-sm">
+                    <table className="w-full text-left text-sm text-[#8A5A5A]">
+                        <thead className="bg-[#FFF7EA] text-[#470102] sticky top-0 z-10 font-medium shadow-sm">
                             <tr>
                                 {columns.map((col: string) => {
                                     const hasIssues = qualityReport?.missing_summary?.find((x: any) => x.column === col);
                                     return (
                                         <th
                                             key={col}
-                                            className={`px-4 py-2 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors whitespace-nowrap ${selectedColumn === col ? 'bg-blue-500/10 text-blue-200 border-b-blue-500/50' : ''}`}
+                                            className={`px-4 py-2 border-b border-[#FFEDC1] cursor-pointer hover:bg-white transition-colors whitespace-nowrap ${selectedColumn === col ? 'bg-[#FEB229]/20 text-[#470102] border-b-[#FEB229]' : ''}`}
                                             onClick={() => setSelectedColumn(col === selectedColumn ? '' : col)}
                                         >
                                             <div className="flex items-center gap-2">
@@ -123,12 +123,12 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
                                 })}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-[#FFEDC1]">
                             {preview.slice(0, 100).map((row: any, i: number) => (
-                                <tr key={i} className="hover:bg-white/5 transition-colors">
+                                <tr key={i} className="hover:bg-[#FFF7EA] transition-colors">
                                     {columns.map((col: string) => (
-                                        <td key={`${i}-${col}`} className={`px-4 py-1.5 whitespace-nowrap border-b border-white/5 ${selectedColumn === col ? 'bg-blue-500/5' : ''}`}>
-                                            {row[col] === null ? <span className="text-red-400/50 italic text-xs">null</span> : <span className="text-gray-300">{String(row[col])}</span>}
+                                        <td key={`${i}-${col}`} className={`px-4 py-1.5 whitespace-nowrap border-b border-[#FFEDC1] ${selectedColumn === col ? 'bg-[#FEB229]/5' : ''}`}>
+                                            {row[col] === null ? <span className="text-red-400/50 italic text-xs">null</span> : <span className="text-[#470102]">{String(row[col])}</span>}
                                         </td>
                                     ))}
                                 </tr>
@@ -139,7 +139,7 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
             </div>
 
             {/* 3. Right: Inspector Panel (Fixed Width) */}
-            <div className="w-[400px] border-l border-white/10 bg-slate-900 flex flex-col overflow-hidden">
+            <div className="w-[400px] border-l border-[#FFEDC1] bg-white flex flex-col overflow-hidden">
                 {activeMode === 'cleaning' && (
                     <CleaningPanel
                         selectedColumn={selectedColumn}
@@ -175,8 +175,8 @@ function NavRailItem({ active, onClick, icon, tooltip }: any) {
         <button
             onClick={onClick}
             className={`p-3 rounded-xl transition-all relative group ${active
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
-                    : 'text-gray-400 hover:bg-white/10 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25'
+                : 'text-gray-400 hover:bg-white/10 hover:text-white'
                 }`}
             title={tooltip}
         >

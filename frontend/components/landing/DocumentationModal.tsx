@@ -43,19 +43,19 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
             case 'overview':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Welcome to IntelliML</h3>
-                        <p className="text-gray-300">
+                        <h3 className="text-2xl font-bold text-[#470102]">Welcome to IntelliML</h3>
+                        <p className="text-[#8A5A5A]">
                             IntelliML is an autonomous machine learning platform designed to democratize data science.
                             It guides you through the entire lifecycle—from raw data to deployed models—without requiring deep technical expertise.
                         </p>
                         <div className="grid grid-cols-2 gap-4 mt-8">
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                <h4 className="font-semibold text-blue-400 mb-2">No-Code / Low-Code</h4>
-                                <p className="text-sm text-gray-400">Perform complex ML tasks using a simple, intuitive interface.</p>
+                            <div className="p-4 bg-white/60 rounded-xl border border-[#FFEDC1] shadow-sm">
+                                <h4 className="font-semibold text-[#FEB229] mb-2">No-Code / Low-Code</h4>
+                                <p className="text-sm text-[#8A5A5A]">Perform complex ML tasks using a simple, intuitive interface.</p>
                             </div>
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                                <h4 className="font-semibold text-purple-400 mb-2">AutoML Engine</h4>
-                                <p className="text-sm text-gray-400">Automatically selects the best algorithms and hyperparameters for your data.</p>
+                            <div className="p-4 bg-white/60 rounded-xl border border-[#FFEDC1] shadow-sm">
+                                <h4 className="font-semibold text-[#FEB229] mb-2">AutoML Engine</h4>
+                                <p className="text-sm text-[#8A5A5A]">Automatically selects the best algorithms and hyperparameters for your data.</p>
                             </div>
                         </div>
                     </div>
@@ -63,12 +63,12 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
             case 'upload':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Data Upload</h3>
-                        <p className="text-gray-300">Start by uploading your dataset. We support CSV, Excel, and JSON formats.</p>
+                        <h3 className="text-2xl font-bold text-[#470102]">Data Upload</h3>
+                        <p className="text-[#8A5A5A]">Start by uploading your dataset. We support CSV, Excel, and JSON formats.</p>
 
-                        <div className="bg-slate-900/50 p-4 rounded-lg border border-white/10">
-                            <h4 className="font-semibold text-white mb-2">Requirements</h4>
-                            <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
+                        <div className="bg-[#FFF7EA] p-4 rounded-lg border border-[#FFEDC1]">
+                            <h4 className="font-semibold text-[#470102] mb-2">Requirements</h4>
+                            <ul className="list-disc list-inside text-sm text-[#8A5A5A] space-y-1">
                                 <li>File size under 50MB (for best performance)</li>
                                 <li>Clean tabular data (columns as features, rows as samples)</li>
                                 <li>Header row representing column names</li>
@@ -79,21 +79,21 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
             case 'prep':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Data Preparation</h3>
-                        <p className="text-gray-300">Clean and transform your data to improve model quality.</p>
+                        <h3 className="text-2xl font-bold text-[#470102]">Data Preparation</h3>
+                        <p className="text-[#8A5A5A]">Clean and transform your data to improve model quality.</p>
 
                         <div className="space-y-4">
                             <div>
-                                <h4 className="text-lg font-semibold text-cyan-400">Cleaning</h4>
-                                <p className="text-sm text-gray-400">Handle missing values (drop or fill) and remove duplicates.</p>
+                                <h4 className="text-lg font-semibold text-[#FEB229]">Cleaning</h4>
+                                <p className="text-sm text-[#8A5A5A]">Handle missing values (drop or fill) and remove duplicates.</p>
                             </div>
                             <div>
                                 <h4 className="text-lg font-semibold text-rose-400">Outlier Detection</h4>
-                                <p className="text-sm text-gray-400">Identify anomalies using IQR or Z-Score methods and remove them to prevent skewing results.</p>
+                                <p className="text-sm text-[#8A5A5A]">Identify anomalies using IQR or Z-Score methods and remove them to prevent skewing results.</p>
                             </div>
                             <div>
-                                <h4 className="text-lg font-semibold text-violet-400">Feature Engineering</h4>
-                                <p className="text-sm text-gray-400">Create new features (Polynomial, Log, Interaction) to capture complex patterns.</p>
+                                <h4 className="text-lg font-semibold text-violet-500">Feature Engineering</h4>
+                                <p className="text-sm text-[#8A5A5A]">Create new features (Polynomial, Log, Interaction) to capture complex patterns.</p>
                             </div>
                         </div>
                     </div>
@@ -101,33 +101,33 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
             case 'eda':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Exploratory Data Analysis (EDA)</h3>
-                        <p className="text-gray-300">Understand your data before training.</p>
-                        <ul className="list-disc list-inside text-gray-400 space-y-2">
-                            <li><strong className="text-white">Distribution Plots:</strong> See how your data is spread.</li>
-                            <li><strong className="text-white">Correlation Matrix:</strong> Identify relationships between features.</li>
-                            <li><strong className="text-white">AI Insights:</strong> Get automated text summaries of interesting patterns.</li>
+                        <h3 className="text-2xl font-bold text-[#470102]">Exploratory Data Analysis (EDA)</h3>
+                        <p className="text-[#8A5A5A]">Understand your data before training.</p>
+                        <ul className="list-disc list-inside text-[#8A5A5A] space-y-2">
+                            <li><strong className="text-[#470102]">Distribution Plots:</strong> See how your data is spread.</li>
+                            <li><strong className="text-[#470102]">Correlation Matrix:</strong> Identify relationships between features.</li>
+                            <li><strong className="text-[#470102]">AI Insights:</strong> Get automated text summaries of interesting patterns.</li>
                         </ul>
                     </div>
                 );
             case 'training':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Model Training</h3>
-                        <p className="text-gray-300">Train multiple models simultaneously.</p>
+                        <h3 className="text-2xl font-bold text-[#470102]">Model Training</h3>
+                        <p className="text-[#8A5A5A]">Train multiple models simultaneously.</p>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 bg-white/5 rounded border border-white/10">
-                                <div className="text-xs text-gray-500 uppercase">Regression</div>
-                                <div className="text-sm text-white mt-1">Random Forest, XGBoost, Linear, Ridge, Lasso</div>
+                            <div className="p-3 bg-white/60 rounded border border-[#FFEDC1]">
+                                <div className="text-xs text-[#8A5A5A] uppercase">Regression</div>
+                                <div className="text-sm text-[#470102] mt-1">Random Forest, XGBoost, Linear, Ridge, Lasso</div>
                             </div>
-                            <div className="p-3 bg-white/5 rounded border border-white/10">
-                                <div className="text-xs text-gray-500 uppercase">Classification</div>
-                                <div className="text-sm text-white mt-1">Random Forest, XGBoost, Gradient Boosting, SVM, KNN</div>
+                            <div className="p-3 bg-white/60 rounded border border-[#FFEDC1]">
+                                <div className="text-xs text-[#8A5A5A] uppercase">Classification</div>
+                                <div className="text-sm text-[#470102] mt-1">Random Forest, XGBoost, Gradient Boosting, SVM, KNN</div>
                             </div>
                         </div>
 
-                        <p className="text-sm text-gray-400 mt-4">
+                        <p className="text-sm text-[#8A5A5A] mt-4">
                             Enable <strong>Hyperparameter Tuning</strong> to automatically find the optimal settings for each algorithm.
                         </p>
                     </div>
@@ -135,21 +135,21 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
             case 'results':
                 return (
                     <div className="space-y-6">
-                        <h3 className="text-2xl font-bold text-white">Results & Deployment</h3>
-                        <p className="text-gray-300">Evaluate model performance and explain predictions.</p>
+                        <h3 className="text-2xl font-bold text-[#470102]">Results & Deployment</h3>
+                        <p className="text-[#8A5A5A]">Evaluate model performance and explain predictions.</p>
 
                         <div className="space-y-4">
                             <div>
-                                <h4 className="text-white font-medium">Evaluation Metrics</h4>
-                                <p className="text-sm text-gray-400">Accuracy, F1-Score, MSE, R2, and more depending on the task.</p>
+                                <h4 className="text-[#470102] font-medium">Evaluation Metrics</h4>
+                                <p className="text-sm text-[#8A5A5A]">Accuracy, F1-Score, MSE, R2, and more depending on the task.</p>
                             </div>
                             <div>
-                                <h4 className="text-white font-medium">Explainability (SHAP)</h4>
-                                <p className="text-sm text-gray-400">Understand <em>why</em> a model made a specific prediction. See which features contributed most.</p>
+                                <h4 className="text-[#470102] font-medium">Explainability (SHAP)</h4>
+                                <p className="text-sm text-[#8A5A5A]">Understand <em>why</em> a model made a specific prediction. See which features contributed most.</p>
                             </div>
                             <div>
-                                <h4 className="text-white font-medium">Deployment</h4>
-                                <p className="text-sm text-gray-400">Download your trained model as a simplified Pickle file or use the built-in Batch Prediction tool.</p>
+                                <h4 className="text-[#470102] font-medium">Deployment</h4>
+                                <p className="text-sm text-[#8A5A5A]">Download your trained model as a simplified Pickle file or use the built-in Batch Prediction tool.</p>
                             </div>
                         </div>
                     </div>
@@ -185,11 +185,11 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
                             leaveFrom="opacity-100 scale-100"
                             leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className="w-full max-w-5xl transform overflow-hidden rounded-2xl bg-slate-900 border border-white/10 shadow-2xl transition-all flex h-[700px]">
+                            <Dialog.Panel className="w-full max-w-5xl transform overflow-hidden rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-2xl transition-all flex h-[700px]">
                                 {/* Sidebar */}
-                                <div className="w-64 bg-slate-950 border-r border-white/10 p-4 flex flex-col">
-                                    <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                                        <span className="bg-blue-600 rounded p-1"><BookOpenIcon className="w-4 h-4 text-white" /></span>
+                                <div className="w-64 bg-[#FFEDC1]/50 border-r border-[#FFEDC1] p-4 flex flex-col">
+                                    <h2 className="text-lg font-bold text-[#470102] mb-6 flex items-center gap-2">
+                                        <span className="bg-[#FEB229] rounded p-1"><BookOpenIcon className="w-4 h-4 text-[#470102]" /></span>
                                         Documentation
                                     </h2>
                                     <nav className="space-y-1 flex-1">
@@ -198,8 +198,8 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
                                                 key={section.id}
                                                 onClick={() => setActiveSection(section.id)}
                                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${activeSection === section.id
-                                                    ? 'bg-blue-600/10 text-blue-400 font-medium'
-                                                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                                    ? 'bg-[#FEB229]/20 text-[#470102] font-medium'
+                                                    : 'text-[#8A5A5A] hover:bg-[#FFEDC1] hover:text-[#470102]'
                                                     }`}
                                             >
                                                 {section.icon}
@@ -207,7 +207,7 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
                                             </button>
                                         ))}
                                     </nav>
-                                    <div className="pt-4 border-t border-white/10 text-xs text-gray-600 text-center">
+                                    <div className="pt-4 border-t border-[#FFEDC1] text-xs text-[#8A5A5A] text-center">
                                         v1.0.0 Stable
                                     </div>
                                 </div>
@@ -215,8 +215,8 @@ export default function DocumentationModal({ isOpen, onClose }: DocumentationMod
                                 {/* Content */}
                                 <div className="flex-1 flex flex-col min-w-0">
                                     {/* Header */}
-                                    <div className="h-16 flex items-center justify-end px-6 border-b border-white/5">
-                                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
+                                    <div className="h-16 flex items-center justify-end px-6 border-b border-[#FFEDC1]">
+                                        <button onClick={onClose} className="text-[#8A5A5A] hover:text-[#470102] transition-colors">
                                             <span className="sr-only">Close</span>
                                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>

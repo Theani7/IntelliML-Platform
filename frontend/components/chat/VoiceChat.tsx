@@ -13,7 +13,7 @@ interface Message {
     timestamp: Date;
 }
 
-// Icon Components
+// Icon Components - Warm Retro Style
 const MicIcon = () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -63,7 +63,7 @@ const SpinnerIcon = () => (
     </svg>
 );
 
-// Python syntax highlighter
+// Python syntax highlighter - Updated colors for Warm Retro
 const highlightPython = (code: string): React.ReactNode[] => {
     const tokens: { type: string; value: string }[] = [];
     let remaining = code;
@@ -101,68 +101,90 @@ const highlightPython = (code: string): React.ReactNode[] => {
 
     const colors: Record<string, string> = {
         comment: 'text-gray-500 italic',
-        string: 'text-amber-300',
-        decorator: 'text-yellow-400',
-        keyword: 'text-cyan-400 font-medium', // Updated from purple
-        builtin: 'text-blue-400',
-        function: 'text-sky-300',
-        number: 'text-orange-400',
-        operator: 'text-cyan-300', // Updated from pink
-        punctuation: 'text-gray-400',
-        variable: 'text-slate-200',
+        string: 'text-[#8A5A5A]', // Muted Red
+        decorator: 'text-[#FEB229]', // Gold
+        keyword: 'text-[#470102] font-bold', // Dark Red
+        builtin: 'text-[#8A5A5A] font-medium',
+        function: 'text-[#470102]',
+        number: 'text-[#FEB229]',
+        operator: 'text-gray-600',
+        punctuation: 'text-gray-500',
+        variable: 'text-gray-800',
         whitespace: '',
-        text: 'text-slate-200',
+        text: 'text-gray-800',
     };
 
     return tokens.map((token, i) => (
-        <span key={i} className={colors[token.type] || 'text-slate-200'}>
+        <span key={i} className={colors[token.type] || 'text-gray-800'}>
             {token.value}
         </span>
     ));
 };
 
-// Collapsible code block component
+// Collapsible code block component with Warm Retro Style
 const CollapsibleCode = ({ lang, code, isPython }: { lang: string; code: string; isPython: boolean }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(code);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
 
     return (
-        <div className="my-3">
-            <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="flex items-center gap-2 text-xs text-cyan-400 hover:text-white transition-colors py-2 px-3 bg-cyan-900/20 hover:bg-cyan-900/40 rounded-lg border border-cyan-500/10 group"
-            >
-                <svg
-                    className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                >
-                    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-                </svg>
-                <svg className="w-3.5 h-3.5 text-cyan-500/70 group-hover:text-cyan-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" />
-                </svg>
-                {isExpanded ? 'Hide Code' : 'Show Code'}
-                <span className="text-cyan-500/50 ml-1 font-mono">({lang || 'Python'})</span>
-            </button>
-
-            {isExpanded && (
-                <div className="mt-2 animate-fadeIn">
-                    <div className="flex items-center justify-between text-xs mb-1 px-2">
-                        <span className="uppercase font-medium text-cyan-400/80 flex items-center gap-1.5 font-mono text-[10px] tracking-wider">
-                            GENERATED CODE
-                        </span>
-                        <button
-                            onClick={() => navigator.clipboard.writeText(code)}
-                            className="hover:text-white text-cyan-500/70 transition-colors flex items-center gap-1 text-xs"
+        <div className="my-4 rounded-xl overflow-hidden border border-[#FFEDC1] shadow-sm bg-[#FFF7EA]/50">
+            {/* Terminal Header */}
+            <div className="flex items-center justify-between px-4 py-2 bg-[#FFF7EA] border-b border-[#FFEDC1]">
+                <div className="flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-[#470102]/20"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#FEB229]/50"></div>
+                        <div className="w-3 h-3 rounded-full bg-[#8A5A5A]/30"></div>
+                    </div>
+                    <span className="ml-3 text-xs font-mono text-[#8A5A5A] select-none font-bold uppercase tracking-wider">
+                        {lang || 'code'}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleCopy}
+                        className={`text-xs transition-colors flex items-center gap-1.5 font-medium px-2 py-1 rounded-md border ${isCopied ? 'bg-green-100 text-green-700 border-green-200' : 'text-[#8A5A5A] hover:text-[#470102] hover:bg-[#FFEDC1]/50 border-transparent'}`}
+                    >
+                        {isCopied ? (
+                            <>
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                <span>Copied!</span>
+                            </>
+                        ) : (
+                            <>
+                                <CopyIcon />
+                                <span>Copy</span>
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-[#8A5A5A] hover:text-[#470102] transition-colors p-1.5 rounded-md hover:bg-[#FFEDC1]/50"
+                    >
+                        <svg
+                            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                         >
-                            <CopyIcon /> Copy
-                        </button>
-                    </div>
-                    <div className="bg-slate-950/80 rounded-lg p-4 overflow-x-auto border border-blue-500/10 shadow-inner">
-                        <pre className="text-xs font-mono leading-relaxed">
-                            {isPython ? highlightPython(code) : <span className="text-gray-300">{code}</span>}
-                        </pre>
-                    </div>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            {/* Code Content */}
+            {isExpanded && (
+                <div className="p-4 overflow-x-auto bg-white/50">
+                    <pre className="text-xs font-mono leading-relaxed bg-transparent text-[#470102]">
+                        {isPython ? highlightPython(code) : <span className="text-[#470102]">{code}</span>}
+                    </pre>
                 </div>
             )}
         </div>
@@ -176,23 +198,48 @@ const renderMarkdown = (text: string) => {
     let key = 0;
 
     while (remaining.length > 0) {
+        // Match code blocks ```...```
         const codeBlockMatch = remaining.match(/^```(\w*)\n?([\s\S]*?)```/);
         if (codeBlockMatch) {
             const lang = codeBlockMatch[1] || 'python';
             const code = codeBlockMatch[2].trim();
             const isPython = lang.toLowerCase() === 'python' || lang === '' || lang.toLowerCase() === 'py';
-
-            parts.push(
-                <CollapsibleCode key={key++} lang={lang} code={code} isPython={isPython} />
-            );
+            parts.push(<CollapsibleCode key={key++} lang={lang} code={code} isPython={isPython} />);
             remaining = remaining.slice(codeBlockMatch[0].length);
             continue;
         }
 
+        // Match Headers (###, ##, #)
+        const headerMatch = remaining.match(/^(#{1,3})\s+(.+?)(\n|$)/);
+        if (headerMatch) {
+            const level = headerMatch[1].length;
+            const content = headerMatch[2];
+            const className = level === 1 ? "text-xl font-bold text-[#470102] mt-4 mb-2 border-b border-[#FFEDC1] pb-1" :
+                level === 2 ? "text-lg font-bold text-[#470102] mt-3 mb-2" :
+                    "text-base font-bold text-[#8A5A5A] mt-2 mb-1";
+            parts.push(<div key={key++} className={className}>{content}</div>);
+            remaining = remaining.slice(headerMatch[0].length);
+            continue;
+        }
+
+        // Match Lists ( - or * )
+        const listMatch = remaining.match(/^(\s*[-*]\s+.+?)(\n|$)/);
+        if (listMatch) {
+            parts.push(
+                <div key={key++} className="flex gap-2 ml-1 my-1">
+                    <span className="text-[#FEB229] mt-1.5">•</span>
+                    <span className="text-[#470102] leading-relaxed">{listMatch[1].replace(/^\s*[-*]\s+/, '')}</span>
+                </div>
+            );
+            remaining = remaining.slice(listMatch[0].length);
+            continue;
+        }
+
+        // Match Inline Code `...`
         const inlineCodeMatch = remaining.match(/^`([^`]+)`/);
         if (inlineCodeMatch) {
             parts.push(
-                <code key={key++} className="bg-blue-900/30 px-1.5 py-0.5 rounded text-cyan-300 text-xs font-mono border border-blue-500/20">
+                <code key={key++} className="bg-[#FFF7EA] px-1.5 py-0.5 rounded text-[#470102] text-xs font-mono border border-[#FFEDC1] font-bold">
                     {inlineCodeMatch[1]}
                 </code>
             );
@@ -200,27 +247,30 @@ const renderMarkdown = (text: string) => {
             continue;
         }
 
+        // Match Bold **...**
         const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/) || remaining.match(/^__([^_]+)__/);
         if (boldMatch) {
-            parts.push(<strong key={key++} className="font-semibold text-white">{boldMatch[1]}</strong>);
+            parts.push(<strong key={key++} className="font-bold text-[#470102]">{boldMatch[1]}</strong>);
             remaining = remaining.slice(boldMatch[0].length);
             continue;
         }
 
-        const nextSpecial = remaining.search(/```|`|\*\*|__/);
+        // Plain Text
+        const nextSpecial = remaining.search(/```|`|\*\*|__|#{1,3}\s|^\s*[-*]\s/m);
+
         if (nextSpecial === -1) {
-            parts.push(<span key={key++}>{remaining}</span>);
+            parts.push(<span key={key++} className="text-[#470102] leading-relaxed whitespace-pre-wrap">{remaining}</span>);
             break;
         } else if (nextSpecial === 0) {
             parts.push(<span key={key++}>{remaining[0]}</span>);
             remaining = remaining.slice(1);
         } else {
-            parts.push(<span key={key++}>{remaining.slice(0, nextSpecial)}</span>);
+            parts.push(<span key={key++} className="text-[#470102] leading-relaxed whitespace-pre-wrap">{remaining.slice(0, nextSpecial)}</span>);
             remaining = remaining.slice(nextSpecial);
         }
     }
 
-    return <>{parts}</>;
+    return <div className="space-y-1">{parts}</div>;
 };
 
 export default function VoiceChat() {
@@ -300,6 +350,7 @@ export default function VoiceChat() {
         }
     };
 
+    // Voice logic remains identical, just need to re-include it
     const startRecording = async () => {
         try {
             setIsPreparing(true);
@@ -432,40 +483,39 @@ export default function VoiceChat() {
     ];
 
     return (
-        <div className="h-[750px] flex flex-col bg-slate-950 rounded-2xl shadow-2xl overflow-hidden border border-blue-500/10 relative">
+        <div className="h-full flex flex-col bg-[#FFF7EA] rounded-[24px] shadow-sm border border-[#FFEDC1] overflow-hidden relative">
             {/* Ambient Background Glow */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-600/5 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB229]/5 rounded-full blur-[120px] pointer-events-none" />
 
             {/* Header */}
-            <div className="px-6 py-5 bg-slate-900/50 backdrop-blur-md border-b border-white/5 z-10 flex items-center justify-between">
+            <div className="px-6 py-5 bg-[#FFF7EA]/80 backdrop-blur-xl border-b border-[#FFEDC1] z-10 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className="relative">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
+                        <div className="w-10 h-10 rounded-xl bg-[#470102] flex items-center justify-center shadow-lg shadow-[#470102]/20 text-[#FFEDC1]">
                             <BotIcon />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-slate-900"></div>
+                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#FEB229] rounded-full border-2 border-[#FFF7EA]"></div>
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-white tracking-wide">AI Data Assistant</h3>
-                        <p className="text-cyan-200/60 text-xs font-medium uppercase tracking-wider">
-                            IntelliML Core Active
+                        <h3 className="text-lg font-bold text-[#470102] tracking-tight">AI Data Assistant</h3>
+                        <p className="text-[#8A5A5A] text-xs font-bold uppercase tracking-wider">
+                            IntelliML Assistant Active
                         </p>
                     </div>
                 </div>
                 <div className="flex gap-2">
                     <button
                         onClick={() => setShowSuggestions(!showSuggestions)}
-                        className={`px-3 py-2 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 border ${showSuggestions
-                                ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                                : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:text-white'
+                        className={`px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 border ${showSuggestions
+                            ? 'bg-[#470102] text-[#FFEDC1] border-[#470102]'
+                            : 'bg-white text-[#470102] border-[#FFEDC1] hover:bg-[#FFF7EA]'
                             }`}
                     >
                         <SparklesIcon /> Ideas
                     </button>
                     <button
                         onClick={handleClear}
-                        className="px-3 py-2 text-xs font-medium bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-all border border-white/5"
+                        className="px-3 py-2 text-xs font-bold bg-white hover:bg-[#FFF7EA] text-[#470102] border border-[#FFEDC1] rounded-lg transition-all"
                     >
                         Clear
                     </button>
@@ -474,8 +524,8 @@ export default function VoiceChat() {
 
             {/* Suggestions Panel */}
             {showSuggestions && (
-                <div className="px-4 py-3 bg-slate-900/80 backdrop-blur-md border-b border-white/5 animate-fadeIn z-10">
-                    <p className="text-[10px] font-bold text-cyan-400/80 uppercase tracking-widest mb-3 px-1">Suggested Visualizations</p>
+                <div className="px-4 py-3 bg-[#FFF7EA] backdrop-blur-md border-b border-[#FFEDC1] animate-fadeIn z-10">
+                    <p className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest mb-3 px-1">Suggested Visualizations</p>
                     <div className="flex flex-wrap gap-2">
                         {suggestions.map((s, idx) => (
                             <button
@@ -484,7 +534,7 @@ export default function VoiceChat() {
                                     handleSend(`Create a ${s.type} chart: ${s.description}`);
                                     setShowSuggestions(false);
                                 }}
-                                className="px-3 py-1.5 text-xs bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-200 border border-cyan-500/10 rounded-full transition-all hover:border-cyan-500/30"
+                                className="px-3 py-1.5 text-xs bg-white hover:bg-[#FFEDC1] text-[#470102] border border-[#FFEDC1] rounded-full transition-all hover:border-[#FEB229] font-bold"
                             >
                                 {s.title}
                             </button>
@@ -494,15 +544,15 @@ export default function VoiceChat() {
             )}
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-6 z-0 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 z-0 scrollbar-thin scrollbar-thumb-[#FFEDC1] scrollbar-track-transparent">
                 {messages.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                        <div className="w-24 h-24 rounded-full bg-slate-900 border border-blue-500/20 flex items-center justify-center mb-8 relative">
-                            <div className="absolute inset-0 rounded-full bg-blue-500/5 animate-pulse"></div>
-                            <BotIcon />
+                        <div className="w-24 h-24 rounded-[2rem] bg-white border border-[#FFEDC1] shadow-xl shadow-[#FEB229]/5 flex items-center justify-center mb-8 relative">
+                            <div className="absolute inset-0 rounded-[2rem] bg-[#FEB229]/5 animate-pulse"></div>
+                            <div className="text-[#470102]"><BotIcon /></div>
                         </div>
-                        <h4 className="text-2xl font-bold text-white mb-3">How can I help you?</h4>
-                        <p className="text-gray-400 mb-8 max-w-sm text-sm leading-relaxed">
+                        <h4 className="text-2xl font-bold text-[#470102] mb-3">How can I help you?</h4>
+                        <p className="text-[#8A5A5A] mb-8 max-w-sm text-sm leading-relaxed">
                             I can analyze your dataset, create visualizations, and answer questions. Just ask or use a preset below.
                         </p>
                         <div className="grid grid-cols-2 gap-3 max-w-md w-full">
@@ -510,7 +560,7 @@ export default function VoiceChat() {
                                 <button
                                     key={idx}
                                     onClick={() => handleSend(q)}
-                                    className="px-4 py-3 text-xs font-medium bg-slate-800/50 hover:bg-slate-800 hover:border-blue-500/30 rounded-xl text-gray-300 hover:text-white transition-all border border-white/5 text-left"
+                                    className="px-4 py-3 text-xs font-bold bg-white hover:bg-[#FFEDC1] hover:border-[#FEB229] hover:shadow-md rounded-xl text-[#470102] transition-all border border-[#FFEDC1] text-left shadow-sm"
                                 >
                                     {q}
                                 </button>
@@ -524,59 +574,81 @@ export default function VoiceChat() {
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn group`}
                         >
                             <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-white mt-1 ${msg.role === 'user'
-                                    ? 'bg-blue-600'
-                                    : 'bg-slate-800 border border-white/10'
+                                {/* Avatar */}
+                                <div className={`w-8 h-8 rounded-[12px] flex items-center justify-center flex-shrink-0 mt-1 shadow-sm border ${msg.role === 'user'
+                                    ? 'bg-[#470102] text-[#FFEDC1] border-[#470102]'
+                                    : 'bg-white text-[#470102] border-[#FFEDC1]'
                                     }`}>
                                     {msg.role === 'user' ? <UserIcon /> : <BotIcon />}
                                 </div>
 
                                 <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                    <div className={`rounded-2xl px-5 py-3.5 ${msg.role === 'user'
-                                        ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white rounded-tr-sm shadow-lg shadow-blue-500/10'
+                                    {/* Sender Label */}
+                                    <span className="text-[10px] text-[#8A5A5A] mb-1 px-1 font-bold select-none">
+                                        {msg.role === 'user' ? 'You' : 'AI Assistant'}
+                                    </span>
+
+                                    {/* Message Bubble */}
+                                    <div className={`rounded-[20px] px-6 py-4 shadow-sm backdrop-blur-md border transition-all ${msg.role === 'user'
+                                        ? 'bg-[#470102] text-[#FFEDC1] rounded-tr-sm border-[#470102]'
                                         : msg.error
-                                            ? 'bg-red-950/30 text-red-200 border border-red-500/20 rounded-tl-sm'
-                                            : 'bg-slate-800/80 text-gray-200 border border-white/5 rounded-tl-sm backdrop-blur-sm'
+                                            ? 'bg-rose-50 text-rose-800 border-rose-100 rounded-tl-sm'
+                                            : 'bg-white text-[#470102] border-[#FFEDC1] rounded-tl-sm shadow-md shadow-[#470102]/5'
                                         }`}>
-                                        <div className="text-sm leading-relaxed">
+                                        <div className={`text-sm leading-relaxed ${msg.role === 'user' ? 'text-[#FFEDC1]' : 'text-[#470102]'}`}>
                                             {msg.role === 'user' ? msg.content : renderMarkdown(msg.content)}
                                         </div>
 
                                         {msg.output && (
-                                            <div className="mt-4 border-t border-white/10 pt-3">
-                                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">System Output</div>
-                                                <div className="bg-black/40 rounded-lg p-3 overflow-x-auto border border-white/5">
-                                                    <pre className="text-cyan-300/90 text-xs font-mono whitespace-pre-wrap">{msg.output}</pre>
+                                            <div className="mt-4 border-t border-[#FFEDC1] pt-3">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-[#FEB229]"></div>
+                                                    <div className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest">System Output</div>
+                                                </div>
+                                                <div className="bg-[#FFF7EA] rounded-xl p-3 overflow-x-auto border border-[#FFEDC1] text-[#470102]">
+                                                    <pre className="text-xs font-mono whitespace-pre-wrap">{msg.output}</pre>
                                                 </div>
                                             </div>
                                         )}
 
                                         {msg.visualization && (
-                                            <div className="mt-4">
-                                                <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                                                    <span className="font-bold uppercase tracking-widest text-[10px]">Generated Plot</span>
+                                            <div className="mt-4 bg-[#FFF7EA] rounded-xl p-3 border border-[#FFEDC1]">
+                                                <div className="flex items-center justify-between text-xs text-[#8A5A5A] mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[#470102]"></span>
+                                                        <span className="font-bold uppercase tracking-widest text-[10px]">Visualization</span>
+                                                    </div>
                                                     <button
                                                         onClick={() => {
+                                                            // Simpler, more reliable approach using direct data URL
                                                             const link = document.createElement('a');
                                                             link.href = msg.visualization!;
-                                                            link.download = `viz-${Date.now()}.png`;
+                                                            link.download = `visualization-${Date.now()}.png`;
+                                                            link.style.display = 'none';
+                                                            document.body.appendChild(link);
                                                             link.click();
+                                                            // Small delay before cleanup to ensure download starts
+                                                            setTimeout(() => {
+                                                                document.body.removeChild(link);
+                                                            }, 100);
                                                         }}
-                                                        className="hover:text-white transition-colors flex items-center gap-1.5 bg-white/5 hover:bg-white/10 px-2 py-1 rounded"
+                                                        className="hover:text-[#470102] transition-colors flex items-center gap-1.5 bg-white hover:bg-[#FFEDC1] px-2 py-1 rounded border border-[#FFEDC1] font-bold"
                                                     >
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                                         Download
                                                     </button>
                                                 </div>
-                                                <img
-                                                    src={msg.visualization}
-                                                    alt="Data visualization"
-                                                    className="rounded-lg border border-white/10 max-w-full bg-slate-900/50"
-                                                />
+                                                <div className="rounded-lg overflow-hidden border border-[#FFEDC1] bg-white shadow-sm">
+                                                    <img
+                                                        src={msg.visualization}
+                                                        alt="Data visualization"
+                                                        className="w-full h-auto"
+                                                    />
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                    <span className="text-[10px] text-gray-600 mt-1.5 px-1 font-medium opactiy-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[10px] text-[#8A5A5A] mt-1.5 px-1 font-medium opacity-0 group-hover:opacity-100 transition-opacity select-none">
                                         {formatTime(msg.timestamp)}
                                     </span>
                                 </div>
@@ -588,19 +660,20 @@ export default function VoiceChat() {
                 {/* Loading State */}
                 {(isLoading || isTranscribing) && (
                     <div className="flex justify-start animate-fadeIn">
-                        <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 flex items-center justify-center text-white mt-1">
+                        <div className="flex gap-3 max-w-[85%]">
+                            <div className="w-8 h-8 rounded-[12px] bg-white flex items-center justify-center text-[#470102] mt-1 border border-[#FFEDC1]">
                                 <BotIcon />
                             </div>
-                            <div className="bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3 border border-white/5 flex items-center gap-3">
-                                <div className="flex gap-1">
-                                    <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                    <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                    <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            <div className="bg-white rounded-[20px] rounded-tl-sm px-5 py-4 border border-[#FFEDC1] shadow-lg shadow-[#470102]/5">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative w-4 h-4">
+                                        <div className="absolute inset-0 bg-[#FEB229] rounded-full animate-ping opacity-75"></div>
+                                        <div className="relative w-4 h-4 bg-[#FEB229] rounded-full shadow-lg shadow-[#FEB229]/50"></div>
+                                    </div>
+                                    <span className="text-xs font-bold text-[#8A5A5A] tracking-wide">
+                                        {isTranscribing ? 'Processing audio...' : 'Thinking...'}
+                                    </span>
                                 </div>
-                                <span className="text-xs font-medium text-cyan-200/70">
-                                    {isTranscribing ? 'Listening & Transcribing...' : 'Processing...'}
-                                </span>
                             </div>
                         </div>
                     </div>
@@ -612,12 +685,12 @@ export default function VoiceChat() {
             {/* Recording Indicator */}
             {isRecording && (
                 <div className="absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none z-20">
-                    <div className="bg-slate-900/90 backdrop-blur-md border border-red-500/30 rounded-full px-6 py-2 shadow-2xl shadow-red-500/10 flex items-center gap-4 animate-in slide-in-from-bottom-5">
+                    <div className="bg-[#470102]/90 backdrop-blur-md border border-[#FEB229]/30 rounded-full px-6 py-2 shadow-2xl shadow-[#470102]/10 flex items-center gap-4 animate-in slide-in-from-bottom-5">
                         <div className="flex items-center gap-1 h-4">
                             {[...Array(8)].map((_, i) => (
                                 <div
                                     key={i}
-                                    className="w-1 bg-red-500 rounded-full animate-pulse"
+                                    className="w-1 bg-[#FEB229] rounded-full animate-pulse"
                                     style={{
                                         height: `${8 + Math.random() * 12}px`,
                                         animationDelay: `${i * 0.1}s`,
@@ -626,25 +699,25 @@ export default function VoiceChat() {
                                 />
                             ))}
                         </div>
-                        <span className="text-red-400 text-xs font-bold uppercase tracking-wider animate-pulse">
+                        <span className="text-[#FFEDC1] text-xs font-bold uppercase tracking-wider animate-pulse">
                             Listening
                         </span>
                     </div>
                 </div>
             )}
 
-            {/* Input Area */}
-            <div className="p-4 z-20 relative">
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none" />
-                <div className="relative flex gap-2 items-end max-w-3xl mx-auto bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl shadow-black/50">
+            {/* Input Area - Floating Glass Style */}
+            <div className="p-5 z-20 relative">
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#FFF7EA] via-[#FFF7EA]/90 to-transparent pointer-events-none" />
+                <div className="relative flex gap-3 items-end max-w-3xl mx-auto bg-white/80 backdrop-blur-2xl border border-[#FFEDC1] rounded-2xl p-2.5 shadow-2xl shadow-[#470102]/5 ring-1 ring-[#470102]/5">
                     <button
                         onClick={handleVoiceClick}
                         disabled={isPreparing || isLoading || isTranscribing}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0 text-white ${isRecording
-                            ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20'
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 flex-shrink-0 ${isRecording
+                            ? 'bg-rose-600 text-white hover:bg-rose-700 shadow-lg shadow-rose-600/20 scale-105'
                             : isPreparing || isTranscribing
-                                ? 'bg-slate-700 cursor-wait'
-                                : 'bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-white border border-white/5 hover:border-white/10'
+                                ? 'bg-[#FFF7EA] text-[#8A5A5A] cursor-wait'
+                                : 'bg-[#FFF7EA] text-[#470102] hover:bg-white hover:text-[#FEB229] border border-[#FFEDC1]'
                             }`}
                         title={isRecording ? 'Stop Recording' : 'Start Voice Input'}
                     >
@@ -657,21 +730,23 @@ export default function VoiceChat() {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                         placeholder={isRecording ? "Listening..." : "Ask something..."}
-                        className="flex-1 bg-transparent border-none rounded-none focus:ring-0 text-white placeholder-gray-500 text-sm py-2.5 px-2"
+                        className="flex-1 bg-transparent border-none rounded-none focus:ring-0 text-[#470102] placeholder-[#8A5A5A]/50 text-sm py-3 px-2 font-medium tracking-wide"
                         disabled={isLoading || isRecording || isTranscribing}
                     />
 
                     <button
                         onClick={() => handleSend()}
                         disabled={!input.trim() || isLoading || isRecording}
-                        className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-gray-600 flex items-center justify-center transition-all shadow-lg shadow-blue-500/20 disabled:shadow-none flex-shrink-0 text-white"
+                        className="w-11 h-11 rounded-xl bg-[#470102] hover:bg-[#5D0203] disabled:bg-[#FFEDC1] disabled:text-[#8A5A5A]/50 flex items-center justify-center transition-all duration-300 shadow-lg shadow-[#470102]/20 disabled:shadow-none flex-shrink-0 text-[#FFEDC1] group"
                         title="Send Message"
                     >
-                        <SendIcon />
+                        <div className={`transform transition-transform duration-300 ${!input.trim() || isLoading || isRecording ? '' : 'group-hover:translate-x-0.5 group-hover:-translate-y-0.5'}`}>
+                            <SendIcon />
+                        </div>
                     </button>
                 </div>
                 {voiceError && (
-                    <p className="text-red-400 text-[10px] mt-2 text-center absolute bottom-1 left-0 right-0">
+                    <p className="text-rose-600 text-[10px] mt-2 text-center absolute -bottom-6 left-0 right-0 animate-fadeIn font-medium">
                         {voiceError}
                     </p>
                 )}

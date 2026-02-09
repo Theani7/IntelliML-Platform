@@ -50,28 +50,12 @@ const LightBulbIcon = () => (
   </svg>
 );
 
-const ChevronIcon = ({ isOpen }: { isOpen: boolean }) => (
-  <svg
-    className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
 export default function ModelComparison({ results }: ModelComparisonProps) {
   const [featureInputs, setFeatureInputs] = useState<{ [key: string]: string }>({});
   const [prediction, setPrediction] = useState<any>(null);
   const [isPredicting, setIsPredicting] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<{ [key: string]: boolean }>({});
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'test_score', direction: 'desc' });
   const [shapExplanation, setShapExplanation] = useState<any>(null);
-
-  const toggleSection = (section: string) => {
-    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -82,7 +66,6 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
 
   if (!results) return null;
 
-  // Handle various potential API response structures
   const models = results.results?.results || results.results || [];
   const best_model = results.results?.best_model || results.best_model;
   const problem_type = results.results?.problem_type || results.problem_type || results.results?.model_type || results.model_type;
@@ -98,7 +81,6 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
     try {
       const features = feature_names.map((name: string) => parseFloat(featureInputs[name] || '0'));
 
-      // Get prediction
       const response = await fetch(`http://localhost:8000/api/models/predict/${job_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +89,6 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
       const data = await response.json();
       setPrediction(data);
 
-      // Get SHAP explanation in background
       fetch(`http://localhost:8000/api/models/explain/${job_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,8 +134,8 @@ print(f"Prediction: {prediction}")
 
   if (!models || models.length === 0) {
     return (
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-        <p className="text-gray-400">No model results available</p>
+      <div className="bg-[#FFF7EA] rounded-xl border border-[#FFEDC1] p-6">
+        <p className="text-[#8A5A5A]">No model results available</p>
       </div>
     );
   }
@@ -168,7 +149,7 @@ print(f"Prediction: {prediction}")
       <div className="flex gap-3 flex-wrap">
         <button
           onClick={handleDownloadCode}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-sm text-white transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-[#FFEDC1] rounded-lg text-sm text-[#470102] font-medium transition-colors shadow-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -179,7 +160,7 @@ print(f"Prediction: {prediction}")
           <a
             href={`http://localhost:8000/api/models/export/${job_id}`}
             download
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 border border-emerald-500/30 rounded-lg text-sm text-white transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#470102] hover:bg-[#5D0203] border border-[#470102] rounded-lg text-sm text-[#FFEDC1] font-bold transition-colors shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -187,63 +168,60 @@ print(f"Prediction: {prediction}")
             Download Model (.joblib)
           </a>
         )}
-        <div className="text-xs text-gray-500 flex items-center">
-          <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded">Best: {best_model?.model_name}</span>
-        </div>
       </div>
 
       {/* 1. KEY METRICS CARDS */}
       <div className="grid md:grid-cols-4 gap-4">
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-4 shadow-lg shadow-blue-500/5 hover:border-blue-500/30 transition-all">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Best Model</div>
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-2">Best Model</div>
           <div className="flex items-center gap-2 mb-1">
-            <TrophyIcon />
-            <div className="text-lg font-bold text-white truncate" title={best_model.model_name}>
+            <div className="text-[#FEB229]"><TrophyIcon /></div>
+            <div className="text-lg font-bold text-[#470102] truncate" title={best_model.model_name}>
               {best_model.model_name}
             </div>
           </div>
-          <div className="text-xs text-emerald-400 font-mono">Rank #1</div>
+          <div className="text-xs text-emerald-600 font-bold bg-emerald-50 inline-block px-2 py-0.5 rounded border border-emerald-100">Rank #1</div>
         </div>
 
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-4 shadow-lg shadow-blue-500/5 hover:border-blue-500/30 transition-all">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-2">
             {isClassification ? 'Accuracy' : 'R² Score'}
           </div>
-          <div className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+          <div className="text-3xl font-bold text-[#470102]">
             {(best_model.test_score ?? best_model.score) !== undefined
               ? ((best_model.test_score ?? best_model.score) * (isClassification ? 100 : 1)).toFixed(2)
               : 'N/A'}
-            {isClassification && '%'}
+            <span className="text-sm font-medium text-[#8A5A5A] ml-1">{isClassification && '%'}</span>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Primary Metric</div>
+          <div className="text-xs text-[#8A5A5A] mt-1">Primary Metric</div>
         </div>
 
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-4 shadow-lg shadow-blue-500/5 hover:border-blue-500/30 transition-all">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-2">
             {isClassification ? 'F1 Score' : 'RMSE'}
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-3xl font-bold text-[#470102]">
             {best_model.metrics ? (
               isClassification
                 ? (best_model.metrics.f1 !== undefined ? (best_model.metrics.f1 * 100).toFixed(2) + '%' : 'N/A')
                 : (best_model.metrics.rmse !== undefined ? best_model.metrics.rmse.toFixed(4) : 'N/A')
             ) : 'N/A'}
           </div>
-          <div className="text-xs text-gray-500 mt-1">{isClassification ? 'Weighted Average' : 'Root Mean Sq. Error'}</div>
+          <div className="text-xs text-[#8A5A5A] mt-1">{isClassification ? 'Weighted Average' : 'Root Mean Sq. Error'}</div>
         </div>
 
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-4 shadow-lg shadow-blue-500/5 hover:border-blue-500/30 transition-all">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-4 shadow-sm hover:shadow-md transition-all">
+          <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-2">
             {isClassification ? 'Precision' : 'MAE'}
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className="text-3xl font-bold text-[#470102]">
             {best_model.metrics ? (
               isClassification
                 ? (best_model.metrics.precision !== undefined ? (best_model.metrics.precision * 100).toFixed(2) + '%' : 'N/A')
                 : (best_model.metrics.mae !== undefined ? best_model.metrics.mae.toFixed(4) : 'N/A')
             ) : 'N/A'}
           </div>
-          <div className="text-xs text-gray-500 mt-1">{isClassification ? 'Weighted Precision' : 'Mean Abs. Error'}</div>
+          <div className="text-xs text-[#8A5A5A] mt-1">{isClassification ? 'Weighted Precision' : 'Mean Abs. Error'}</div>
         </div>
       </div>
 
@@ -251,31 +229,31 @@ print(f"Prediction: {prediction}")
 
         {/* 2. CONFUSION MATRIX (Classification Only) */}
         {isClassification && best_model.confusion_matrix && (
-          <div className="bg-slate-900 rounded-xl border border-white/5 p-6 shadow-lg">
+          <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+              <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
                 <TargetIcon />
               </div>
-              <h3 className="text-lg font-bold text-white">Confusion Matrix</h3>
+              <h3 className="text-lg font-bold text-[#470102]">Confusion Matrix</h3>
             </div>
 
             <div className="overflow-x-auto">
               <div className="inline-block min-w-full align-middle">
-                <table className="min-w-full divide-y divide-white/5 border border-white/5">
+                <table className="min-w-full divide-y divide-[#FFEDC1] border border-[#FFEDC1]">
                   <thead>
                     <tr>
-                      <th className="px-3 py-2 text-xs font-medium text-gray-500 bg-slate-950"></th>
+                      <th className="px-3 py-2 text-xs font-bold text-[#8A5A5A] bg-[#FFF7EA]"></th>
                       {best_model.confusion_matrix_labels?.map((label: string, i: number) => (
-                        <th key={i} className="px-3 py-2 text-xs font-medium text-gray-400 bg-slate-950 uppercase">
+                        <th key={i} className="px-3 py-2 text-xs font-bold text-[#470102] bg-[#FFF7EA] uppercase border-l border-[#FFEDC1]">
                           Pred: {label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5">
+                  <tbody className="divide-y divide-[#FFEDC1]">
                     {best_model.confusion_matrix.map((row: any, i: number) => (
                       <tr key={i}>
-                        <td className="px-3 py-2 text-xs font-medium text-gray-400 bg-slate-950 uppercase whitespace-nowrap">
+                        <td className="px-3 py-2 text-xs font-bold text-[#470102] bg-[#FFF7EA] uppercase whitespace-nowrap border-r border-[#FFEDC1]">
                           Actual: {row.Actual}
                         </td>
                         {best_model.confusion_matrix_labels?.map((colLabel: string, j: number) => {
@@ -285,10 +263,10 @@ print(f"Prediction: {prediction}")
                             Math.max(...best_model.confusion_matrix_labels.map((c: string) => r[c]))
                           ));
                           const intensity = val / maxVal;
-                          const bg = `rgba(6, 182, 212, ${intensity * 0.5})`; // cyan base
+                          const bg = val > 0 ? `rgba(254, 178, 41, ${intensity * 0.6})` : 'transparent'; // Gold base
 
                           return (
-                            <td key={j} className="px-3 py-2 text-sm text-center text-white" style={{ backgroundColor: val > 0 ? bg : 'transparent' }}>
+                            <td key={j} className="px-3 py-2 text-sm text-center text-[#470102] font-medium border-l border-[#FFEDC1]" style={{ backgroundColor: bg }}>
                               {val}
                             </td>
                           )
@@ -304,44 +282,44 @@ print(f"Prediction: {prediction}")
 
         {/* 3. ROC CURVE (Classification Only) */}
         {isClassification && best_model.roc_curve && best_model.roc_curve.length > 0 && (
-          <div className="bg-slate-900 rounded-xl border border-white/5 p-6 shadow-lg">
+          <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+              <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
                 <ChartIcon />
               </div>
-              <h3 className="text-lg font-bold text-white">ROC Curve</h3>
+              <h3 className="text-lg font-bold text-[#470102]">ROC Curve</h3>
             </div>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={best_model.roc_curve}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis
                     dataKey="x"
                     type="number"
                     domain={[0, 1]}
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                    label={{ value: 'False Positive Rate', position: 'insideBottom', offset: -5, fill: '#6b7280', fontSize: 10 }}
+                    tick={{ fill: '#8A5A5A', fontSize: 12 }}
+                    label={{ value: 'False Positive Rate', position: 'insideBottom', offset: -5, fill: '#8A5A5A', fontSize: 10 }}
                   />
                   <YAxis
                     domain={[0, 1]}
-                    tick={{ fill: '#9ca3af', fontSize: 12 }}
-                    label={{ value: 'True Positive Rate', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 10 }}
+                    tick={{ fill: '#8A5A5A', fontSize: 12 }}
+                    label={{ value: 'True Positive Rate', angle: -90, position: 'insideLeft', fill: '#8A5A5A', fontSize: 10 }}
                   />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }}
-                    itemStyle={{ color: '#fff' }}
-                    labelStyle={{ color: '#9ca3af' }}
+                    contentStyle={{ backgroundColor: '#fff', borderColor: '#FFEDC1', color: '#470102' }}
+                    itemStyle={{ color: '#470102' }}
+                    labelStyle={{ color: '#8A5A5A' }}
                     formatter={(value: number) => value.toFixed(3)}
                   />
-                  <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#6b7280" strokeDasharray="3 3" />
+                  <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#9ca3af" strokeDasharray="3 3" />
                   <Line
                     type="monotone"
                     dataKey="y"
-                    stroke="#06b6d4"
+                    stroke="#470102"
                     strokeWidth={2}
                     dot={false}
                     name="ROC"
-                    activeDot={{ r: 6, fill: '#fff' }}
+                    activeDot={{ r: 6, fill: '#FEB229' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -352,13 +330,13 @@ print(f"Prediction: {prediction}")
 
       {/* CV SCORE COMPARISON - Train vs Test */}
       {models.length > 0 && (
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-6 shadow-lg">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
               <ChartIcon />
             </div>
-            <h3 className="text-lg font-bold text-white">Train vs Test Score Comparison</h3>
-            <span className="text-xs text-gray-500">CV Mean (Train) vs Test Set</span>
+            <h3 className="text-lg font-bold text-[#470102]">Train vs Test Score Comparison</h3>
+            <span className="text-xs text-[#8A5A5A] bg-[#FFF7EA] px-2 py-1 rounded border border-[#FFEDC1]">CV Mean (Train) vs Test Set</span>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -370,43 +348,45 @@ print(f"Prediction: {prediction}")
                 }))}
                 margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: '#9ca3af', fontSize: 10 }}
+                  tick={{ fill: '#470102', fontSize: 11, fontWeight: 500 }}
                   angle={-30}
                   textAnchor="end"
                   height={60}
                 />
                 <YAxis
                   domain={[0, 1]}
-                  tick={{ fill: '#9ca3af', fontSize: 12 }}
-                  label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: '#6b7280', fontSize: 11 }}
+                  tick={{ fill: '#8A5A5A', fontSize: 12 }}
+                  label={{ value: 'Score', angle: -90, position: 'insideLeft', fill: '#8A5A5A', fontSize: 11 }}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
+                  cursor={{ fill: '#FFF7EA', opacity: 0.5 }}
+                  contentStyle={{ backgroundColor: '#fff', borderColor: '#FFEDC1', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   formatter={(value: number) => value.toFixed(3)}
                 />
-                <Legend />
-                <Bar dataKey="cv_score" name="CV Score (Train)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="test_score" name="Test Score" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                <Legend iconType="circle" />
+                <Bar dataKey="cv_score" name="CV Score (Train)" fill="#FEB229" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="test_score" name="Test Score" fill="#470102" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Large gaps between CV and Test scores may indicate overfitting or data leakage.
+          <p className="text-xs text-[#8A5A5A] mt-3 italic flex items-center gap-1">
+            <span className="w-1 h-1 rounded-full bg-[#470102] inline-block"></span>
+            Large gaps between CV and Test scores may indicate overfitting.
           </p>
         </div>
       )}
 
       {/* FEATURE IMPORTANCE */}
       {best_model.feature_importance && best_model.feature_importance.length > 0 && (
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-6 shadow-lg">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
               <ChartIcon />
             </div>
-            <h3 className="text-lg font-bold text-white">Feature Importance</h3>
+            <h3 className="text-lg font-bold text-[#470102]">Feature Importance</h3>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -422,16 +402,17 @@ print(f"Prediction: {prediction}")
                 layout="vertical"
                 margin={{ left: 100 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 12 }} />
-                <YAxis dataKey="feature" type="category" tick={{ fill: '#9ca3af', fontSize: 11 }} width={90} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
+                <XAxis type="number" tick={{ fill: '#8A5A5A', fontSize: 12 }} />
+                <YAxis dataKey="feature" type="category" tick={{ fill: '#470102', fontSize: 11, fontWeight: 500 }} width={90} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155' }}
+                  cursor={{ fill: '#FFF7EA', opacity: 0.5 }}
+                  contentStyle={{ backgroundColor: '#fff', borderColor: '#FFEDC1', color: '#470102' }}
                   formatter={(value: number) => value.toFixed(4)}
                 />
-                <Bar dataKey="importance" fill="#10b981" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="importance" fill="#470102" radius={[0, 4, 4, 0]}>
                   {best_model.feature_importance.map((_: any, idx: number) => (
-                    <Cell key={idx} fill={idx === 0 ? '#06b6d4' : '#10b981'} />
+                    <Cell key={idx} fill={idx === 0 ? '#470102' : '#FEB229'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -442,19 +423,19 @@ print(f"Prediction: {prediction}")
 
       {/* 4. SUGGESTIONS */}
       {suggestions.length > 0 && (
-        <div className="bg-gradient-to-r from-amber-950/30 to-slate-900 border border-amber-500/20 rounded-xl p-6 shadow-lg">
+        <div className="bg-[#FFF7EA] border border-[#FEB229] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500 animate-pulse">
+            <div className="w-8 h-8 rounded-lg bg-[#FEB229] flex items-center justify-center text-[#470102]">
               <LightBulbIcon />
             </div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-[#470102]">
               Suggestions for Improvement
             </h3>
           </div>
           <ul className="space-y-3">
             {suggestions.map((tip: string, idx: number) => (
-              <li key={idx} className="flex items-start gap-3 text-sm text-gray-300">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+              <li key={idx} className="flex items-start gap-3 text-sm text-[#470102]">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#FEB229] shrink-0"></span>
                 <span>{tip}</span>
               </li>
             ))}
@@ -463,59 +444,59 @@ print(f"Prediction: {prediction}")
       )}
 
       {/* 5. FULL COMPARISON TABLE */}
-      <div className="bg-slate-900 rounded-xl border border-blue-500/10 overflow-hidden shadow-lg shadow-blue-500/5">
-        <div className="flex items-center gap-3 p-5 border-b border-white/5 bg-slate-950/50">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+      <div className="bg-white rounded-xl border border-[#FFEDC1] overflow-hidden shadow-sm">
+        <div className="flex items-center gap-3 p-5 border-b border-[#FFEDC1] bg-[#FFF7EA]">
+          <div className="w-10 h-10 rounded-xl bg-white border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
             <ChartIcon />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-[#470102]">
               Model Comparison
             </h3>
-            <p className="text-xs text-gray-500">Full performance breakdown</p>
+            <p className="text-xs text-[#8A5A5A]">Full performance breakdown</p>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-950">
+            <thead className="bg-[#FFF7EA]">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
                   Rank
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
                   Model Architecture
                 </th>
                 <th
                   onClick={() => handleSort('test_score')}
-                  className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'Accuracy' : 'R² Score'}
                   {sortConfig.key === 'test_score' && (
-                    <span className="ml-1">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                    <span className="ml-1 text-[#470102]">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </th>
                 <th
                   onClick={() => handleSort('f1')}
-                  className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'F1 Score' : 'RMSE'}
                   {sortConfig.key === 'f1' && (
-                    <span className="ml-1">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                    <span className="ml-1 text-[#470102]">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </th>
                 <th
                   onClick={() => handleSort('precision')}
-                  className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'Precision' : 'MAE'}
                   {sortConfig.key === 'precision' && (
-                    <span className="ml-1">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                    <span className="ml-1 text-[#470102]">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
                   )}
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 bg-slate-900">
+            <tbody className="divide-y divide-[#FFEDC1]">
               {[...models].sort((a: any, b: any) => {
                 let aVal = sortConfig.key === 'test_score' ? (a.test_score ?? a.score ?? 0) : (a.metrics?.[sortConfig.key] ?? 0);
                 let bVal = sortConfig.key === 'test_score' ? (b.test_score ?? b.score ?? 0) : (b.metrics?.[sortConfig.key] ?? 0);
@@ -523,31 +504,31 @@ print(f"Prediction: {prediction}")
               }).map((model: any, idx: number) => (
                 <tr
                   key={idx}
-                  className={idx === 0 ? 'bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors' : 'hover:bg-slate-800 transition-colors'}
+                  className={idx === 0 ? 'bg-[#FFF7EA]/50' : 'hover:bg-[#FFF7EA] transition-colors'}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#470102]">
                     {idx === 0 ? (
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+                      <div className="w-8 h-8 rounded-lg bg-[#FEB229] flex items-center justify-center text-[#470102] shadow-sm">
                         <TrophyIcon />
                       </div>
                     ) : (
-                      <span className="text-gray-500 font-mono ml-2">#{idx + 1}</span>
+                      <span className="text-[#8A5A5A] font-mono ml-2">#{idx + 1}</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-white">
+                    <div className="text-sm font-bold text-[#470102]">
                       {model.model_name}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden max-w-[100px]">
+                      <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[100px] border border-gray-200">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                          className="h-full rounded-full bg-[#470102]"
                           style={{ width: `${(model.test_score ?? model.score ?? 0) * 100}%` }}
                         />
                       </div>
-                      <span className="text-sm font-bold text-white min-w-[60px]">
+                      <span className="text-sm font-bold text-[#470102] min-w-[50px]">
                         {isClassification
                           ? ((model.test_score ?? model.score ?? 0) * 100).toFixed(1) + '%'
                           : Number(model.test_score ?? model.score ?? 0).toFixed(3)
@@ -555,14 +536,14 @@ print(f"Prediction: {prediction}")
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
                     {model.metrics ? (
                       isClassification
                         ? (model.metrics.f1 !== undefined ? (model.metrics.f1 * 100).toFixed(2) + '%' : '-')
                         : (model.metrics.rmse !== undefined ? model.metrics.rmse.toFixed(4) : '-')
                     ) : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
                     {model.metrics ? (
                       isClassification
                         ? (model.metrics.precision !== undefined ? (model.metrics.precision * 100).toFixed(2) + '%' : '-')
@@ -578,40 +559,40 @@ print(f"Prediction: {prediction}")
 
       {/* AI Explanation Text */}
       {explanation && (
-        <div className="bg-gradient-to-r from-indigo-950/50 to-slate-900 border border-indigo-500/20 rounded-xl p-6 shadow-lg shadow-indigo-500/5">
+        <div className="bg-white border border-[#FFEDC1] rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+            <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
               <SparkleIcon />
             </div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-[#470102]">
               AI Explanation
             </h3>
           </div>
-          <p className="text-gray-300 leading-relaxed text-sm md:text-base">{explanation}</p>
+          <p className="text-[#8A5A5A] leading-relaxed text-sm md:text-base">{explanation}</p>
         </div>
       )}
 
       {/* PREDICTION PREVIEW */}
       {feature_names.length > 0 && job_id && (
-        <div className="bg-slate-900 rounded-xl border border-white/5 p-6 shadow-lg">
+        <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
               <TargetIcon />
             </div>
-            <h3 className="text-lg font-bold text-white">Prediction Preview</h3>
-            <span className="text-xs text-gray-500">Test your model with sample inputs</span>
+            <h3 className="text-lg font-bold text-[#470102]">Prediction Preview</h3>
+            <span className="text-xs text-[#8A5A5A] bg-[#FFF7EA] px-2 py-1 rounded">Test your model with sample inputs</span>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
             {feature_names.map((name: string) => (
               <div key={name}>
-                <label className="block text-xs text-gray-400 mb-1">{name}</label>
+                <label className="block text-xs font-bold text-[#8A5A5A] mb-1">{name}</label>
                 <input
                   type="number"
                   step="any"
                   value={featureInputs[name] || ''}
                   onChange={(e) => setFeatureInputs({ ...featureInputs, [name]: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white text-sm focus:border-purple-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-white border border-[#FFEDC1] rounded-lg text-[#470102] text-sm focus:border-[#FEB229] focus:ring-1 focus:ring-[#FEB229] focus:outline-none"
                   placeholder="0.0"
                 />
               </div>
@@ -622,20 +603,20 @@ print(f"Prediction: {prediction}")
             <button
               onClick={handlePredict}
               disabled={isPredicting}
-              className="px-6 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 rounded-lg text-white text-sm font-medium transition-colors"
+              className="px-6 py-2 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 rounded-lg text-[#FFEDC1] text-sm font-bold transition-all shadow-sm"
             >
               {isPredicting ? 'Predicting...' : 'Predict'}
             </button>
 
             {prediction && (
-              <div className="flex items-center gap-3">
-                <span className="text-gray-400">Result:</span>
-                <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
+              <div className="flex items-center gap-3 bg-[#FFF7EA] px-4 py-2 rounded-lg border border-[#FFEDC1]">
+                <span className="text-[#8A5A5A] text-sm font-medium">Result:</span>
+                <span className="text-xl font-bold text-[#470102]">
                   {prediction.prediction}
                 </span>
                 {prediction.probability && (
-                  <span className="text-xs text-gray-500">
-                    (confidence: {(Math.max(...prediction.probability) * 100).toFixed(1)}%)
+                  <span className="text-xs text-[#8A5A5A]">
+                    (avg conf: {(Math.max(...prediction.probability) * 100).toFixed(1)}%)
                   </span>
                 )}
               </div>
@@ -644,11 +625,11 @@ print(f"Prediction: {prediction}")
 
           {/* SHAP Explanation */}
           {shapExplanation?.explanations && (
-            <div className="mt-6 pt-6 border-t border-white/10">
+            <div className="mt-6 pt-6 border-t border-[#FFEDC1]">
               <div className="flex items-center gap-2 mb-4">
-                <LightBulbIcon />
-                <h4 className="text-sm font-semibold text-white">Why This Prediction?</h4>
-                <span className="text-xs text-gray-500">(SHAP Feature Contributions)</span>
+                <div className="text-[#FEB229]"><LightBulbIcon /></div>
+                <h4 className="text-sm font-bold text-[#470102]">Why This Prediction?</h4>
+                <span className="text-xs text-[#8A5A5A]">(SHAP Feature Contributions)</span>
               </div>
               <div className="space-y-2">
                 {shapExplanation.explanations.map((exp: any, idx: number) => {
@@ -656,20 +637,20 @@ print(f"Prediction: {prediction}")
                   const widthPercent = (Math.abs(exp.shap_value) / maxVal) * 100;
                   return (
                     <div key={idx} className="flex items-center gap-3">
-                      <div className="w-28 text-xs text-gray-400 truncate text-right" title={exp.feature}>
+                      <div className="w-28 text-xs font-medium text-[#8A5A5A] truncate text-right" title={exp.feature}>
                         {exp.feature}
                       </div>
                       <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-1 h-5 bg-slate-800 rounded relative overflow-hidden">
+                        <div className="flex-1 h-5 bg-gray-100 rounded relative overflow-hidden border border-gray-200">
                           <div
-                            className={`absolute h-full rounded transition-all ${exp.shap_value > 0 ? 'bg-emerald-500/70 left-1/2' : 'bg-rose-500/70 right-1/2'}`}
+                            className={`absolute h-full rounded transition-all ${exp.shap_value > 0 ? 'bg-emerald-500 left-1/2' : 'bg-rose-500 right-1/2'}`}
                             style={{ width: `${widthPercent / 2}%` }}
                           />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-px h-full bg-white/20" />
+                            <div className="w-px h-full bg-gray-300" />
                           </div>
                         </div>
-                        <span className={`text-xs w-16 ${exp.shap_value > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span className={`text-xs w-16 font-mono font-medium ${exp.shap_value > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                           {exp.shap_value > 0 ? '+' : ''}{exp.shap_value.toFixed(3)}
                         </span>
                       </div>
@@ -677,8 +658,8 @@ print(f"Prediction: {prediction}")
                   );
                 })}
               </div>
-              <p className="text-xs text-gray-500 mt-3">
-                <span className="text-emerald-400">Green (+)</span> pushes prediction higher, <span className="text-rose-400">Red (-)</span> pushes it lower.
+              <p className="text-xs text-[#8A5A5A] mt-3 bg-[#FFF7EA] p-2 rounded inline-block">
+                <span className="text-emerald-600 font-bold">Green (+)</span> pushes prediction higher, <span className="text-rose-600 font-bold">Red (-)</span> pushes it lower.
               </p>
             </div>
           )}

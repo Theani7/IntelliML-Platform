@@ -68,12 +68,12 @@ export default function DataStats({ analysis }: DataStatsProps) {
 
 function StatCard({ icon, label, value, gradient }: { icon: React.ReactNode; label: string; value: string | number; gradient: string }) {
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5 hover:bg-white/10 transition-all group">
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
+    <div className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm hover:shadow-md transition-all group">
+      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white mb-3 shadow-md group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
-      <div className="text-2xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm text-gray-400">{label}</div>
+      <div className="text-2xl font-bold text-[#470102] mb-1">{value}</div>
+      <div className="text-sm text-[#8A5A5A]">{label}</div>
     </div>
   );
 }
