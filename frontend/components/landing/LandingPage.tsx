@@ -395,7 +395,7 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-white transition-colors flex items-center gap-3 group">
+                  <a href="https://github.com/NeonNinjaX" className="hover:text-white transition-colors flex items-center gap-3 group">
                     <div className="p-1.5 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
                       <GitHubIcon />
                     </div>
