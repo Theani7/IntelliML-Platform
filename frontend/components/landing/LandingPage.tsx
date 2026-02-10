@@ -359,8 +359,11 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-[#FEB229] transition-colors flex items-center gap-3">
-                    <GitHubIcon /> <span className="font-medium">Rahul Mishra</span>
+                  <a href="https://github.com/NeonNinjaX" className="hover:text-white transition-colors flex items-center gap-3 group">
+                    <div className="p-1.5 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
+                      <GitHubIcon />
+                    </div>
+                    <span className="font-medium">Rahul Mishra</span>
                   </a>
                 </li>
                 <li>
