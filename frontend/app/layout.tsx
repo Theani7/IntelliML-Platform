@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Gloock } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const gloock = Gloock({ weight: "400", subsets: ["latin"], variable: "--font-gloock" });
@@ -18,7 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${gloock.variable} antialiased transition-colors duration-300 font-sans`}>
-        {children}
+        <AuthProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );

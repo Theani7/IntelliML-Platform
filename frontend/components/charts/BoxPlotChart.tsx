@@ -86,9 +86,9 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
           y={getY(data.q3)}
           width="40%"
           height={getY(data.q1) - getY(data.q3)}
-          fill="#8b5cf6"
+          fill="#FEB229"
           fillOpacity="0.2"
-          stroke="#a78bfa"
+          stroke="#470102"
           strokeWidth="2"
         />
 
@@ -98,7 +98,7 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
           y1={getY(data.median)}
           x2="70%"
           y2={getY(data.median)}
-          stroke="#ddd6fe"
+          stroke="#470102"
           strokeWidth="3"
         />
 
@@ -155,7 +155,7 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
           <span className="font-medium text-[#470102]">{data.min.toFixed(2)}</span>
         </div>
         {data.outliers.length > 0 && (
-          <div className="flex justify-between text-red-400 pt-1">
+          <div className="flex justify-between text-[#A93434] pt-1">
             <span>Outliers</span>
             <span className="font-bold">{data.outliers.length}</span>
           </div>

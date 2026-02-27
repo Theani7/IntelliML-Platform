@@ -21,8 +21,8 @@ interface CategoricalChartProps {
 }
 
 const COLORS = [
-  '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#84cc16'
+  '#470102', '#7C2D12', '#A93434', '#FEB229', '#C2410C',
+  '#8A5A5A', '#307B65', '#1D4D4F', '#F59E0B', '#6B1A1A'
 ];
 
 import { downloadChart } from '@/lib/downloadChart';

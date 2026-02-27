@@ -62,10 +62,10 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
     };
 
     return (
-        <div className="flex h-[calc(100vh-140px)] gap-0 animate-fadeIn overflow-hidden rounded-2xl border border-[#FFEDC1] bg-white">
+        <div className="flex flex-col md:flex-row md:h-[calc(100vh-140px)] gap-0 animate-fadeIn overflow-hidden rounded-2xl border border-[#FFEDC1] bg-white">
 
             {/* 1. Left Nav Rail (Icons Only) */}
-            <div className="w-16 flex flex-col items-center py-4 gap-4 border-r border-[#FFEDC1] bg-[#FFF7EA]">
+            <div className="w-full md:w-16 flex md:flex-col items-center justify-between md:justify-start px-3 md:px-0 py-3 md:py-4 gap-3 md:gap-4 border-b md:border-b-0 md:border-r border-[#FFEDC1] bg-[#FFF7EA]">
                 <NavRailItem
                     active={activeMode === 'cleaning'}
                     onClick={() => setActiveMode('cleaning')}
@@ -85,14 +85,14 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
                     tooltip="Feature Engineering"
                 />
 
-                <div className="mt-auto flex flex-col gap-3">
+                <div className="md:mt-auto flex items-center md:flex-col gap-3">
                     <HealthDot label="Missing" hasIssue={qualityReport?.missing_summary?.length > 0} color="bg-amber-400" />
                     <HealthDot label="Outliers" hasIssue={qualityReport?.outlier_summary?.length > 0} color="bg-rose-400" />
                 </div>
             </div>
 
             {/* 2. Center: Data Preview (Flex-1) */}
-            <div className="flex-1 flex flex-col overflow-hidden bg-[#FFF7EA]/30">
+            <div className="flex-1 min-h-[320px] md:min-h-0 flex flex-col overflow-hidden bg-[#FFF7EA]/30">
                 <div className="h-12 border-b border-[#FFEDC1] flex items-center px-4 justify-between bg-white">
                     <h3 className="font-semibold text-[#470102] text-sm flex items-center gap-2">
                         Dataset Preview
@@ -139,7 +139,7 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
             </div>
 
             {/* 3. Right: Inspector Panel (Fixed Width) */}
-            <div className="w-[400px] border-l border-[#FFEDC1] bg-white flex flex-col overflow-hidden">
+            <div className="w-full md:w-[400px] border-t md:border-t-0 md:border-l border-[#FFEDC1] bg-white flex flex-col overflow-hidden">
                 {activeMode === 'cleaning' && (
                     <CleaningPanel
                         selectedColumn={selectedColumn}

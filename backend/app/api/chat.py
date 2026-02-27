@@ -27,7 +27,7 @@ class ChatResponse(BaseModel):
 
 
 @router.post("/message", response_model=ChatResponse)
-async def send_message(request: ChatMessage):
+async def send_message(request: ChatMessage, session_id: str = "default"):
     """
     Send a message to the AI data assistant.
     
@@ -40,7 +40,7 @@ async def send_message(request: ChatMessage):
     try:
         logger.info(f"Chat message received: {request.message[:50]}...")
         
-        result = data_chat_service.chat(request.message)
+        result = data_chat_service.chat(request.message, session_id=session_id)
         
         return ChatResponse(**result)
         
@@ -50,7 +50,7 @@ async def send_message(request: ChatMessage):
 
 
 @router.get("/suggestions")
-async def get_visualization_suggestions():
+async def get_visualization_suggestions(session_id: str = "default"):
     """
     Get AI-suggested visualizations based on the current dataset.
     
@@ -60,7 +60,7 @@ async def get_visualization_suggestions():
     - Python code to generate the visualization
     """
     try:
-        suggestions = data_chat_service.get_visualization_suggestions()
+        suggestions = data_chat_service.get_visualization_suggestions(session_id=session_id)
         return {"suggestions": suggestions}
         
     except ValueError as e:
@@ -71,7 +71,7 @@ async def get_visualization_suggestions():
 
 
 @router.post("/clear")
-async def clear_chat_history():
+async def clear_chat_history(session_id: str = "default"):
     """Clear the conversation history"""
-    data_chat_service.clear_history()
+    data_chat_service.clear_history(session_id=session_id)
     return {"message": "Chat history cleared"}

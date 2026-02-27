@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getExperiments } from '@/lib/api';
+import { downloadModelExport, getExperiments } from '@/lib/api';
 
 interface Experiment {
     job_id: string;
@@ -49,6 +49,14 @@ export default function ExperimentLeaderboard() {
             console.error("Failed to load experiments", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDownload = async (exp: Experiment) => {
+        try {
+            await downloadModelExport(exp.job_id, `${exp.best_model || 'model'}.joblib`);
+        } catch (error) {
+            console.error('Failed to download model:', error);
         }
     };
 
@@ -139,14 +147,13 @@ export default function ExperimentLeaderboard() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <a
-                                            href={`http://localhost:8000/api/models/export/${exp.job_id}`}
+                                        <button
+                                            onClick={() => handleDownload(exp)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#FFEDC1] hover:border-[#FEB229] rounded-lg text-xs font-bold text-[#470102] transition-colors shadow-sm hover:shadow"
-                                            download
                                         >
                                             <DownloadIcon />
                                             Download
-                                        </a>
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

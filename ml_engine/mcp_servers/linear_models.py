@@ -13,12 +13,15 @@ class LinearModelsServer:
     """
     MCP Server for Linear Model Family
     Handles Linear Regression, Logistic Regression, Ridge, Lasso, ElasticNet,
-    SVC/SVR, KNN, and Naive Bayes
+    SVC/SVR, KNN, and Naive Bayes.
+    
+    Stores ALL trained models (not just the last one) so they can be
+    persisted and compared after training.
     """
     
     def __init__(self):
-        self.models = {}
-        self.trained_model = None
+        self.trained_models: Dict[str, Any] = {}   # name → sklearn model
+        self.trained_model = None                   # last trained (legacy compat)
         self.model_type = None
     
     def train(
@@ -79,14 +82,21 @@ class LinearModelsServer:
             # Train
             model.fit(X_train, y_train)
             self.trained_model = model
+            self.trained_models[self.model_type] = model  # store ALL models
             
-            # Cross-validation score
-            cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+            # Train score
+            from sklearn.metrics import accuracy_score, r2_score
+            y_train_pred = model.predict(X_train)
+            if problem_type == "classification":
+                train_score = float(accuracy_score(y_train, y_train_pred))
+            else:
+                train_score = float(r2_score(y_train, y_train_pred))
             
             return {
                 "model_name": self.model_type,
-                "cv_score_mean": float(cv_scores.mean()),
-                "cv_score_std": float(cv_scores.std()),
+                "cv_score_mean": 0.0,
+                "cv_score_std": 0.0,
+                "train_score": train_score,
                 "num_features": X_train.shape[1],
                 "training_samples": X_train.shape[0],
             }
@@ -107,7 +117,11 @@ class LinearModelsServer:
             return None
         
         if hasattr(self.trained_model, 'coef_'):
-            return np.abs(self.trained_model.coef_)
-        elif hasattr(self.trained_model, 'feature_importances_'):
-            return self.trained_model.feature_importances_
+            coef = np.abs(self.trained_model.coef_)
+            # For linear models, coef_ could be (1, n_features) or (n_features,)
+            return coef.ravel()
         return None
+    
+    def get_all_models(self) -> Dict[str, Any]:
+        """Return all trained models"""
+        return self.trained_models

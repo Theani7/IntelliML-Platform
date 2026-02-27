@@ -15,6 +15,7 @@ import {
   ReferenceLine,
   Cell
 } from 'recharts';
+import { downloadModelExport, explainSinglePrediction, runSinglePrediction } from '@/lib/api';
 
 interface ModelComparisonProps {
   results: any;
@@ -81,20 +82,10 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
     try {
       const features = feature_names.map((name: string) => parseFloat(featureInputs[name] || '0'));
 
-      const response = await fetch(`http://localhost:8000/api/models/predict/${job_id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ features })
-      });
-      const data = await response.json();
+      const data = await runSinglePrediction(job_id, features);
       setPrediction(data);
 
-      fetch(`http://localhost:8000/api/models/explain/${job_id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ features })
-      })
-        .then(res => res.json())
+      explainSinglePrediction(job_id, features)
         .then(shapData => setShapExplanation(shapData))
         .catch(err => console.warn('SHAP explanation failed:', err));
     } catch (error) {
@@ -132,6 +123,15 @@ print(f"Prediction: {prediction}")
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadModel = async () => {
+    if (!job_id) return;
+    try {
+      await downloadModelExport(job_id, `${best_model?.model_name || 'best_model'}.joblib`);
+    } catch (error) {
+      console.error('Model download failed:', error);
+    }
+  };
+
   if (!models || models.length === 0) {
     return (
       <div className="bg-[#FFF7EA] rounded-xl border border-[#FFEDC1] p-6">
@@ -157,21 +157,20 @@ print(f"Prediction: {prediction}")
           Download Python Code
         </button>
         {job_id && (
-          <a
-            href={`http://localhost:8000/api/models/export/${job_id}`}
-            download
+          <button
+            onClick={handleDownloadModel}
             className="flex items-center gap-2 px-4 py-2 bg-[#470102] hover:bg-[#5D0203] border border-[#470102] rounded-lg text-sm text-[#FFEDC1] font-bold transition-colors shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Download Model (.joblib)
-          </a>
+          </button>
         )}
       </div>
 
       {/* 1. KEY METRICS CARDS */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl border border-[#FFEDC1] p-4 shadow-sm hover:shadow-md transition-all">
           <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-2">Best Model</div>
           <div className="flex items-center gap-2 mb-1">
@@ -289,7 +288,7 @@ print(f"Prediction: {prediction}")
               </div>
               <h3 className="text-lg font-bold text-[#470102]">ROC Curve</h3>
             </div>
-            <div className="h-[300px] w-full">
+            <div className="h-[240px] md:h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={best_model.roc_curve}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -338,7 +337,7 @@ print(f"Prediction: {prediction}")
             <h3 className="text-lg font-bold text-[#470102]">Train vs Test Score Comparison</h3>
             <span className="text-xs text-[#8A5A5A] bg-[#FFF7EA] px-2 py-1 rounded border border-[#FFEDC1]">CV Mean (Train) vs Test Set</span>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[240px] md:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={models.slice(0, 8).map((m: any) => ({
@@ -388,7 +387,7 @@ print(f"Prediction: {prediction}")
             </div>
             <h3 className="text-lg font-bold text-[#470102]">Feature Importance</h3>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[240px] md:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={best_model.feature_importance
@@ -461,15 +460,15 @@ print(f"Prediction: {prediction}")
           <table className="min-w-full">
             <thead className="bg-[#FFF7EA]">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
+                <th className="px-3 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
                   Rank
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
+                <th className="px-3 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider border-b border-[#FFEDC1]">
                   Model Architecture
                 </th>
                 <th
                   onClick={() => handleSort('test_score')}
-                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
+                  className="px-3 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'Accuracy' : 'R² Score'}
                   {sortConfig.key === 'test_score' && (
@@ -478,7 +477,7 @@ print(f"Prediction: {prediction}")
                 </th>
                 <th
                   onClick={() => handleSort('f1')}
-                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
+                  className="px-3 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'F1 Score' : 'RMSE'}
                   {sortConfig.key === 'f1' && (
@@ -487,7 +486,7 @@ print(f"Prediction: {prediction}")
                 </th>
                 <th
                   onClick={() => handleSort('precision')}
-                  className="px-6 py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
+                  className="px-3 py-3 md:px-6 md:py-4 text-left text-xs font-bold text-[#8A5A5A] uppercase tracking-wider cursor-pointer hover:text-[#470102] transition-colors border-b border-[#FFEDC1]"
                 >
                   {isClassification ? 'Precision' : 'MAE'}
                   {sortConfig.key === 'precision' && (
@@ -506,7 +505,7 @@ print(f"Prediction: {prediction}")
                   key={idx}
                   className={idx === 0 ? 'bg-[#FFF7EA]/50' : 'hover:bg-[#FFF7EA] transition-colors'}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#470102]">
+                  <td className="px-3 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-[#470102]">
                     {idx === 0 ? (
                       <div className="w-8 h-8 rounded-lg bg-[#FEB229] flex items-center justify-center text-[#470102] shadow-sm">
                         <TrophyIcon />
@@ -515,12 +514,12 @@ print(f"Prediction: {prediction}")
                       <span className="text-[#8A5A5A] font-mono ml-2">#{idx + 1}</span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 md:px-6 md:py-4 whitespace-nowrap">
                     <div className="text-sm font-bold text-[#470102]">
                       {model.model_name}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 md:px-6 md:py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[100px] border border-gray-200">
                         <div
@@ -536,14 +535,14 @@ print(f"Prediction: {prediction}")
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
+                  <td className="px-3 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
                     {model.metrics ? (
                       isClassification
                         ? (model.metrics.f1 !== undefined ? (model.metrics.f1 * 100).toFixed(2) + '%' : '-')
                         : (model.metrics.rmse !== undefined ? model.metrics.rmse.toFixed(4) : '-')
                     ) : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
+                  <td className="px-3 py-3 md:px-6 md:py-4 whitespace-nowrap text-sm text-[#8A5A5A]">
                     {model.metrics ? (
                       isClassification
                         ? (model.metrics.precision !== undefined ? (model.metrics.precision * 100).toFixed(2) + '%' : '-')
@@ -583,7 +582,7 @@ print(f"Prediction: {prediction}")
             <span className="text-xs text-[#8A5A5A] bg-[#FFF7EA] px-2 py-1 rounded">Test your model with sample inputs</span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
             {feature_names.map((name: string) => (
               <div key={name}>
                 <label className="block text-xs font-bold text-[#8A5A5A] mb-1">{name}</label>
@@ -599,11 +598,11 @@ print(f"Prediction: {prediction}")
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <button
               onClick={handlePredict}
               disabled={isPredicting}
-              className="px-6 py-2 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 rounded-lg text-[#FFEDC1] text-sm font-bold transition-all shadow-sm"
+              className="w-full sm:w-auto px-6 py-2 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 rounded-lg text-[#FFEDC1] text-sm font-bold transition-all shadow-sm"
             >
               {isPredicting ? 'Predicting...' : 'Predict'}
             </button>

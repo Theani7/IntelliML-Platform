@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { getBatchPredictionUrl, getAuthHeadersForRequest } from '@/lib/api';
 
 // Icons
 const UploadIcon = () => (
@@ -48,9 +49,12 @@ export default function BatchPrediction({ jobId }: BatchPredictionProps) {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch(`http://localhost:8000/api/models/predict-batch/${jobId}`, {
+            const response = await fetch(getBatchPredictionUrl(jobId), {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    ...getAuthHeadersForRequest(),
+                },
             });
 
             if (!response.ok) {
@@ -93,8 +97,8 @@ export default function BatchPrediction({ jobId }: BatchPredictionProps) {
                 </div>
             </div>
 
-            <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 px-6 py-2.5 bg-[#470102] hover:bg-[#5D0203] rounded-lg text-[#FFEDC1] text-sm font-bold cursor-pointer transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <label className="w-full sm:w-auto justify-center sm:justify-start flex items-center gap-2 px-6 py-2.5 bg-[#470102] hover:bg-[#5D0203] rounded-lg text-[#FFEDC1] text-sm font-bold cursor-pointer transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5">
                     {isUploading ? (
                         <svg className="animate-spin h-4 w-4 text-[#FFEDC1]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -115,7 +119,7 @@ export default function BatchPrediction({ jobId }: BatchPredictionProps) {
                     />
                 </label>
 
-                <div className="h-8 w-px bg-[#FFEDC1]"></div>
+                <div className="hidden sm:block h-8 w-px bg-[#FFEDC1]"></div>
 
                 {status === 'success' && (
                     <span className="text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 text-sm flex items-center gap-2 font-medium">

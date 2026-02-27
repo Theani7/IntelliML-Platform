@@ -4,6 +4,24 @@ import { useState } from 'react';
 import { useVoiceRecording } from '@/hooks/useVoiceRecording';
 import { processVoiceCommand } from '@/lib/api';
 
+const pseudoRandom = (seed: number) => {
+  const x = Math.sin(seed * 7777) * 10000;
+  return x - Math.floor(x);
+};
+
+const WAVEFORM_BARS = Array.from({ length: 15 }, (_, i) => ({
+  height: `${20 + pseudoRandom(i + 1) * 40}px`,
+  animationDelay: `${i * 0.1}s`,
+  animationDuration: '0.8s',
+}));
+
+interface VoiceIntent {
+  intent?: string;
+  target_column?: string;
+  needs_clarification?: boolean;
+  clarification_question?: string;
+}
+
 export default function VoiceButton() {
   const {
     isRecording,
@@ -17,7 +35,7 @@ export default function VoiceButton() {
   const [transcription, setTranscription] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [intent, setIntent] = useState<any>(null);
+  const [intent, setIntent] = useState<VoiceIntent | null>(null);
 
   const handleClick = async () => {
     if (isRecording) {
@@ -48,9 +66,9 @@ export default function VoiceButton() {
         setTranscription(result.transcription);
         setIntent(result.intent);
 
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Processing error:', err);
-        setError(err.message || 'Failed to process audio');
+        setError(err instanceof Error ? err.message : 'Failed to process audio');
       } finally {
         setIsProcessing(false);
       }
@@ -132,7 +150,7 @@ export default function VoiceButton() {
                 Click to start voice command
               </p>
               <p className="text-gray-500 text-sm">
-                Try: "Analyze the data" or "Train a model"
+                Try: &quot;Analyze the data&quot; or &quot;Train a model&quot;
               </p>
             </div>
           )}
@@ -141,15 +159,11 @@ export default function VoiceButton() {
         {/* Recording Waveform Animation */}
         {isRecording && (
           <div className="flex items-center justify-center space-x-1 h-16">
-            {[...Array(15)].map((_, i) => (
+            {WAVEFORM_BARS.map((bar, i) => (
               <div
                 key={i}
                 className="w-1 bg-gradient-to-t from-red-500 to-pink-500 rounded-full animate-pulse"
-                style={{
-                  height: `${20 + Math.random() * 40}px`,
-                  animationDelay: `${i * 0.1}s`,
-                  animationDuration: '0.8s',
-                }}
+                style={bar}
               />
             ))}
           </div>

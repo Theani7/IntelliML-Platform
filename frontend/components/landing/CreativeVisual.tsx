@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+const pseudoRandom = (seed: number) => {
+    const x = Math.sin(seed * 9999) * 10000;
+    return x - Math.floor(x);
+};
+
+const PARTICLES = Array.from({ length: 10 }, (_, i) => ({
+    top: `${pseudoRandom(i + 1) * 100}%`,
+    left: `${pseudoRandom(i + 101) * 100}%`,
+    animationDelay: `${pseudoRandom(i + 201) * 5}s`,
+    animationDuration: `${5 + pseudoRandom(i + 301) * 5}s`,
+}));
 
 export default function CreativeVisual() {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) return null;
-
     return (
         <div className="relative w-full h-full flex items-center justify-center">
             {/* Central Core - Breathing Glow */}
@@ -40,16 +42,11 @@ export default function CreativeVisual() {
 
 
             {/* Floating Particles */}
-            {[...Array(10)].map((_, i) => (
+            {PARTICLES.map((particle, i) => (
                 <div
                     key={i}
                     className="absolute w-1.5 h-1.5 bg-[#FEB229]/60 rounded-full animate-float"
-                    style={{
-                        top: `${Math.random() * 100}%`,
-                        left: `${Math.random() * 100}%`,
-                        animationDelay: `${Math.random() * 5}s`,
-                        animationDuration: `${5 + Math.random() * 5}s`
-                    }}
+                    style={particle}
                 ></div>
             ))}
         </div>

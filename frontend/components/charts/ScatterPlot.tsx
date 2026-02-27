@@ -33,10 +33,10 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
 
   const correlationColor =
     Math.abs(data.correlation) > 0.7
-      ? 'text-green-400'
+      ? 'text-[#307B65]'
       : Math.abs(data.correlation) > 0.4
-        ? 'text-yellow-400'
-        : 'text-gray-400';
+        ? 'text-[#FEB229]'
+        : 'text-[#8A5A5A]';
 
   return (
     <div id={chartId} className="bg-white rounded-xl border border-[#FFEDC1] p-5 shadow-sm">
@@ -107,7 +107,7 @@ export default function ScatterPlot({ data }: ScatterPlotProps) {
           <Scatter
             name="Data Points"
             data={chartData}
-            fill="#8b5cf6"
+            fill="#470102"
             fillOpacity={0.6}
             shape="circle"
           />

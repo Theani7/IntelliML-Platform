@@ -1,0 +1,446 @@
+"""
+EDA (Exploratory Data Analysis) Endpoints
+Handles analyze, report generation, and AI insights.
+"""
+
+from fastapi import HTTPException
+from fastapi.responses import StreamingResponse
+import pandas as pd
+import numpy as np
+from typing import Dict, List
+import json
+
+from app.api.data import router, get_current_dataset, data_service, logger
+from app.core.cache import analysis_cache
+
+
+def safe_float(val):
+    """Make a float value JSON-safe."""
+    if pd.isna(val) or val != val or val == float('inf') or val == float('-inf'):
+        return None
+    return float(val)
+
+
+def safe_list(arr):
+    """Make a list of floats JSON-safe."""
+    return [safe_float(x) for x in arr]
+
+
+def generate_insights(df: pd.DataFrame, analysis: Dict) -> List[str]:
+    """
+    Generate AI-powered insights about the dataset
+    """
+    insights = []
+
+    # Data size insight
+    rows, cols = df.shape
+    insights.append(f"Dataset contains {rows:,} rows and {cols} columns")
+
+    # Missing values insight
+    missing_total = df.isnull().sum().sum()
+    if missing_total > 0:
+        missing_pct = (missing_total / (rows * cols)) * 100
+        insights.append(f"Found {missing_total:,} missing values ({missing_pct:.1f}% of total data)")
+    else:
+        insights.append("No missing values detected - data is complete!")
+
+    # Column types insight
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    categorical_cols = df.select_dtypes(include=['object']).columns
+
+    if len(numeric_cols) > 0:
+        insights.append(f"Found {len(numeric_cols)} numeric columns suitable for modeling")
+
+    if len(categorical_cols) > 0:
+        insights.append(f"Found {len(categorical_cols)} categorical columns that may need encoding")
+
+    # Check for potential target variables
+    for col in df.columns:
+        if df[col].dtype in [np.int64, np.float64]:
+            unique_ratio = df[col].nunique() / len(df)
+            if unique_ratio < 0.1 and df[col].nunique() < 20:
+                insights.append(f"Column '{col}' might be a good classification target (low cardinality)")
+
+    # Data quality insights
+    duplicate_count = df.duplicated().sum()
+    if duplicate_count > 0:
+        insights.append(f"Warning: Found {duplicate_count} duplicate rows")
+
+    return insights
+
+
+@router.get("/analyze")
+async def analyze_data(session_id: str = "default"):
+    """
+    Analyze the current dataset and return comprehensive statistics,
+    chart data, and AI-powered insights for the Data Insights Dashboard.
+    """
+    state = get_current_dataset(session_id)
+    df = state.get("df")
+
+    if df is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded. Please upload a file first.")
+
+    try:
+        df = state["df"]
+
+        # Check cache first
+        cached = analysis_cache.get("analysis", df)
+        if cached is not None:
+            return cached
+
+        rows, cols = df.shape
+
+        # Accumulate non-fatal warnings to surface to the frontend
+        warnings: List[str] = []
+
+        # Identify column types
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+
+        # ========== 1. Basic Info ==========
+        basic_info = {
+            "num_rows": rows,
+            "num_columns": cols,
+            "numeric_columns": len(numeric_cols),
+            "categorical_columns": len(categorical_cols),
+            "column_names": df.columns.tolist(),
+            "column_types": {col: str(dtype) for col, dtype in df.dtypes.items()}
+        }
+
+        # ========== 2. Missing Values Analysis ==========
+        missing_per_col = df.isnull().sum()
+        total_missing = int(missing_per_col.sum())
+
+        missing_values = {
+            "total_missing": total_missing,
+            "missing_percentage": round((total_missing / (rows * cols)) * 100, 2) if rows * cols > 0 else 0,
+            "per_column": {col: int(count) for col, count in missing_per_col.items() if count > 0}
+        }
+
+        # ========== 3. Data Quality Scoring ==========
+        quality_score = 100
+        issues = []
+
+        if total_missing > 0:
+            missing_pct = (total_missing / (rows * cols)) * 100
+            if missing_pct > 20:
+                quality_score -= 30
+                issues.append(f"High missing values: {missing_pct:.1f}% of data is missing")
+            elif missing_pct > 5:
+                quality_score -= 15
+                issues.append(f"Moderate missing values: {missing_pct:.1f}% of data is missing")
+            else:
+                quality_score -= 5
+                issues.append(f"Low missing values: {missing_pct:.1f}% of data is missing")
+
+        duplicate_count = int(df.duplicated().sum())
+        if duplicate_count > 0:
+            dup_pct = (duplicate_count / rows) * 100
+            if dup_pct > 10:
+                quality_score -= 20
+                issues.append(f"High duplicates: {duplicate_count} duplicate rows ({dup_pct:.1f}%)")
+            else:
+                quality_score -= 10
+                issues.append(f"{duplicate_count} duplicate rows found ({dup_pct:.1f}%)")
+
+        for col in df.columns:
+            if df[col].nunique() == 1:
+                quality_score -= 5
+                issues.append(f"Column '{col}' has only one unique value")
+
+        quality_score = max(0, quality_score)
+
+        data_quality = {
+            "quality_score": quality_score,
+            "issues": issues,
+            "duplicate_rows": duplicate_count,
+            "completeness": round(100 - (total_missing / (rows * cols) * 100), 2) if rows * cols > 0 else 100
+        }
+
+        # ========== 3b. Descriptive Statistics ==========
+        descriptive_stats = {}
+        if len(numeric_cols) > 0:
+            try:
+                desc = df[numeric_cols].describe().T
+                skew = df[numeric_cols].skew()
+                kurt = df[numeric_cols].kurtosis()
+
+                for col in numeric_cols:
+                    stats_dict = desc.loc[col].to_dict()
+                    stats_dict['skew'] = round(skew.get(col, 0), 4)
+                    stats_dict['kurtosis'] = round(kurt.get(col, 0), 4)
+
+                    for k, v in stats_dict.items():
+                        if isinstance(v, float):
+                            stats_dict[k] = round(v, 4)
+                    descriptive_stats[col] = stats_dict
+
+            except Exception as e:
+                logger.warning(f"Could not calculate descriptive stats: {e}")
+                warnings.append(f"Descriptive statistics unavailable: {e}")
+
+        # ========== 4. Generate Chart Data ==========
+        chart_data = {}
+
+        # 4a. Distribution charts for numeric columns
+        distributions = []
+        for col in numeric_cols[:8]:
+            try:
+                col_data = df[col].dropna()
+                if len(col_data) > 0:
+                    hist_counts, bin_edges = np.histogram(col_data, bins=20)
+                    distributions.append({
+                        "column": col,
+                        "bins": safe_list(bin_edges[:-1]),
+                        "counts": [int(c) for c in hist_counts],
+                        "mean": safe_float(col_data.mean()),
+                        "median": safe_float(col_data.median())
+                    })
+            except Exception as e:
+                logger.warning(f"Could not generate distribution for {col}: {e}")
+                warnings.append(f"Distribution chart skipped for '{col}': {e}")
+        chart_data["distributions"] = distributions
+
+        # 4b. Categorical value counts
+        categorical_counts = []
+        for col in categorical_cols[:8]:
+            try:
+                value_counts = df[col].value_counts().head(10)
+                categorical_counts.append({
+                    "column": col,
+                    "categories": value_counts.index.tolist(),
+                    "counts": [int(c) for c in value_counts.values]
+                })
+            except Exception as e:
+                logger.warning(f"Could not generate categorical counts for {col}: {e}")
+                warnings.append(f"Category counts skipped for '{col}': {e}")
+        chart_data["categorical_counts"] = categorical_counts
+
+        # 4c. Correlation heatmap
+        if len(numeric_cols) >= 2:
+            try:
+                corr_cols = numeric_cols[:10]
+                corr_matrix = df[corr_cols].corr()
+                corr_matrix = corr_matrix.fillna(0)
+                chart_data["correlation_heatmap"] = {
+                    "columns": corr_cols,
+                    "values": [[safe_float(v) or 0 for v in row] for row in corr_matrix.values]
+                }
+            except Exception as e:
+                logger.warning(f"Could not generate correlation heatmap: {e}")
+                warnings.append(f"Correlation heatmap unavailable: {e}")
+                chart_data["correlation_heatmap"] = {"columns": [], "values": []}
+        else:
+            chart_data["correlation_heatmap"] = {"columns": [], "values": []}
+
+        # 4d. Missing values chart
+        cols_with_missing = [(col, int(count)) for col, count in missing_per_col.items() if count > 0]
+        if cols_with_missing:
+            chart_data["missing_values_chart"] = {
+                "columns": [c[0] for c in cols_with_missing],
+                "counts": [c[1] for c in cols_with_missing],
+                "percentages": [round((c[1] / rows) * 100, 2) for c in cols_with_missing]
+            }
+        else:
+            chart_data["missing_values_chart"] = None
+
+        # 4e. Box plots for numeric columns
+        box_plots = []
+        for col in numeric_cols[:6]:
+            try:
+                col_data = df[col].dropna()
+                if len(col_data) > 0:
+                    q1 = float(col_data.quantile(0.25))
+                    q3 = float(col_data.quantile(0.75))
+                    iqr = q3 - q1
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    outliers_data = col_data[(col_data < lower_bound) | (col_data > upper_bound)]
+
+                    box_plots.append({
+                        "column": col,
+                        "min": safe_float(col_data.min()),
+                        "q1": safe_float(q1),
+                        "median": safe_float(col_data.median()),
+                        "q3": safe_float(q3),
+                        "max": safe_float(col_data.max()),
+                        "outliers": safe_list(outliers_data.head(50).tolist())
+                    })
+            except Exception as e:
+                logger.warning(f"Could not generate box plot for {col}: {e}")
+                warnings.append(f"Box plot skipped for '{col}': {e}")
+        chart_data["box_plots"] = box_plots
+
+        # 4f. Scatter plot matrix
+        scatter_matrix = []
+        if len(numeric_cols) >= 2:
+            try:
+                corr_matrix_scatter = df[numeric_cols[:8]].corr()
+                pairs_added = set()
+
+                for i, col1 in enumerate(numeric_cols[:8]):
+                    for j, col2 in enumerate(numeric_cols[:8]):
+                        if i < j:
+                            pair_key = tuple(sorted([col1, col2]))
+                            if pair_key not in pairs_added:
+                                corr_val = corr_matrix_scatter.loc[col1, col2]
+                                if pd.notna(corr_val) and abs(corr_val) > 0.3:
+                                    sample_df = df[[col1, col2]].dropna()
+                                    if len(sample_df) > 200:
+                                        sample_df = sample_df.sample(200, random_state=42)
+
+                                    scatter_matrix.append({
+                                        "x_column": col1,
+                                        "y_column": col2,
+                                        "x_values": safe_list(sample_df[col1].tolist()),
+                                        "y_values": safe_list(sample_df[col2].tolist()),
+                                        "correlation": safe_float(corr_val) or 0
+                                    })
+                                    pairs_added.add(pair_key)
+
+                                    if len(scatter_matrix) >= 6:
+                                        break
+                    if len(scatter_matrix) >= 6:
+                        break
+            except Exception as e:
+                logger.warning(f"Could not generate scatter matrix: {e}")
+                warnings.append(f"Scatter matrix unavailable: {e}")
+        chart_data["scatter_matrix"] = scatter_matrix
+
+        # ========== 5. Recommendations ==========
+        recommendations = []
+
+        if total_missing > 0:
+            recommendations.append("Consider handling missing values using imputation or removal")
+
+        if duplicate_count > 0:
+            recommendations.append("Review and remove duplicate rows if they are not intentional")
+
+        if len(categorical_cols) > 0:
+            recommendations.append("Encode categorical variables before training ML models")
+
+        for col in categorical_cols:
+            if df[col].nunique() > 50:
+                recommendations.append(f"Column '{col}' has high cardinality ({df[col].nunique()} unique values) - consider binning")
+                break
+
+        for col in numeric_cols:
+            unique_ratio = df[col].nunique() / len(df)
+            if unique_ratio < 0.05 and df[col].nunique() <= 10:
+                recommendations.append(f"Column '{col}' appears suitable for classification (low cardinality)")
+                break
+
+        if len(recommendations) == 0:
+            recommendations.append("Dataset looks well-prepared for analysis!")
+
+        # ========== 6. AI Insights ==========
+        insights = generate_insights(df, basic_info)
+
+        # ========== Compile Result ==========
+        result = {
+            "analysis": {
+                "basic_info": basic_info,
+                "data_quality": data_quality,
+                "missing_values": missing_values,
+                "descriptive_stats": descriptive_stats,
+                "chart_data": chart_data,
+                "recommendations": recommendations
+            },
+            "ai_insights": {
+                "insights": "\n".join(insights),
+                "timestamp": pd.Timestamp.now().isoformat()
+            },
+            "warnings": warnings
+        }
+
+        logger.info("✓ Comprehensive analysis completed successfully")
+        analysis_cache.set("analysis", result, df)
+        return result
+
+    except Exception as e:
+        logger.error(f"Analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/report")
+def get_report(session_id: str = "default"):
+    """
+    Generate and download EDA PDF Report with AI Analysis
+    """
+    from app.utils.pdf_generator import generate_eda_pdf
+    from app.core.groq_client import groq_client
+
+    state = get_current_dataset(session_id)
+    df = state.get("df")
+    if df is None:
+        raise HTTPException(status_code=404, detail="No dataset loaded")
+
+    # 1. Prepare Data Summary for AI
+    description = df.describe().to_dict()
+    missing = df.isnull().sum().to_dict()
+
+    # Calculate correlations for context
+    numeric_df = df.select_dtypes(include=[np.number])
+    correlations = {}
+    if not numeric_df.empty:
+        corr_matrix = numeric_df.corr().abs()
+        pairs = (corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+                 .stack()
+                 .sort_values(ascending=False))
+        if not pairs.empty:
+            top_corr = pairs.head(5).to_dict()
+            correlations = {f"{k[0]} vs {k[1]}": v for k, v in top_corr.items()}
+
+    # 2. Generate AI Analysis
+    ai_analysis_text = "AI Analysis unavailable."
+    try:
+        prompt = f"""
+        You are an expert Senior Data Scientist. Write a detailed Exploratory Data Analysis (EDA) report based on this dataset summary:
+
+        Dataset Info: {len(df)} rows, {len(df.columns)} columns.
+        Columns: {', '.join(df.columns)}
+
+        Descriptive Statistics:
+        {json.dumps(description, indent=2)}
+
+        Missing Values:
+        {json.dumps(missing, indent=2)}
+
+        Top Correlations (Absolute Values):
+        {json.dumps(correlations, indent=2)}
+
+        Instructions:
+        1. Write a comprehensive "Executive Summary" analyzing the data quality, distributions, and relationships.
+        2. Specifically explain what the charts (Distribution, Heatmap, Boxplots) would likely show based on these stats.
+        3. Highlight any anomalies, outliers, or strong relationships.
+        4. Use professional, markdown-free formatting (paragraphs only).
+        5. Keep it under 400 words.
+        """
+
+        response = groq_client.chat_completion([
+            {"role": "system", "content": "You are a helpful data science assistant."},
+            {"role": "user", "content": prompt}
+        ])
+        ai_analysis_text = response
+
+    except Exception as e:
+        logger.error(f"AI Report Generation Failed: {e}")
+        ai_analysis_text = f"Could not generate AI analysis due to an error: {str(e)}"
+
+    analysis_results = {
+        'descriptive_stats': description,
+        'data_quality': {
+            'quality_score': 'N/A',
+            'missing_values': missing
+        },
+        'ai_analysis': ai_analysis_text
+    }
+
+    pdf_buffer = generate_eda_pdf(df, analysis_results)
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=eda_report.pdf"}
+    )

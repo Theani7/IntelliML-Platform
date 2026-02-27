@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { cleanData, getDataQuality, getDatasetInfo } from '@/lib/api';
+import { cleanData, getDataQuality, getDatasetInfo, engineerFeatures } from '@/lib/api';
 
 interface FeatureEngineeringProps {
     columns: string[];
@@ -94,14 +94,11 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
             if (operation === 'polynomial') params.degree = degree;
             if (operation === 'binning') params.bins = bins;
 
-            const response = await fetch('http://localhost:8000/api/data/engineer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ operation, columns: selectedCols, params })
-            });
-            const data = await response.json();
+            const data = await engineerFeatures(operation, selectedCols, params);
             setResult(data);
             setSelectedCols([]);
+            const info = await getDatasetInfo();
+            setDatasetInfo(info);
         } catch (error) {
             console.error('Feature engineering failed:', error);
         }
@@ -144,9 +141,9 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
 
     return (
         <div className="space-y-6">
-            <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-8 shadow-sm">
+            <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-4 md:p-8 shadow-sm">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-[#FEB229]/20 flex items-center justify-center text-[#470102]">
                             <WandIcon />
@@ -158,7 +155,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                     </div>
 
                     {/* Tabs / Mode Switcher */}
-                    <div className="flex bg-white rounded-xl p-1.5 border border-[#FFEDC1] shadow-sm">
+                    <div className="flex bg-white rounded-xl p-1.5 border border-[#FFEDC1] shadow-sm overflow-x-auto">
                         {[
                             { id: 'transform', label: 'Transform', icon: <ChartBarIcon /> },
                             { id: 'encoding', label: 'Encode', icon: <CodeIcon /> },
@@ -167,7 +164,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === tab.id
+                                className={`shrink-0 flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === tab.id
                                         ? 'bg-[#470102] text-[#FFEDC1] shadow-md'
                                         : 'text-[#8A5A5A] hover:bg-[#FFF7EA] hover:text-[#470102]'
                                     }`}
@@ -186,7 +183,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                             <div className="p-1.5 bg-[#FFF7EA] rounded-lg text-[#FEB229]"><MagicIcon /></div>
                             AI Recommendations
                         </h4>
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {qualityReport.encoding_summary.map((item: any, i: number) => (
                                 <div key={i} className="flex flex-col p-4 bg-[#FFF7EA] rounded-xl border border-[#FFEDC1]/50 hover:border-[#FEB229] transition-colors group">
                                     <div className="flex justify-between items-start mb-2">
@@ -209,7 +206,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                 )}
 
                 {/* Main Content Area */}
-                <div className="grid lg:grid-cols-12 gap-8">
+                <div className="grid lg:grid-cols-12 gap-6 md:gap-8">
                     {/* Sidebar / Options */}
                     <div className="lg:col-span-3 space-y-4">
                         {activeTab === 'transform' && (
@@ -230,7 +227,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                                                     : 'border-transparent hover:bg-gray-50'
                                                 }`}
                                         >
-                                            <div className={`font-bold ${operation === op.id ? 'text-[#470102]' : 'text-gray-600'}`}>{op.label}</div>
+                                            <div className={`font-bold ${operation === op.id ? 'text-[#470102]' : 'text-[#8A5A5A]'}`}>{op.label}</div>
                                             <div className="text-xs text-[#8A5A5A] mt-0.5">{op.desc}</div>
                                         </button>
                                     ))}
@@ -300,7 +297,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
 
                             {/* Controls */}
                             {activeTab === 'transform' && (
-                                <div className="mb-6 flex gap-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <div className="mb-6 flex flex-col md:flex-row gap-4 md:gap-6 p-4 bg-[#FFF7EA] rounded-lg border border-[#FFEDC1]">
                                     {operation === 'polynomial' && (
                                         <div className="flex-1">
                                             <label className="text-xs font-bold text-[#8A5A5A] mb-1.5 block">Degree of Polynomial</label>
@@ -337,14 +334,14 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
 
                             {/* Column Selection Grid */}
                             <div className="flex-1 mb-6">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto p-1">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 max-h-[400px] overflow-y-auto p-1">
                                     {(activeTab === 'encoding' ? columns.filter(c => !numericColumns.includes(c)) : numericColumns).map((col) => (
                                         <button
                                             key={col}
                                             onClick={() => handleColumnToggle(col)}
                                             className={`relative px-4 py-3 rounded-lg text-sm font-medium transition-all text-left border ${selectedCols.includes(col)
                                                     ? 'bg-[#470102] text-[#FFEDC1] border-[#470102] shadow-md transform scale-[1.02]'
-                                                    : 'bg-white text-gray-600 border-[#FFEDC1] hover:border-[#FEB229] hover:bg-[#FFF7EA]'
+                                                    : 'bg-white text-[#8A5A5A] border-[#FFEDC1] hover:border-[#FEB229] hover:bg-[#FFF7EA]'
                                                 }`}
                                         >
                                             <div className="truncate" title={col}>{col}</div>
@@ -354,7 +351,7 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                                         </button>
                                     ))}
                                     {(activeTab === 'encoding' ? columns.filter(c => !numericColumns.includes(c)) : numericColumns).length === 0 && (
-                                        <div className="col-span-full py-10 text-center text-gray-400 italic">
+                                        <div className="col-span-full py-10 text-center text-[#8A5A5A] italic">
                                             No compatible columns found for this operation.
                                         </div>
                                     )}
@@ -362,11 +359,11 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
                             </div>
 
                             {/* Action Footer */}
-                            <div className="flex justify-end pt-6 border-t border-[#FFEDC1]">
+                            <div className="flex justify-stretch md:justify-end pt-6 border-t border-[#FFEDC1]">
                                 <button
                                     onClick={activeTab === 'transform' ? applyEngineering : activeTab === 'encoding' ? applyEncoding : applyScaling}
                                     disabled={isProcessing || selectedCols.length === 0 || (operation === 'interaction' && selectedCols.length !== 2)}
-                                    className="px-8 py-3 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[#FFEDC1] text-lg font-bold shadow-lg shadow-[#470102]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-3"
+                                    className="w-full md:w-auto px-8 py-3 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-[#FFEDC1] text-base md:text-lg font-bold shadow-lg shadow-[#470102]/20 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3"
                                 >
                                     {isProcessing ? (
                                         <>
@@ -390,13 +387,13 @@ export default function FeatureEngineering({ columns }: FeatureEngineeringProps)
 
                 {/* Success Feedback */}
                 {result && result.new_columns?.length > 0 && (
-                    <div className="mt-8 p-6 bg-[#307B65] text-white rounded-xl shadow-lg border border-[#205A48] flex items-center gap-4 animate-slideIn">
-                        <div className="p-2 bg-white/20 rounded-full">
+                    <div className="mt-8 p-6 bg-[#FFF7EA] text-[#470102] rounded-xl shadow-lg border border-[#FFEDC1] flex items-center gap-4 animate-slideIn">
+                        <div className="p-2 bg-[#FEB229]/20 rounded-full text-[#470102]">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         </div>
                         <div>
                             <h4 className="font-bold text-lg">Success!</h4>
-                            <p className="opacity-90">Created {result.new_columns.length} new feature(s): <span className="font-mono bg-black/20 px-2 py-0.5 rounded">{result.new_columns.join(', ')}</span></p>
+                            <p className="text-[#8A5A5A]">Created {result.new_columns.length} new feature(s): <span className="font-mono bg-white px-2 py-0.5 rounded border border-[#FFEDC1] text-[#470102]">{result.new_columns.join(', ')}</span></p>
                         </div>
                     </div>
                 )}

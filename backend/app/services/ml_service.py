@@ -36,6 +36,7 @@ class MLService:
             experiment_entry = {
                 "job_id": job_data['job_id'],
                 "timestamp": datetime.datetime.now().isoformat(),
+                "username": job_data.get("username"),
                 "target_column": job_data['target_column'],
                 "problem_type": job_data['results']['problem_type'],
                 "best_model": job_data['results']['best_model']['model_name'],
@@ -66,7 +67,9 @@ class MLService:
         model_types: Optional[List[str]] = None,
         test_size: float = 0.2,
         cv_folds: int = 5,
-        enable_tuning: bool = False
+        enable_tuning: bool = False,
+        session_id: str = "default",
+        username: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Start model training job
@@ -75,7 +78,7 @@ class MLService:
             logger.info(f"Starting model training for target: {target_column}, test_size: {test_size}, cv_folds: {cv_folds}, enable_tuning: {enable_tuning}")
             
             # Get dataset
-            df = self.data_service.get_dataframe()
+            df = self.data_service.get_dataframe(session_id=session_id)
             logger.info(f"Got dataset with shape: {df.shape}")
             logger.info(f"Columns: {df.columns.tolist()}")
             
@@ -147,6 +150,8 @@ class MLService:
                 'job_id': job_id,
                 'status': 'completed',
                 'target_column': target_column,
+                'session_id': session_id,
+                'username': username,
                 'results': clean_results,
                 'suggestions': suggestions,
                 'explanation': explanation,
@@ -227,3 +232,5 @@ Be encouraging and helpful."""
         except Exception as e:
             logger.error(f"Explanation generation error: {str(e)}")
             return "Model training completed. Unable to generate explanation at this time."
+
+ml_service = MLService()

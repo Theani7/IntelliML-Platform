@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CreativeVisual from './CreativeVisual';
+import dynamic from 'next/dynamic';
 import DocumentationModal from './DocumentationModal';
+
+const CreativeVisual = dynamic(() => import('./CreativeVisual'), { ssr: false });
 
 // --- Icons ---
 const PlayIcon = () => (
@@ -104,7 +106,13 @@ const TargetIcon = () => (
 
 // --- Components ---
 
-export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+interface LandingPageProps {
+  onGetStarted: () => void;
+  onLogin?: () => void;
+  onSignup?: () => void;
+}
+
+export default function LandingPage({ onGetStarted, onLogin, onSignup }: LandingPageProps) {
   const [scrolled, setScrolled] = useState(false);
   const [showDocs, setShowDocs] = useState(false);
 
@@ -123,21 +131,28 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
       </div>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative pt-20 pb-20 lg:pt-36 lg:pb-32 container mx-auto px-6">
+      <section className="relative pt-6 pb-20 lg:pt-10 lg:pb-28 container mx-auto px-6">
+        <div className="mb-4 flex justify-end gap-3">
+          {onLogin && (
+            <button
+              onClick={onLogin}
+              className="rounded-xl border border-[#FFEDC1] bg-white px-5 py-2 text-sm font-bold text-[#470102] transition-colors hover:border-[#FEB229]"
+            >
+              Log In
+            </button>
+          )}
+          {onSignup && (
+            <button
+              onClick={onSignup}
+              className="rounded-xl bg-[#470102] px-5 py-2 text-sm font-bold text-[#FFEDC1] transition-colors hover:bg-[#5D0203]"
+            >
+              Sign Up
+            </button>
+          )}
+        </div>
         <div className="flex flex-col lg:flex-row items-center gap-16">
 
           <div className="flex-1 space-y-8 z-10 animate-fade-in-up">
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#470102]/5 border border-[#470102]/10 text-[#470102] text-sm font-bold tracking-wide animate-fade-in-up"
-              style={{ animationDelay: '0.1s' }}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FEB229] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FEB229]"></span>
-              </span>
-              v2.0 Now Available
-            </div>
-
             <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <h1 className="text-6xl md:text-8xl font-display font-bold tracking-tight leading-[1] text-[#470102]">
                 Intelligent <br />

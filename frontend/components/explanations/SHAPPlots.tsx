@@ -49,7 +49,16 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
     );
   }
 
-  const { feature_importance, plots } = shap_results;
+  const rawFeatureImportance = shap_results.feature_importance;
+  const feature_importance = Array.isArray(rawFeatureImportance)
+    ? rawFeatureImportance
+    : rawFeatureImportance && typeof rawFeatureImportance === 'object'
+      ? Object.entries(rawFeatureImportance).map(([feature, importance]) => ({
+        feature,
+        importance: Number(importance) || 0,
+      })).sort((a, b) => b.importance - a.importance)
+      : [];
+  const { plots } = shap_results;
 
   return (
     <div className="space-y-6">

@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException, Response, UploadFile, File
+from fastapi import APIRouter, HTTPException, Response, UploadFile, File, Depends
 from pydantic import BaseModel
 from app.services.ml_service import MLService
 from typing import Optional, List
 import logging
 import io
 import joblib
+from app.models.user import User
+from app.core.auth_utils import get_current_active_user
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -20,7 +22,11 @@ class TrainRequest(BaseModel):
     enable_tuning: bool = False
 
 @router.post("/train")
-async def train_models(request: TrainRequest):
+async def train_models(
+    request: TrainRequest,
+    session_id: str = "default",
+    current_user: User = Depends(get_current_active_user),
+):
     """
     Train ML models on current dataset
     """
@@ -32,7 +38,9 @@ async def train_models(request: TrainRequest):
             model_types=request.model_types,
             test_size=request.test_size,
             cv_folds=request.cv_folds,
-            enable_tuning=request.enable_tuning
+            enable_tuning=request.enable_tuning,
+            session_id=session_id,
+            username=current_user.username if current_user else None,
         )
         
         logger.info(f"Training successful. Job ID: {result['job_id']}")
@@ -70,7 +78,7 @@ async def get_model_results(job_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/experiments")
-async def get_experiments():
+async def get_experiments(current_user: User = Depends(get_current_active_user)):
     """Get list of past training experiments"""
     try:
         import os
@@ -81,6 +89,8 @@ async def get_experiments():
             
         with open("experiments.json", "r") as f:
             experiments = json.load(f)
+
+        experiments = [e for e in experiments if e.get("username") == current_user.username]
             
         # Reverse sort by timestamp (newest first)
         experiments.reverse()
@@ -94,27 +104,34 @@ async def get_experiments():
 async def export_model(job_id: str):
     """Export the best trained model as a downloadable joblib file"""
     try:
-        # Get job with trainer
+        from app.core.model_store import model_store
+        
+        model = None
+        best_model_name = "model"
+        
+        # 1. Try Memory First
         job = ml_service.jobs.get(job_id)
-        if not job:
-            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+        if job and job.get('trainer'):
+            trainer = job['trainer']
+            best_server = trainer.get_best_model_server()
+            if best_server and hasattr(best_server, 'trained_model'):
+                model = best_server.trained_model
+                best_model_name = job['results']['best_model']['model_name'].replace(' ', '_').lower()
         
-        trainer = job.get('trainer')
-        if not trainer:
-            raise HTTPException(status_code=400, detail="No trainer found for this job")
-        
-        # Get best model server
-        best_server = trainer.get_best_model_server()
-        if not best_server or not hasattr(best_server, 'trained_model'):
-            raise HTTPException(status_code=400, detail="No trained model found")
+        # 2. Try Disk if memory failed
+        if model is None:
+            model = model_store.load_model(job_id, "best_model")
+            metadata = model_store.load_metadata(job_id, "best_model")
+            if model and metadata:
+                best_model_name = metadata.get("model_name", "model").replace(' ', '_').lower()
+                
+        if model is None:
+            raise HTTPException(status_code=404, detail=f"Job or Model {job_id} not found")
         
         # Serialize model to bytes
         buffer = io.BytesIO()
-        joblib.dump(best_server.trained_model, buffer)
+        joblib.dump(model, buffer)
         buffer.seek(0)
-        
-        # Get model name for filename
-        best_model_name = job['results']['best_model']['model_name'].replace(' ', '_').lower()
         
         return Response(
             content=buffer.read(),
@@ -128,6 +145,81 @@ async def export_model(job_id: str):
     except Exception as e:
         logger.error(f"Export model error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/learning-curves/{job_id}")
+async def get_learning_curves(job_id: str):
+    """Compute learning curves for the best model."""
+    try:
+        import numpy as np
+        from sklearn.model_selection import learning_curve, StratifiedKFold, KFold
+
+        job = ml_service.jobs.get(job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+        trainer = job.get('trainer')
+        if not trainer:
+            raise HTTPException(status_code=400, detail="Trainer not in memory")
+
+        best_server = trainer.get_best_model_server()
+        if not best_server or not hasattr(best_server, 'trained_model'):
+            raise HTTPException(status_code=400, detail="Trained model not found")
+
+        X_train = getattr(trainer, 'X_train', None)
+        y_train = getattr(trainer, 'y_train', None)
+        if X_train is None or y_train is None:
+            raise HTTPException(status_code=400, detail="Training data not in memory. Please re-train the model to enable learning curves.")
+
+        problem_type = job['results'].get('problem_type', 'classification')
+        scoring = 'accuracy' if problem_type == 'classification' else 'r2'
+
+        if problem_type == 'classification':
+            cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        else:
+            cv = KFold(n_splits=3, shuffle=True, random_state=42)
+
+        # Use a fresh clone of the model to avoid state issues
+        from sklearn.base import clone
+        model_clone = clone(best_server.trained_model)
+
+        train_sizes_abs, train_scores, val_scores = learning_curve(
+            model_clone, X_train, y_train,
+            train_sizes=[0.2, 0.4, 0.6, 0.8, 1.0],
+            cv=cv, scoring=scoring, n_jobs=-1,
+            random_state=42,
+        )
+
+        data = []
+        for i in range(len(train_sizes_abs)):
+            data.append({
+                "train_size": int(train_sizes_abs[i]),
+                "train_score": float(np.mean(train_scores[i])),
+                "val_score": float(np.mean(val_scores[i])),
+            })
+
+        # Diagnose the learning curve
+        final_gap = data[-1]["train_score"] - data[-1]["val_score"]
+        final_val = data[-1]["val_score"]
+        if final_gap > 0.15:
+            diagnosis = "Overfitting — the model performs much better on training data than validation. Consider regularization or more data."
+        elif final_val < 0.6:
+            diagnosis = "Underfitting — both scores are low. Consider a more complex model or better features."
+        else:
+            diagnosis = "Good fit — training and validation scores are converging."
+
+        return {
+            "data": data,
+            "scoring": scoring,
+            "model_name": job['results']['best_model']['model_name'],
+            "diagnosis": diagnosis,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Learning curves error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 class PredictRequest(BaseModel):
     features: List[float]
@@ -148,12 +240,18 @@ async def predict(job_id: str, request: PredictRequest):
         if not best_server or not hasattr(best_server, 'trained_model'):
             raise HTTPException(status_code=400, detail="No trained model found")
         
+        import pandas as pd
         import numpy as np
-        features_array = np.array([request.features])
         
-        # Scale features if scaler exists
-        if hasattr(trainer, 'scaler') and trainer.scaler is not None:
-            features_array = trainer.scaler.transform(features_array)
+        feature_names = job['results'].get('feature_names', [f'feature_{i}' for i in range(len(request.features))])
+        
+        # If we have exactly the right number of features, we can construct the DF accurately
+        if len(feature_names) == len(request.features):
+            input_df = pd.DataFrame([request.features], columns=feature_names)
+        else:
+            input_df = pd.DataFrame([request.features])
+            
+        features_array = trainer.preprocess_for_inference(input_df)
         
         prediction = best_server.trained_model.predict(features_array)
         
@@ -210,10 +308,20 @@ async def explain_prediction(job_id: str, request: ExplainRequest):
         model = best_server.trained_model
         feature_names = job['results'].get('feature_names', [f'Feature {i}' for i in range(len(request.features))])
         
-        # Prepare features
-        features_array = np.array([request.features])
-        if hasattr(trainer, 'scaler') and trainer.scaler is not None:
-            features_array = trainer.scaler.transform(features_array)
+        # Prepare features using the unified inference pipeline
+        import pandas as pd
+        
+        # Build DataFrame with proper column names if possible
+        if len(feature_names) == len(request.features):
+            input_df = pd.DataFrame([request.features], columns=feature_names)
+        else:
+            input_df = pd.DataFrame([request.features])
+            
+        try:
+            features_array = trainer.preprocess_for_inference(input_df)
+        except Exception as e:
+            logger.error(f"SHAP preprocessing failed: {e}")
+            raise HTTPException(status_code=400, detail=f"Data preprocessing failed: {str(e)}")
         
         # Create SHAP explainer based on model type
         try:
@@ -289,25 +397,13 @@ async def predict_batch(job_id: str, file: UploadFile = File(...)):
         content = await file.read()
         df = pd.read_csv(io.BytesIO(content))
         
-        # Get feature names from training (need to match)
-        feature_names = job['results'].get('feature_names', [])
-        
-        # Prepare features - only keep columns that were used in training
-        available_cols = [c for c in feature_names if c in df.columns]
-        if len(available_cols) < len(feature_names):
-            missing = set(feature_names) - set(available_cols)
-            logger.warning(f"Missing columns in batch file: {missing}")
-        
-        X = df[available_cols] if available_cols else df.select_dtypes(include=['number'])
-        
-        # Handle missing values
-        X = X.fillna(X.mean())
-        
-        # Scale if scaler exists
-        import numpy as np
-        features_array = X.values
-        if hasattr(trainer, 'scaler') and trainer.scaler is not None:
-            features_array = trainer.scaler.transform(features_array)
+        # Prepare features using the exact same pipeline from training
+        # (This handles missing columns, encoding, imputation, and scaling)
+        try:
+            features_array = trainer.preprocess_for_inference(df)
+        except Exception as e:
+            logger.error(f"Batch preprocessing failed: {e}")
+            raise HTTPException(status_code=400, detail=f"Data preprocessing failed: {str(e)}")
         
         # Predict
         predictions = best_server.trained_model.predict(features_array)

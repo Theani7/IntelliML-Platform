@@ -1,6 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { downloadReport } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
+import {
+  chartDensityToMaxCharts,
+  getStoredUserPreferences,
+  maxChartsToDensity,
+  saveUserPreferences,
+} from '@/lib/userPreferences';
 import DistributionChart from '../charts/DistributionChart';
 import CategoricalChart from '../charts/CategoricalChart';
 import CorrelationHeatmap from '../charts/CorrelationHeatmap';
@@ -18,6 +25,23 @@ type TabType = 'overview' | 'distributions' | 'relationships' | 'quality' | 'adv
 export default function InsightsDashboard({ analysisResults }: InsightsDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [maxCharts, setMaxCharts] = useState(() =>
+    chartDensityToMaxCharts(getStoredUserPreferences().chartDensity)
+  );
+  const [pinnedTabs, setPinnedTabs] = useState<TabType[]>([]);
+  const { notify } = useToast();
+
+  useEffect(() => {
+    const handlePreferencesUpdate = (event: Event) => {
+      const next = (event as CustomEvent).detail;
+      if (next?.chartDensity) {
+        setMaxCharts(chartDensityToMaxCharts(next.chartDensity));
+      }
+    };
+
+    window.addEventListener('intelliml:preferences-updated', handlePreferencesUpdate as EventListener);
+    return () => window.removeEventListener('intelliml:preferences-updated', handlePreferencesUpdate as EventListener);
+  }, []);
 
   // Extract data from props
   const analysis = analysisResults?.analysis || {};
@@ -29,12 +53,44 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
       await downloadReport();
     } catch (error) {
       console.error('Failed to download report:', error);
-      // Optional: Add toast notification here
-      alert('Failed to download report. Please try again.');
+      notify('error', 'Report download failed', 'Please try again.');
     } finally {
       setIsDownloading(false);
     }
   };
+
+  const exportCurrentTabData = () => {
+    const payload =
+      activeTab === 'overview' ? analysis.basic_info :
+      activeTab === 'distributions' ? chartData.distributions :
+      activeTab === 'relationships' ? chartData.scatter_matrix :
+      activeTab === 'quality' ? analysis.data_quality :
+      activeTab === 'statistics' ? analysis.descriptive_stats :
+      chartData.time_series;
+
+    const blob = new Blob([JSON.stringify(payload ?? {}, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `eda-${activeTab}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('success', 'Tab data exported', `Saved as eda-${activeTab}.json`);
+  };
+
+  const orderedTabs = useMemo(() => {
+    const all: { id: TabType; label: string; icon: React.ReactNode }[] = [
+      { id: 'overview', label: 'Overview', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
+      { id: 'distributions', label: 'Distributions', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg> },
+      { id: 'relationships', label: 'Relationships', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg> },
+      { id: 'quality', label: 'Data Quality', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+      { id: 'advanced', label: 'Advanced', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
+      { id: 'statistics', label: 'Statistics', icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> },
+    ];
+    const pinned = all.filter((t) => pinnedTabs.includes(t.id));
+    const rest = all.filter((t) => !pinnedTabs.includes(t.id));
+    return [...pinned, ...rest];
+  }, [pinnedTabs]);
 
   return (
     <GlassCard className="rounded-2xl shadow-xl shadow-[#470102]/5 overflow-hidden border border-[#FFEDC1]">
@@ -90,43 +146,46 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
 
       {/* Tab Navigation */}
       <div className="border-b border-[#FFEDC1] bg-[#FFF7EA]">
+        <div className="px-3 pt-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-[#8A5A5A]">Chart density</span>
+            <select
+              value={maxCharts}
+              onChange={(e) => {
+                const nextMax = Number(e.target.value);
+                setMaxCharts(nextMax);
+                const current = getStoredUserPreferences();
+                saveUserPreferences({
+                  ...current,
+                  chartDensity: maxChartsToDensity(nextMax),
+                });
+              }}
+              className="text-xs border border-[#FFEDC1] bg-white rounded px-2 py-1 text-[#470102]"
+            >
+              <option value={4}>Compact</option>
+              <option value={6}>Balanced</option>
+              <option value={12}>Expanded</option>
+            </select>
+          </div>
+          <button
+            onClick={exportCurrentTabData}
+            className="text-xs font-bold text-[#470102] border border-[#FFEDC1] bg-white rounded px-3 py-1 hover:bg-[#FFF7EA]"
+          >
+            Export Tab Data
+          </button>
+        </div>
         <div className="flex space-x-1 p-2">
-          <TabButton
-            active={activeTab === 'overview'}
-            onClick={() => setActiveTab('overview')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
-            label="Overview"
-          />
-          <TabButton
-            active={activeTab === 'distributions'}
-            onClick={() => setActiveTab('distributions')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>}
-            label="Distributions"
-          />
-          <TabButton
-            active={activeTab === 'relationships'}
-            onClick={() => setActiveTab('relationships')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
-            label="Relationships"
-          />
-          <TabButton
-            active={activeTab === 'quality'}
-            onClick={() => setActiveTab('quality')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
-            label="Data Quality"
-          />
-          <TabButton
-            active={activeTab === 'advanced'}
-            onClick={() => setActiveTab('advanced')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
-            label="Advanced"
-          />
-          <TabButton
-            active={activeTab === 'statistics'}
-            onClick={() => setActiveTab('statistics')}
-            icon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
-            label="Statistics"
-          />
+          {orderedTabs.map((tab) => (
+            <TabButton
+              key={tab.id}
+              active={activeTab === tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              onPin={() => setPinnedTabs((prev) => prev.includes(tab.id) ? prev.filter((p) => p !== tab.id) : [...prev, tab.id])}
+              pinned={pinnedTabs.includes(tab.id)}
+              icon={tab.icon}
+              label={tab.label}
+            />
+          ))}
 
         </div>
       </div>
@@ -137,10 +196,10 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
           <OverviewTab analysis={analysis} chartData={chartData} />
         )}
         {activeTab === 'distributions' && (
-          <DistributionsTab chartData={chartData} />
+          <DistributionsTab chartData={chartData} maxCharts={maxCharts} />
         )}
         {activeTab === 'relationships' && (
-          <RelationshipsTab chartData={chartData} />
+          <RelationshipsTab chartData={chartData} maxCharts={maxCharts} />
         )}
         {activeTab === 'quality' && (
           <QualityTab analysis={analysis} chartData={chartData} />
@@ -149,7 +208,7 @@ export default function InsightsDashboard({ analysisResults }: InsightsDashboard
           <StatisticsTab stats={analysis.descriptive_stats} />
         )}
         {activeTab === 'advanced' && (
-          <AdvancedTab chartData={chartData} />
+          <AdvancedTab chartData={chartData} maxCharts={maxCharts} />
         )}
 
       </div>
@@ -200,9 +259,11 @@ function StatisticsTab({ stats }: { stats: any }) {
 
 
 // Tab Button Component
-function TabButton({ active, onClick, icon, label }: {
+function TabButton({ active, onClick, onPin, pinned, icon, label }: {
   active: boolean;
   onClick: () => void;
+  onPin: () => void;
+  pinned: boolean;
   icon: React.ReactNode;
   label: string;
 }) {
@@ -219,6 +280,16 @@ function TabButton({ active, onClick, icon, label }: {
     >
       <span>{icon}</span>
       <span>{label}</span>
+      <span
+        onClick={(e) => {
+          e.stopPropagation();
+          onPin();
+        }}
+        className={`ml-1 text-[10px] ${pinned ? 'text-[#470102]' : 'text-[#8A5A5A]/70'}`}
+        title={pinned ? 'Unpin tab' : 'Pin tab'}
+      >
+        ★
+      </span>
     </button>
   );
 }
@@ -228,7 +299,7 @@ function OverviewTab({ analysis, chartData }: { analysis: any; chartData: any })
   // Return null if required data is missing
   if (!analysis?.basic_info) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-[#8A5A5A]">
         <p>Analysis data not available</p>
       </div>
     );
@@ -291,7 +362,7 @@ function OverviewTab({ analysis, chartData }: { analysis: any; chartData: any })
 }
 
 // Distributions Tab
-function DistributionsTab({ chartData }: { chartData: any }) {
+function DistributionsTab({ chartData, maxCharts }: { chartData: any; maxCharts: number }) {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-[#470102] mb-4">
@@ -305,7 +376,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
             Numeric Columns
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
-            {chartData.distributions.map((dist: any, idx: number) => (
+            {chartData.distributions.slice(0, maxCharts).map((dist: any, idx: number) => (
               <DistributionChart key={idx} data={dist} />
             ))}
           </div>
@@ -319,7 +390,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
             Categorical Columns
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
-            {chartData.categorical_counts.map((cat: any, idx: number) => (
+            {chartData.categorical_counts.slice(0, maxCharts).map((cat: any, idx: number) => (
               <CategoricalChart key={idx} data={cat} />
             ))}
           </div>
@@ -340,7 +411,7 @@ function DistributionsTab({ chartData }: { chartData: any }) {
 }
 
 // Relationships Tab
-function RelationshipsTab({ chartData }: { chartData: any }) {
+function RelationshipsTab({ chartData, maxCharts }: { chartData: any; maxCharts: number }) {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-[#470102] mb-4">
@@ -360,7 +431,7 @@ function RelationshipsTab({ chartData }: { chartData: any }) {
             Scatter Plot Matrix
           </h4>
           <div className="grid md:grid-cols-2 gap-6">
-            {chartData.scatter_matrix.map((scatter: any, idx: number) => (
+            {chartData.scatter_matrix.slice(0, maxCharts).map((scatter: any, idx: number) => (
               <ScatterPlot key={idx} data={scatter} />
             ))}
           </div>
@@ -407,14 +478,14 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 
       {/* Issues */}
       {analysis.data_quality.issues && analysis.data_quality.issues.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-yellow-900 mb-3 flex items-center gap-2">
+        <div className="bg-[#FFF7EA] border border-[#FFEDC1] rounded-lg p-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             Issues Found
           </h4>
           <ul className="space-y-2">
             {analysis.data_quality.issues.map((issue: string, idx: number) => (
-              <li key={idx} className="flex items-start space-x-2 text-yellow-800">
+              <li key={idx} className="flex items-start space-x-2 text-[#8A5A5A]">
                 <span>•</span>
                 <span>{issue}</span>
               </li>
@@ -430,14 +501,14 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 
       {/* Recommendations */}
       {analysis.recommendations && analysis.recommendations.length > 0 && (
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6">
-          <h4 className="text-lg font-semibold text-teal-900 mb-3 flex items-center gap-2">
+        <div className="bg-white border border-[#FFEDC1] rounded-lg p-6">
+          <h4 className="text-lg font-semibold text-[#470102] mb-3 flex items-center gap-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
             Recommendations
           </h4>
           <ul className="space-y-2">
             {analysis.recommendations.map((rec: string, idx: number) => (
-              <li key={idx} className="flex items-start space-x-2 text-teal-800">
+              <li key={idx} className="flex items-start space-x-2 text-[#8A5A5A]">
                 <span>•</span>
                 <span>{rec}</span>
               </li>
@@ -450,7 +521,7 @@ function QualityTab({ analysis, chartData }: { analysis: any; chartData: any }) 
 }
 
 // Advanced Tab
-function AdvancedTab({ chartData }: { chartData: any }) {
+function AdvancedTab({ chartData, maxCharts }: { chartData: any; maxCharts: number }) {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold text-[#470102] mb-4">Advanced Analysis</h3>
@@ -462,7 +533,7 @@ function AdvancedTab({ chartData }: { chartData: any }) {
             Time Series Analysis
           </h4>
           <div className="space-y-6">
-            {chartData.time_series.map((ts: any, idx: number) => (
+            {chartData.time_series.slice(0, maxCharts).map((ts: any, idx: number) => (
               <TimeSeriesChart key={idx} data={ts} />
             ))}
           </div>

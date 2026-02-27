@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { detectOutliers as detectOutliersApi, removeOutliers as removeOutliersApi, getDatasetInfo } from '@/lib/api';
 
 interface OutlierResult {
     column: string;
@@ -17,7 +18,11 @@ interface OutlierResponse {
     details: OutlierResult[];
 }
 
-export default function OutlierDetection() {
+interface OutlierDetectionProps {
+    onDataUpdate?: (newData: any) => void;
+}
+
+export default function OutlierDetection({ onDataUpdate }: OutlierDetectionProps) {
     const [method, setMethod] = useState<'iqr' | 'zscore'>('iqr');
     const [threshold, setThreshold] = useState(1.5);
     const [isDetecting, setIsDetecting] = useState(false);
@@ -29,12 +34,7 @@ export default function OutlierDetection() {
         setIsDetecting(true);
         setResults(null);
         try {
-            const response = await fetch('http://localhost:8000/api/data/outliers/detect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ method, threshold })
-            });
-            const data = await response.json();
+            const data = await detectOutliersApi(method, threshold);
             setResults(data);
         } catch (error) {
             console.error('Outlier detection failed:', error);
@@ -45,14 +45,13 @@ export default function OutlierDetection() {
     const removeOutliers = async () => {
         setIsRemoving(true);
         try {
-            const response = await fetch('http://localhost:8000/api/data/outliers/remove', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ method, threshold })
-            });
-            const data = await response.json();
+            const data = await removeOutliersApi(method, threshold);
             setRemoveResult(data);
             setResults(null);
+            if (onDataUpdate) {
+                const info = await getDatasetInfo();
+                onDataUpdate(info);
+            }
         } catch (error) {
             console.error('Outlier removal failed:', error);
         }

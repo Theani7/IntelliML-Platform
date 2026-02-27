@@ -10,11 +10,15 @@ logger = logging.getLogger(__name__)
 class TreeModelsServer:
     """
     MCP Server for Tree-Based Model Family
-    Handles Decision Trees and Random Forests
+    Handles Decision Trees and Random Forests.
+    
+    Stores ALL trained models (not just the last one) so they can be
+    persisted and compared after training.
     """
     
     def __init__(self):
-        self.trained_model = None
+        self.trained_models: Dict[str, Any] = {}   # name → sklearn model
+        self.trained_model = None                   # last trained (legacy compat)
         self.model_type = None
     
     def train(
@@ -77,14 +81,21 @@ class TreeModelsServer:
             # Train
             model.fit(X_train, y_train)
             self.trained_model = model
+            self.trained_models[self.model_type] = model  # store ALL models
             
-            # Cross-validation
-            cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+            # Train score
+            from sklearn.metrics import accuracy_score, r2_score
+            y_train_pred = model.predict(X_train)
+            if problem_type == "classification":
+                train_score = float(accuracy_score(y_train, y_train_pred))
+            else:
+                train_score = float(r2_score(y_train, y_train_pred))
             
             return {
                 "model_name": self.model_type,
-                "cv_score_mean": float(cv_scores.mean()),
-                "cv_score_std": float(cv_scores.std()),
+                "cv_score_mean": 0.0,
+                "cv_score_std": 0.0,
+                "train_score": train_score,
                 "num_features": X_train.shape[1],
                 "training_samples": X_train.shape[0],
             }
@@ -105,5 +116,9 @@ class TreeModelsServer:
             return None
         
         if hasattr(self.trained_model, 'feature_importances_'):
-            return self.trained_model.feature_importances_
+            return self.trained_model.feature_importances_.ravel()
         return None
+    
+    def get_all_models(self) -> Dict[str, Any]:
+        """Return all trained models"""
+        return self.trained_models

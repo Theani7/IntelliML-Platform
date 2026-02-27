@@ -4,19 +4,16 @@
   color-scheme: light;
 
   /* Custom Theme Variables */
-  --background: #ffffff;
-  --foreground: #1a1a1d;
-  /* Black */
+  --background: #fff7ea;
+  --foreground: #470102;
   --card-bg: #ffffff;
-  --card-border: rgba(0, 0, 0, 0.08);
+  --card-border: #ffedc1;
 
-  --primary: #826bf8;
-  /* Purple */
-  --primary-hover: #6e56e0;
+  --primary: #470102;
+  --primary-hover: #5d0203;
 
-  --secondary-bg: #f2f2f5;
-  --gray-text: #48484a;
-  /* Gray */
+  --secondary-bg: #fff7ea;
+  --gray-text: #8a5a5a;
 
   --success: #34c759;
   --warning: #ff9f0a;
@@ -96,14 +93,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  /* Darken slightly */
+  background-color: #ffedc1;
 }
 
-.dark .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  /* Lighten slightly */
-}
 
 /* Animations */
 @keyframes fadeIn {
@@ -149,11 +141,6 @@ body {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
 }
 
-.dark .glass-effect {
-  background: rgba(28, 28, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
 
 /* Scrollbar styling - Minimalist */
 ::-webkit-scrollbar {
@@ -174,13 +161,6 @@ body {
   background: rgba(0, 0, 0, 0.3);
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
 
 /* Utilities */
 .gradient-text {
@@ -189,9 +169,6 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-.dark .gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #a1a1a6 100%);
-}
 
 /* Custom Animations */
 @keyframes fadeInUp {

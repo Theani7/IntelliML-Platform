@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { engineerFeatures, getDatasetInfo } from '@/lib/api';
 // --- Icons ---
 const CalculatorIcon = ({ className }: { className?: string }) => (
     <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,20 +65,10 @@ export default function FeaturePanel({ columns, onDataUpdate }: FeaturePanelProp
             if (operation === 'polynomial') params.degree = degree;
             if (operation === 'binning') params.bins = bins;
 
-            const response = await fetch('http://localhost:8000/api/data/engineer', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    operation,
-                    columns: selectedCols,
-                    params
-                })
-            });
-            const data = await response.json();
-            if (data.dataset_info) {
-                onDataUpdate(data.dataset_info);
-                setSelectedCols([]);
-            }
+            await engineerFeatures(operation, selectedCols, params);
+            const info = await getDatasetInfo();
+            onDataUpdate(info);
+            setSelectedCols([]);
         } catch (error) {
             console.error('Feature engineering failed:', error);
         }

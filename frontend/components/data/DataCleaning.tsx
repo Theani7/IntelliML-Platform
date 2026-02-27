@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { cleanData, getDataQuality } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
 
 interface DataCleaningProps {
     data: any;
@@ -45,6 +46,7 @@ const AlertIcon = () => (
 );
 
 export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) {
+    const { notify } = useToast();
     const [selectedColumn, setSelectedColumn] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [activeOperation, setActiveOperation] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
             }
         } catch (e) {
             console.error(e);
-            alert('Fix failed');
+            notify('error', 'Auto-fix failed', 'Please review and try again.');
         } finally {
             setIsProcessing(false);
         }
@@ -142,7 +144,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
 
         // Simple validation alert replacement (could be better, but quick fix for now)
         if (['drop_column', 'fill_na', 'rename', 'cast'].includes(activeOperation) && !selectedColumn) {
-            alert('Please select a column first');
+            notify('info', 'Select a column first', 'Choose a column from preview to continue.');
             return;
         }
 
@@ -165,7 +167,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
             }
         } catch (error) {
             console.error('Cleaning failed:', error);
-            alert('Operation failed. Check console for details.');
+            notify('error', 'Cleaning operation failed', 'Please verify parameters and try again.');
         } finally {
             setIsProcessing(false);
         }
@@ -188,7 +190,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
             }
         } catch (error) {
             console.error('Casting failed:', error);
-            alert('Casting failed. Check console.');
+            notify('error', 'Type conversion failed', 'Please check selected data type.');
         } finally {
             setIsProcessing(false);
         }
@@ -228,8 +230,8 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
 
     return (
         <>
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+                <div className="flex items-center gap-2 md:gap-4 overflow-x-auto pb-1">
                     <button
                         onClick={() => setActiveTab('clean')}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'clean' ? 'bg-[#470102] text-[#FFF7EA] shadow-lg shadow-[#470102]/20' : 'bg-[#FFF7EA] border border-[#FFEDC1] text-[#8A5A5A] hover:bg-[#FFF7EA]/80'}`}
@@ -243,7 +245,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                         Schema & Types
                     </button>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-end md:self-auto">
                     <button
                         onClick={handleUndo}
                         disabled={isProcessing || !historyStatus.can_undo}
@@ -268,10 +270,10 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
             </div>
 
             {activeTab === 'schema' ? (
-                <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-6 h-[calc(100vh-200px)] overflow-hidden flex flex-col shadow-sm">
+                <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-4 md:p-6 md:h-[calc(100vh-200px)] overflow-hidden flex flex-col shadow-sm">
                     <h3 className="text-lg font-bold text-[#470102] mb-4">Dataset Schema</h3>
                     <div className="flex-1 overflow-auto custom-scrollbar">
-                        <table className="w-full text-left text-sm text-[#8A5A5A]">
+                        <table className="w-full min-w-[640px] text-left text-sm text-[#8A5A5A]">
                             <thead className="bg-[#470102] text-[#FFF7EA] sticky top-0 z-10">
                                 <tr>
                                     <th className="px-4 py-3 border-b border-[#FFEDC1]/10">Column Name</th>
@@ -281,22 +283,22 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                     <th className="px-4 py-3 border-b border-[#FFEDC1]/10">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-[#FFEDC1]">
                                 {columns.map((col: string) => {
                                     const missingCount = qualityReport?.missing_summary?.find((m: any) => m.column === col)?.count || 0;
                                     const total = data?.rows || 0;
                                     const nonNull = total - missingCount;
 
                                     return (
-                                        <tr key={col} className="hover:bg-white/5">
-                                            <td className="px-4 py-3 font-medium text-white">{col}</td>
-                                            <td className="px-4 py-3 font-mono text-cyan-400">{data?.dtypes?.[col] || 'unknown'}</td>
+                                        <tr key={col} className="hover:bg-[#FFF7EA]">
+                                            <td className="px-4 py-3 font-medium text-[#470102]">{col}</td>
+                                            <td className="px-4 py-3 font-mono text-[#8A5A5A]">{data?.dtypes?.[col] || 'unknown'}</td>
                                             <td className="px-4 py-3">
-                                                {nonNull} <span className="text-gray-600">/ {total}</span>
+                                                {nonNull} <span className="text-[#8A5A5A]">/ {total}</span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <select
-                                                    className="bg-slate-950 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-blue-500 outline-none"
+                                                    className="bg-white border border-[#FFEDC1] rounded px-2 py-1 text-xs text-[#470102] focus:border-[#FEB229] outline-none"
                                                     value={castTypes[col] || ''}
                                                     onChange={(e) => setCastTypes(prev => ({ ...prev, [col]: e.target.value }))}
                                                 >
@@ -312,7 +314,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                                 <button
                                                     onClick={() => handleCast(col)}
                                                     disabled={!castTypes[col] || isProcessing}
-                                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
+                                                    className="px-3 py-1 bg-[#470102] hover:bg-[#5D0203] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFEDC1] text-xs rounded transition-colors"
                                                 >
                                                     Apply
                                                 </button>
@@ -325,12 +327,12 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] relative">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:h-[calc(100vh-140px)] relative">
                     {/* ... key={forceRemount} logic if needed, but standard React updates should work ... */}
 
                     {/* Modal Overlay */}
                     {fixConfirmation && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#470102]/40 backdrop-blur-sm p-4 animate-fadeIn">
                             <div className="bg-[#FFF7EA] border border-[#FFEDC1] rounded-2xl p-6 max-w-md w-full shadow-2xl shadow-[#470102]/10 transform transition-all scale-100">
                                 <h3 className="text-xl font-bold text-[#470102] mb-2 flex items-center gap-2">
                                     <MagicIcon /> Confirm AI Fix
@@ -368,16 +370,16 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                     )}
 
                     {/* LEFT: Data Preview (Scrollable) */}
-                    <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden h-full">
+                    <div className="lg:col-span-2 flex flex-col gap-6 overflow-hidden md:h-full">
 
                         {/* Health Report Banner */}
-                        <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-4 shrink-0 max-h-[300px] overflow-y-auto custom-scrollbar space-y-4 relative shadow-sm">
+                        <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-4 shrink-0 md:max-h-[300px] overflow-y-auto custom-scrollbar space-y-4 relative shadow-sm">
                             {/* Loading Overlay */}
                             {isAnalyzing && (
-                                <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
+                                <div className="absolute inset-0 bg-[#FFF7EA]/85 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
                                     <div className="flex flex-col items-center gap-2">
-                                        <RefreshIcon className="animate-spin text-blue-400 w-6 h-6" />
-                                        <span className="text-blue-200 text-sm font-medium animate-pulse">Running AI Analysis...</span>
+                                        <RefreshIcon className="animate-spin text-[#470102] w-6 h-6" />
+                                        <span className="text-[#8A5A5A] text-sm font-medium animate-pulse">Running AI Analysis...</span>
                                     </div>
                                 </div>
                             )}
@@ -390,7 +392,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                     <button
                                         onClick={fetchQuality}
                                         disabled={isAnalyzing}
-                                        className="text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 flex items-center gap-1"
+                                        className="text-xs text-[#8A5A5A] hover:text-[#470102] disabled:opacity-50 flex items-center gap-1"
                                     >
                                         {isAnalyzing ? 'Analyzing...' : 'Refresh'}
                                         <RefreshIcon className={`w-3 h-3 ${isAnalyzing ? 'animate-spin' : ''}`} />
@@ -399,14 +401,14 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                             </div>
 
                             {error && (
-                                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-200 text-sm flex items-center gap-2">
+                                <div className="p-3 bg-[#FFF7EA] border border-[#FFEDC1] rounded-lg text-[#8A5A5A] text-sm flex items-center gap-2">
                                     <AlertIcon />
                                     {error}
                                 </div>
                             )}
 
                             {!error && !qualityReport && (
-                                <div className="text-gray-400 text-sm animate-pulse">Analyzing data quality...</div>
+                                <div className="text-[#8A5A5A] text-sm animate-pulse">Analyzing data quality...</div>
                             )}
 
                             {qualityReport && (
@@ -425,7 +427,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                                             </div>
                                                             <div className="text-xs text-[#8A5A5A] mt-1 flex items-center gap-1">
                                                                 <span>AI: {item.ai_recommendation}</span>
-                                                                <span className="text-gray-300">•</span>
+                                                                <span className="text-[#8A5A5A]/40">•</span>
                                                                 <span className="text-[#8A5A5A] italic truncate max-w-[150px]">{item.ai_reasoning}</span>
                                                             </div>
                                                         </div>
@@ -450,22 +452,22 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                             <h4 className="text-xs font-semibold text-[#8A5A5A] uppercase tracking-wider mb-2">Outliers Detected ({qualityReport.outlier_summary.length})</h4>
                                             <div className="grid grid-cols-1 gap-2">
                                                 {qualityReport.outlier_summary.map((item: any) => (
-                                                    <div key={item.column} className="bg-white rounded-lg p-3 border border-[#FFEDC1] flex justify-between items-center group hover:border-red-500/30 transition-colors shadow-sm">
+                                                    <div key={item.column} className="bg-white rounded-lg p-3 border border-[#FFEDC1] flex justify-between items-center group hover:border-[#FEB229] transition-colors shadow-sm">
                                                         <div>
                                                             <div className="font-medium text-[#470102] flex items-center gap-2 text-sm">
                                                                 {item.column}
-                                                                <span className="text-[10px] text-red-600 bg-red-100 px-1.5 rounded">{item.count} detected</span>
+                                                                <span className="text-[10px] text-[#A93434] bg-[#FCE8E8] px-1.5 rounded">{item.count} detected</span>
                                                             </div>
                                                             <div className="text-xs text-[#8A5A5A] mt-1 flex items-center gap-1">
                                                                 <span>AI: {item.ai_recommendation}</span>
-                                                                <span className="text-gray-300">•</span>
+                                                                <span className="text-[#8A5A5A]/40">•</span>
                                                                 <span className="text-[#8A5A5A] italic truncate max-w-[150px]">{item.ai_reasoning}</span>
                                                             </div>
                                                         </div>
                                                         <button
                                                             onClick={() => initiateFix(item, 'outlier')}
                                                             disabled={isProcessing}
-                                                            className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            className="px-2 py-1 bg-[#FCE8E8] hover:bg-[#F8D8D8] text-[#A93434] text-xs font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                                         >
                                                             Fix
                                                         </button>
@@ -486,8 +488,8 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                         </div>
 
                         <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] flex flex-col overflow-hidden shrink-0 shadow-sm">
-                            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
-                                <h3 className="font-semibold text-white flex items-center gap-2">
+                            <div className="p-4 border-b border-[#FFEDC1] flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center bg-white">
+                                <h3 className="font-semibold text-[#470102] flex items-center gap-2">
                                     <FilterIcon /> Data Preview
                                 </h3>
                                 <span className="text-xs text-[#8A5A5A]">
@@ -496,17 +498,17 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                             </div>
 
                             <div className="flex-1 overflow-auto">
-                                <table className="w-full text-left text-sm text-[#8A5A5A]">
+                                <table className="w-full min-w-[620px] text-left text-sm text-[#8A5A5A]">
                                     <thead className="bg-[#470102] text-[#FFF7EA] sticky top-0 z-10 font-medium">
                                         <tr>
                                             {columns.map((col: string) => (
                                                 <th
                                                     key={col}
-                                                    className={`px-4 py-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors ${selectedColumn === col ? 'bg-blue-900/40 text-blue-200' : ''}`}
+                                                    className={`px-4 py-3 border-b border-[#FFEDC1] cursor-pointer hover:bg-[#FFF7EA] transition-colors ${selectedColumn === col ? 'bg-[#FEB229]/20 text-[#470102]' : ''}`}
                                                     onClick={() => setSelectedColumn(col)}
                                                 >
                                                     <div className="flex items-center gap-2">
-                                                        {selectedColumn === col && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400"></div>}
+                                                        {selectedColumn === col && <div className="w-1.5 h-1.5 rounded-full bg-[#FEB229]"></div>}
                                                         {col}
                                                         {qualityReport?.missing_summary?.find((x: any) => x.column === col) && <AlertIcon />}
                                                     </div>
@@ -514,12 +516,12 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                                             ))}
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-white/5">
+                                    <tbody className="divide-y divide-[#FFEDC1]">
                                         {preview.slice(0, 5).map((row: any, i: number) => (
-                                            <tr key={i} className="hover:bg-white/5">
+                                            <tr key={i} className="hover:bg-[#FFF7EA]">
                                                 {columns.map((col: string) => (
-                                                    <td key={`${i}-${col}`} className={`px-4 py-3 whitespace-nowrap ${selectedColumn === col ? 'bg-blue-900/10' : ''}`}>
-                                                        {row[col] === null ? <span className="text-red-400 italic">null</span> : String(row[col])}
+                                                    <td key={`${i}-${col}`} className={`px-4 py-3 whitespace-nowrap ${selectedColumn === col ? 'bg-[#FEB229]/10' : ''}`}>
+                                                        {row[col] === null ? <span className="text-[#A93434] italic">null</span> : String(row[col])}
                                                     </td>
                                                 ))}
                                             </tr>
@@ -531,7 +533,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                     </div>
 
                     {/* RIGHT: Operations Panel */}
-                    <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-6 flex flex-col h-full overflow-hidden shadow-sm">
+                    <div className="bg-[#FFF7EA] rounded-2xl border border-[#FFEDC1] p-4 md:p-6 flex flex-col md:h-full overflow-hidden shadow-sm">
                         <h3 className="text-lg font-bold text-[#470102] mb-6 flex items-center gap-2">
                             <EditIcon /> Cleaning Station
                         </h3>
@@ -571,7 +573,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                             </div>
 
                             {/* 2. Drop Column */}
-                            <div className={`p-4 rounded-xl border transition-all cursor-pointer ${activeOperation === 'drop_column' ? 'bg-red-50 border-red-200' : 'bg-white border-[#FFEDC1] hover:border-red-200'}`} onClick={() => handleOperation('drop_column')}>
+                            <div className={`p-4 rounded-xl border transition-all cursor-pointer ${activeOperation === 'drop_column' ? 'bg-[#FCE8E8] border-[#E7B4B4]' : 'bg-white border-[#FFEDC1] hover:border-[#E7B4B4]'}`} onClick={() => handleOperation('drop_column')}>
                                 <div className="font-semibold text-[#470102] mb-1">Drop Column</div>
                                 <p className="text-xs text-[#8A5A5A]">Permanently remove this column.</p>
                             </div>
@@ -599,7 +601,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
                             </div>
 
                             {/* 5. Drop Missing Rows (Global) */}
-                            <div className={`p-4 rounded-xl border transition-all cursor-pointer ${activeOperation === 'drop_na' ? 'bg-red-50 border-red-200' : 'bg-white border-[#FFEDC1] hover:border-red-200'}`} onClick={() => handleOperation('drop_na')}>
+                            <div className={`p-4 rounded-xl border transition-all cursor-pointer ${activeOperation === 'drop_na' ? 'bg-[#FCE8E8] border-[#E7B4B4]' : 'bg-white border-[#FFEDC1] hover:border-[#E7B4B4]'}`} onClick={() => handleOperation('drop_na')}>
                                 <div className="font-semibold text-[#470102] mb-1">Drop Missing Rows</div>
                                 <p className="text-xs text-[#8A5A5A]">Remove any row containing null values.</p>
                             </div>

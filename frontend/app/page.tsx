@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import Header from '@/components/layout/Header';
+import WorkflowNavigation from '@/components/layout/responsive/WorkflowNavigation';
 import LandingPage from '@/components/landing/LandingPage';
+import { LoginPage } from '@/components/auth/LoginPage';
+import { SignupPage } from '@/components/auth/SignupPage';
 import VoiceChat from '@/components/chat/VoiceChat';
 import FileUploader from '@/components/data/FileUploader';
 import DataPreview from '@/components/data/DataPreview';
@@ -17,19 +20,28 @@ import SHAPPlots from '@/components/explanations/SHAPPlots';
 import OutlierDetection from '@/components/data/OutlierDetection';
 import FeatureEngineering from '@/components/data/FeatureEngineering';
 import BatchPrediction from '@/components/models/BatchPrediction';
-import ExperimentLeaderboard from '@/components/ml/ExperimentLeaderboard';
+import Simulate from '@/components/models/Simulate';
+import AccountSection from '@/components/account/AccountSection';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 import ResetModal from '@/components/ui/ResetModal';
+import LogoutModal from '@/components/ui/LogoutModal';
+import OnboardingChecklist from '@/components/ui/OnboardingChecklist';
+import SkeletonState from '@/components/ui/SkeletonState';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 import {
   checkBackendHealth,
   testGroqConnection,
   analyzeData,
-  getExplanations
+  getExplanations,
+  resetSessionData,
+  clearChatHistory,
 } from '@/lib/api';
 
 
 // ... other imports
 
-type Tab = 'upload' | 'chat' | 'analyze' | 'train' | 'results' | 'cleaning' | 'engineering' | 'history';
+type Tab = 'upload' | 'chat' | 'analyze' | 'train' | 'results' | 'simulate' | 'cleaning' | 'engineering' | 'account' | 'admin';
 type Status = 'checking' | 'connected' | 'error';
 
 
@@ -70,12 +82,6 @@ const CheckIcon = () => (
   </svg>
 );
 
-const LockIcon = () => (
-  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-  </svg>
-);
-
 const MicIcon = () => (
   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -102,15 +108,38 @@ const WrenchIcon = () => (
   </svg>
 );
 
-const ClockIcon = () => (
+const ShieldIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l8 4v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z" />
   </svg>
 );
 
+const getInitials = (fullName?: string, username?: string) => {
+  const source = (fullName || username || 'U').trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+};
+
+const getAvatarGradient = (seed: string) => {
+  const palette = [
+    'from-[#470102] to-[#8A5A5A]',
+    'from-[#7C2D12] to-[#C2410C]',
+    'from-[#1D4D4F] to-[#307B65]',
+    'from-[#7F1D1D] to-[#A93434]',
+    'from-[#8A5A5A] to-[#470102]',
+  ];
+  const hash = seed.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return palette[hash % palette.length];
+};
+
 export default function Home() {
+  const { isAuthenticated, user, logout, loading } = useAuth();
+  const { notify } = useToast();
   const [showApp, setShowApp] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'landing' | 'login' | 'signup'>('landing');
   const [backendStatus, setBackendStatus] = useState<Status>('checking');
   const [groqStatus, setGroqStatus] = useState<Status>('checking');
 
@@ -120,7 +149,11 @@ export default function Home() {
   const [explanations, setExplanations] = useState<any>(null);
 
   const [activeTab, setActiveTab] = useState<Tab>('upload');
+  const [isHeavyTabLoading, setIsHeavyTabLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const isAdmin = !!user?.is_admin;
+  const avatarInitials = getInitials(user?.full_name, user?.username);
+  const avatarGradient = getAvatarGradient(user?.username || user?.email || 'user');
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -138,6 +171,47 @@ export default function Home() {
     if (showApp) checkStatus();
   }, [showApp]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      setShowApp(true);
+      setAuthMode('landing');
+      setActiveTab(user?.is_admin ? 'admin' : 'upload');
+    }
+  }, [isAuthenticated, user?.is_admin]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      if (activeTab !== 'admin') setActiveTab('admin');
+      return;
+    }
+    if (activeTab === 'admin') setActiveTab('upload');
+  }, [isAdmin, activeTab]);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      setShowApp(false);
+    }
+  }, [isAuthenticated, loading]);
+
+  useEffect(() => {
+    const heavyTabs: Tab[] = ['analyze', 'train', 'simulate', 'account', 'admin'];
+    const hasRequiredData =
+      (activeTab === 'analyze' || activeTab === 'train') ? !!datasetInfo :
+      activeTab === 'simulate' ? !!trainingResults :
+      activeTab === 'account' ? isAuthenticated :
+      activeTab === 'admin' ? !!user?.is_admin :
+      true;
+
+    if (!heavyTabs.includes(activeTab) || !hasRequiredData) {
+      setIsHeavyTabLoading(false);
+      return;
+    }
+
+    setIsHeavyTabLoading(true);
+    const timer = window.setTimeout(() => setIsHeavyTabLoading(false), 360);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, datasetInfo, trainingResults, isAuthenticated]);
+
   const handleDataUpload = async (data: any) => {
     setDatasetInfo(data);
     setActiveTab('cleaning');
@@ -153,12 +227,12 @@ export default function Home() {
       console.error('Analysis failed:', error);
       // Handle session expiry (backend restart)
       if (error.message && (error.message.includes('404') || error.message.includes('No dataset'))) {
-        alert("Session expired or dataset lost. Please re-upload your file.");
+        notify('error', 'Session expired', 'Please re-upload your dataset.');
         setDatasetInfo(null);
         setAnalysisResults(null);
         setActiveTab('upload');
       } else {
-        alert("Analysis failed. Please try again.");
+        notify('error', 'Analysis failed', 'Please try again.');
       }
     } finally {
       setIsAnalyzing(false);
@@ -184,43 +258,114 @@ export default function Home() {
     setShowResetModal(true);
   };
 
-  const confirmReset = () => {
-    setDatasetInfo(null);
-    setAnalysisResults(null);
-    setTrainingResults(null);
-    setExplanations(null);
-    setActiveTab('upload');
+  const confirmReset = async () => {
+    try {
+      await resetSessionData();
+      await clearChatHistory();
+    } catch (error) {
+      console.warn('Failed to fully reset backend session state:', error);
+    } finally {
+      setDatasetInfo(null);
+      setAnalysisResults(null);
+      setTrainingResults(null);
+      setExplanations(null);
+      setActiveTab('upload');
+      notify('success', 'Session reset', 'All current data and results were cleared.');
+    }
   };
 
+  // Prevent landing-page flash while auth state is restoring from localStorage/token.
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FFF7EA] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[#8A5A5A] text-sm font-bold tracking-wider uppercase">
+          <svg className="w-5 h-5 animate-spin text-[#470102]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Restoring Session
+        </div>
+      </div>
+    );
+  }
+
+  if (showApp && !loading && !isAuthenticated) {
+    return (
+      <LoginPage
+        onSwitchToSignup={() => setAuthMode('signup')}
+        onBack={() => {
+          setShowApp(false);
+          setAuthMode('landing');
+        }}
+      />
+    );
+  }
+
   if (!showApp) {
-    return <LandingPage onGetStarted={() => setShowApp(true)} />;
+    if (authMode === 'login') {
+      return (
+        <LoginPage
+          onSwitchToSignup={() => setAuthMode('signup')}
+          onBack={() => setAuthMode('landing')}
+        />
+      );
+    }
+    if (authMode === 'signup') {
+      return (
+        <SignupPage
+          onSwitchToLogin={() => setAuthMode('login')}
+          onSignupSuccess={() => setAuthMode('login')}
+          onBack={() => setAuthMode('landing')}
+        />
+      );
+    }
+
+    return (
+      <LandingPage
+        onGetStarted={() => {
+          if (isAuthenticated) {
+            setShowApp(true);
+          } else {
+            setAuthMode('login');
+          }
+        }}
+        onLogin={() => setAuthMode('login')}
+        onSignup={() => setAuthMode('signup')}
+      />
+    );
   }
 
   const mainTabs = [
-    { id: 'upload', label: 'Upload', icon: <UploadIcon />, available: true },
-    { id: 'cleaning', label: 'Data Cleaning', icon: <SparklesIcon />, available: !!datasetInfo },
-    { id: 'analyze', label: 'EDA', icon: <ChartIcon />, available: !!datasetInfo },
-    { id: 'engineering', label: 'Feature Engineering', icon: <WrenchIcon />, available: !!datasetInfo },
-    { id: 'train', label: 'Train', icon: <BrainIcon />, available: !!datasetInfo },
-    { id: 'results', label: 'Results', icon: <TargetIcon />, available: !!trainingResults },
-    { id: 'history', label: 'History', icon: <ClockIcon />, available: !!datasetInfo },
-    { id: 'chat', label: 'AI Assistant', icon: <ChatIcon />, available: !!datasetInfo },
+    ...(isAdmin
+      ? [{ id: 'admin', label: 'Admin', icon: <ShieldIcon />, available: true }]
+      : [
+        { id: 'upload', label: 'Upload', icon: <UploadIcon />, available: true },
+        { id: 'cleaning', label: 'Data Cleaning', icon: <SparklesIcon />, available: !!datasetInfo },
+        { id: 'analyze', label: 'EDA', icon: <ChartIcon />, available: !!datasetInfo },
+        { id: 'engineering', label: 'Feature Engineering', icon: <WrenchIcon />, available: !!datasetInfo },
+        { id: 'train', label: 'Train', icon: <BrainIcon />, available: !!datasetInfo },
+        { id: 'results', label: 'Results', icon: <TargetIcon />, available: !!trainingResults },
+        { id: 'simulate', label: 'Simulate', icon: <SparklesIcon />, available: !!trainingResults },
+        { id: 'chat', label: 'AI Assistant', icon: <ChatIcon />, available: !!datasetInfo },
+      ]),
   ];
+  const unlockedCount = mainTabs.filter((tab) => tab.available).length;
+  const workflowProgress = Math.round((unlockedCount / mainTabs.length) * 100);
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[#FFF7EA]/80 backdrop-blur-xl border-b border-[#FFEDC1] transition-colors duration-300">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div>
-                <h1 className="text-3xl font-display font-bold text-[#470102] tracking-tight">IntelliML</h1>
+                <h1 className="text-2xl md:text-3xl font-display font-bold text-[#470102] tracking-tight">IntelliML</h1>
                 <p className="text-xs text-[#8A5A5A] font-bold tracking-wider uppercase">AI-Powered Analytics Platform</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex flex-wrap items-center gap-2 md:gap-6">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
                 <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${backendStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : backendStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
                 <span className="text-xs font-bold text-[#470102] tracking-wide">Backend</span>
@@ -229,7 +374,7 @@ export default function Home() {
                 <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${groqStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : groqStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
                 <span className="text-xs font-bold text-[#470102] tracking-wide">AI Engine</span>
               </div>
-              {datasetInfo && (
+              {datasetInfo && !isAdmin && (
                 <button
                   onClick={handleReset}
                   className="px-4 py-1.5 text-xs font-bold bg-[#470102] hover:bg-[#5D0203] text-[#FFEDC1] rounded-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
@@ -237,73 +382,50 @@ export default function Home() {
                   Reset Session
                 </button>
               )}
+              {isAuthenticated && !isAdmin && (
+                <button
+                  onClick={() => setActiveTab('account')}
+                  className={`flex items-center gap-2.5 px-2 py-1.5 text-xs font-bold border rounded-full transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
+                    activeTab === 'account'
+                      ? 'bg-[#470102] border-[#470102] text-[#FFEDC1]'
+                      : 'border-[#FFEDC1] bg-white text-[#470102]'
+                  }`}
+                >
+                  <span className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient} text-[#FFEDC1] flex items-center justify-center text-[10px] font-bold`}>
+                    {avatarInitials}
+                  </span>
+                  <span className="pr-1 hidden sm:inline">{user?.full_name || user?.username || 'Account'}</span>
+                </button>
+              )}
+              {isAuthenticated && isAdmin && (
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="px-4 py-2 text-xs font-bold border border-[#FFEDC1] bg-white text-[#470102] rounded-lg transition-all shadow-sm hover:shadow-md"
+                >
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-80px)] bg-[#FFF7EA] border-r border-[#FFEDC1] p-5 flex flex-col transition-colors duration-300">
-
-          {/* Main Workflow Steps */}
-          <nav className="space-y-2">
-            {mainTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => tab.available && setActiveTab(tab.id as Tab)}
-                disabled={!tab.available}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group ${activeTab === tab.id
-                  ? 'bg-[#FEB229] text-[#470102] shadow-lg shadow-[#FEB229]/20 font-bold translate-x-1'
-                  : tab.available
-                    ? 'text-[#8A5A5A] hover:bg-[#FFEDC1]/50 hover:text-[#470102] hover:translate-x-1'
-                    : 'text-[#8A5A5A]/40 cursor-not-allowed'
-                  }`}
-              >
-                <div className={`transition-transform duration-300 ${activeTab === tab.id ? 'scale-110' : 'group-hover:scale-110'}`}>
-                  {tab.icon}
-                </div>
-                <span className="font-semibold tracking-wide text-sm">{tab.label}</span>
-                {!tab.available && tab.id !== 'upload' && (
-                  <span className="ml-auto flex items-center gap-1 text-xs opacity-50">
-                    <LockIcon />
-                  </span>
-                )}
-                {tab.id === 'upload' && datasetInfo && (
-                  <span className="ml-auto text-emerald-500 bg-emerald-50 rounded-full p-0.5"><CheckIcon /></span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          {datasetInfo && (
-            <div className="mt-6 pt-6 text-center">
-              <div className="p-4 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm relative overflow-hidden group">
-                <div className="absolute top-0 left-0 w-full h-1 bg-[#FEB229]"></div>
-                <div className="w-10 h-10 bg-[#FFF7EA] border border-[#FFEDC1] rounded-full flex items-center justify-center mx-auto mb-3 text-[#470102] font-bold text-lg shadow-sm">
-                  {datasetInfo.filename.charAt(0).toUpperCase()}
-                </div>
-                <h3 className="text-sm font-bold text-[#470102] mb-1 truncate">{datasetInfo.filename}</h3>
-                <p className="text-[10px] text-[#8A5A5A] uppercase tracking-wider font-bold mb-3">Active Dataset</p>
-
-                <div className="flex justify-center gap-2 text-[10px] font-medium">
-                  <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
-                    {datasetInfo.rows} rows
-                  </span>
-                  <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
-                    {datasetInfo.columns?.length} cols
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </aside>
+      <div className="flex flex-col md:flex-row">
+        <WorkflowNavigation
+          tabs={mainTabs}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+          unlockedCount={unlockedCount}
+          workflowProgress={workflowProgress}
+          datasetInfo={datasetInfo}
+          showDatasetCard={!isAdmin}
+        />
 
         {/* Main Content */}
-        <main className="flex-1 p-8 bg-[var(--background)]">
+        <main className="flex-1 p-4 md:p-8 bg-[var(--background)]">
           {/* Upload Tab */}
           {
-            activeTab === 'upload' && (
+            activeTab === 'upload' && !isAdmin && (
               <div className="animate-fadeIn">
                 <div className="text-center mb-10">
                   <h2 className="text-5xl font-medium tracking-tight text-display mb-3 text-[#470102]">Upload Your Data</h2>
@@ -314,33 +436,26 @@ export default function Home() {
                   <FileUploader onUploadSuccess={handleDataUpload} />
                 </div>
 
-                <div className="mt-12 max-w-4xl mx-auto">
-                  <h3 className="text-lg font-semibold text-[#470102] mb-4 text-center">How It Works</h3>
-                  <div className="grid md:grid-cols-5 gap-6">
-                    {[
-                      { key: 'upload', icon: <UploadIcon />, title: 'Upload', desc: 'Add your dataset' },
-                      { key: 'clean', icon: <SparklesIcon />, title: 'Clean', desc: 'Handle missing/outliers' },
-                      { key: 'eda', icon: <ChartIcon />, title: 'EDA', desc: 'View insights' },
-                      { key: 'eng', icon: <WrenchIcon />, title: 'Engineer', desc: 'Create features' },
-                      { key: 'train', icon: <BrainIcon />, title: 'Train', desc: 'Build ML models' },
-                    ].map((step, i) => (
-                      <div key={i} className="text-center p-6 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
-                        <div className="w-12 h-12 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center mx-auto text-[#FEB229] mb-4 shadow-sm">
-                          {step.icon}
-                        </div>
-                        <h4 className="text-[#470102] font-semibold mb-1">{step.title}</h4>
-                        <p className="text-sm text-[#8A5A5A] leading-relaxed">{step.desc}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="max-w-6xl mx-auto mb-8">
+                  <OnboardingChecklist
+                    hasDataset={!!datasetInfo}
+                    hasAnalysis={!!analysisResults}
+                    hasTraining={!!trainingResults}
+                    onGoUpload={() => setActiveTab('upload')}
+                    onGoClean={() => setActiveTab('cleaning')}
+                    onGoAnalyze={() => setActiveTab('analyze')}
+                    onGoTrain={() => setActiveTab('train')}
+                    onGoSimulate={() => setActiveTab('simulate')}
+                  />
                 </div>
+
               </div>
             )
           }
 
           {/* Data Cleaning Tab */}
           {
-            activeTab === 'cleaning' && datasetInfo && (
+            activeTab === 'cleaning' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Data Cleaning Station</h2>
@@ -348,7 +463,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-8">
-                  <OutlierDetection />
+                  <OutlierDetection onDataUpdate={(newData) => setDatasetInfo(newData)} />
                   <DataCleaning
                     data={datasetInfo}
                     onDataUpdate={(newData) => setDatasetInfo(newData)}
@@ -360,7 +475,7 @@ export default function Home() {
 
           {/* Feature Engineering Tab */}
           {
-            activeTab === 'engineering' && datasetInfo && (
+            activeTab === 'engineering' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Feature Engineering</h2>
@@ -376,18 +491,54 @@ export default function Home() {
 
           {/* Chat Tab */}
           {
-            activeTab === 'chat' && datasetInfo && (
-              <div className="animate-fadeIn h-[calc(100vh-140px)] rounded-[24px] overflow-hidden shadow-2xl shadow-black/5 border border-gray-200 bg-white">
+            activeTab === 'chat' && datasetInfo && !isAdmin && (
+              <div className="animate-fadeIn h-[calc(100dvh-240px)] md:h-[calc(100vh-140px)] rounded-[24px] overflow-hidden shadow-2xl shadow-black/5 border border-gray-200 bg-white">
                 <VoiceChat />
+              </div>
+            )
+          }
+
+          {
+            activeTab === 'account' && isAuthenticated && !isAdmin && (
+              <div className="animate-fadeIn">
+                {isHeavyTabLoading ? (
+                  <div className="space-y-4 max-w-6xl mx-auto">
+                    <SkeletonState rows={4} />
+                    <SkeletonState rows={5} />
+                    <SkeletonState rows={6} />
+                  </div>
+                ) : (
+                  <AccountSection onLogout={() => setShowLogoutModal(true)} />
+                )}
+              </div>
+            )
+          }
+
+          {
+            activeTab === 'admin' && user?.is_admin && (
+              <div className="animate-fadeIn max-w-7xl mx-auto">
+                {isHeavyTabLoading ? (
+                  <div className="space-y-4">
+                    <SkeletonState rows={4} />
+                    <SkeletonState rows={6} />
+                  </div>
+                ) : (
+                  <AdminDashboard currentUsername={user?.username} />
+                )}
               </div>
             )
           }
 
           {/* Analyze Tab */}
           {
-            activeTab === 'analyze' && datasetInfo && (
+            activeTab === 'analyze' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn space-y-8 max-w-7xl mx-auto">
-                {!analysisResults ? (
+                {isHeavyTabLoading ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <SkeletonState rows={6} />
+                    <SkeletonState rows={6} />
+                  </div>
+                ) : !analysisResults ? (
                   <div className="animate-fadeIn">
                     <div className="bg-[#FFF7EA] rounded-[24px] border border-[#FFEDC1] p-12 text-center shadow-lg shadow-[#FEB229]/5">
                       {/* Hero Content */}
@@ -420,6 +571,13 @@ export default function Home() {
                         )}
                       </button>
                     </div>
+
+                    {isAnalyzing && (
+                      <div className="mt-6 grid md:grid-cols-2 gap-4">
+                        <SkeletonState rows={6} />
+                        <SkeletonState rows={6} />
+                      </div>
+                    )}
 
                     {/* Feature Grid */}
                     <div className="grid md:grid-cols-3 gap-6 mt-8">
@@ -463,28 +621,35 @@ export default function Home() {
 
           {/* Train Tab */}
           {
-            activeTab === 'train' && datasetInfo && (
+            activeTab === 'train' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-4xl mx-auto">
                 <div className="text-center mb-10">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Train ML Models</h2>
                   <p className="text-gray-500">Select a target column and train multiple models</p>
                 </div>
 
-                <div className="bg-white p-1 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                  <div className="bg-[var(--background)] p-8 rounded-[20px]">
-                    <ModelTraining
-                      columns={datasetInfo.columns}
-                      onTrainingComplete={handleTrainingComplete}
-                    />
+                {isHeavyTabLoading ? (
+                  <div className="space-y-4">
+                    <SkeletonState rows={6} />
+                    <SkeletonState rows={4} />
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white p-1 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+                    <div className="bg-[var(--background)] p-8 rounded-[20px]">
+                      <ModelTraining
+                        columns={datasetInfo.columns}
+                        onTrainingComplete={handleTrainingComplete}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )
           }
 
           {/* Results Tab */}
           {
-            activeTab === 'results' && trainingResults && (
+            activeTab === 'results' && trainingResults && !isAdmin && (
               <div className="animate-fadeIn space-y-8 max-w-6xl mx-auto">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Training Complete</h2>
@@ -500,17 +665,22 @@ export default function Home() {
             )
           }
 
-          {/* History Tab */}
+          {/* Simulate Tab */}
           {
-            activeTab === 'history' && datasetInfo && (
+            activeTab === 'simulate' && trainingResults && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Experiment History</h2>
-                  <p className="text-gray-500">Track and compare your model training runs</p>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What-If Simulation</h2>
+                  <p className="text-gray-500">Adjust input features and see live prediction impact</p>
                 </div>
-                <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
-                  <ExperimentLeaderboard />
-                </div>
+                {isHeavyTabLoading ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <SkeletonState rows={8} />
+                    <SkeletonState rows={8} />
+                  </div>
+                ) : (
+                  <Simulate jobId={trainingResults.job_id || trainingResults.results?.job_id} />
+                )}
               </div>
             )
           }
@@ -521,6 +691,11 @@ export default function Home() {
         isOpen={showResetModal}
         onClose={() => setShowResetModal(false)}
         onConfirm={confirmReset}
+      />
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={logout}
       />
     </div>
   );

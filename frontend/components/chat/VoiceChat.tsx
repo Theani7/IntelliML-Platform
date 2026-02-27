@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion, transcribeAudio } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -10,8 +11,86 @@ interface Message {
     output?: string | null;
     visualization?: string | null;
     error?: boolean;
+    followUps?: string[];
     timestamp: Date;
 }
+
+type AssistantStage = 'idle' | 'understanding' | 'running' | 'result';
+
+const RECORDER_BAR_HEIGHTS = [8, 10, 12, 16, 14, 11, 9, 13];
+
+const QUICK_PROMPTS = [
+    { label: 'Clean missing values', prompt: 'Clean missing values using the safest strategy and explain what changed.' },
+    { label: 'Find top correlations', prompt: 'Find top correlations and summarize the strongest relationships.' },
+    { label: 'Train best model', prompt: 'Train the best model for this dataset and summarize metrics clearly.' },
+    { label: 'Explain model output', prompt: 'Explain the latest model output in simple business terms.' },
+];
+
+const FOLLOW_UP_ACTIONS = [
+    { label: 'Apply fix', prompt: 'Apply the recommended fixes now and show before/after summary.' },
+    { label: 'Compare before/after', prompt: 'Compare before and after with concise metrics and key differences.' },
+    { label: 'Create report', prompt: 'Create a concise report for this result with top takeaways.' },
+    { label: 'Schedule retrain', prompt: 'Create a retraining checklist and suggested schedule for this dataset.' },
+];
+
+const SLASH_COMMANDS = [
+    { command: '/clean', description: 'Clean missing values and outliers', prompt: 'Clean missing values and outliers with best-practice defaults.' },
+    { command: '/eda', description: 'Run exploratory analysis', prompt: 'Run EDA and summarize major patterns, anomalies, and quality risks.' },
+    { command: '/train', description: 'Train ML models', prompt: 'Train models with recommended defaults and explain top model performance.' },
+    { command: '/simulate', description: 'What-if simulation', prompt: 'Run what-if simulation guidance using key controllable features.' },
+    { command: '/report', description: 'Generate concise report', prompt: 'Generate a concise executive report from the latest analysis.' },
+];
+
+const STAGE_LABELS: Record<AssistantStage, string> = {
+    idle: 'Idle',
+    understanding: 'Understanding request...',
+    running: 'Running analysis...',
+    result: 'Preparing result...',
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getFollowUps = (content: string): string[] => {
+    const lower = content.toLowerCase();
+    if (lower.includes('missing') || lower.includes('outlier') || lower.includes('clean')) {
+        return [FOLLOW_UP_ACTIONS[0].prompt, FOLLOW_UP_ACTIONS[1].prompt];
+    }
+    if (lower.includes('model') || lower.includes('accuracy') || lower.includes('score')) {
+        return [FOLLOW_UP_ACTIONS[1].prompt, FOLLOW_UP_ACTIONS[3].prompt];
+    }
+    return [FOLLOW_UP_ACTIONS[2].prompt, FOLLOW_UP_ACTIONS[1].prompt];
+};
+
+const resolveSlashCommand = (message: string) => {
+    const trimmed = message.trim();
+    if (!trimmed.startsWith('/')) return trimmed;
+
+    const matched = SLASH_COMMANDS.find((item) => trimmed === item.command || trimmed.startsWith(`${item.command} `));
+    if (!matched) return message;
+
+    const rest = trimmed.slice(matched.command.length).trim();
+    if (!rest) return matched.prompt;
+    return `${matched.prompt} ${rest}`;
+};
+
+const getInitials = (fullName?: string, username?: string) => {
+    const source = (fullName || username || 'U').trim();
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return source.slice(0, 2).toUpperCase();
+};
+
+const getAvatarGradient = (seed: string) => {
+    const palette = [
+        'from-[#470102] to-[#8A5A5A]',
+        'from-[#7C2D12] to-[#C2410C]',
+        'from-[#1D4D4F] to-[#307B65]',
+        'from-[#7F1D1D] to-[#A93434]',
+        'from-[#8A5A5A] to-[#470102]',
+    ];
+    const hash = seed.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return palette[hash % palette.length];
+};
 
 // Icon Components - Warm Retro Style
 const MicIcon = () => (
@@ -41,12 +120,6 @@ const SparklesIcon = () => (
 const CopyIcon = () => (
     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-    </svg>
-);
-
-const UserIcon = () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
     </svg>
 );
 
@@ -274,11 +347,14 @@ const renderMarkdown = (text: string) => {
 };
 
 export default function VoiceChat() {
+    const { user } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [suggestions, setSuggestions] = useState<VisualizationSuggestion[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showCommandPalette, setShowCommandPalette] = useState(false);
+    const [commandHighlightIndex, setCommandHighlightIndex] = useState(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Voice recording state
@@ -286,6 +362,10 @@ export default function VoiceChat() {
     const [isPreparing, setIsPreparing] = useState(false);
     const [isTranscribing, setIsTranscribing] = useState(false);
     const [voiceError, setVoiceError] = useState<string | null>(null);
+    const [assistantStage, setAssistantStage] = useState<AssistantStage>('idle');
+    const userDisplayName = user?.full_name || user?.username || 'You';
+    const userInitials = getInitials(user?.full_name, user?.username);
+    const userAvatarGradient = getAvatarGradient(user?.username || user?.email || 'user');
 
     // Recording refs
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -314,20 +394,26 @@ export default function VoiceChat() {
     };
 
     const handleSend = async (text?: string) => {
-        const messageText = text || input.trim();
+        const rawMessage = text || input.trim();
+        const messageText = resolveSlashCommand(rawMessage);
         if (!messageText || isLoading) return;
 
         setInput('');
+        setShowCommandPalette(false);
 
         setMessages(prev => [...prev, {
             role: 'user',
-            content: messageText,
+            content: rawMessage.trim(),
             timestamp: new Date()
         }]);
         setIsLoading(true);
+        setAssistantStage('understanding');
 
         try {
+            await sleep(220);
+            setAssistantStage('running');
             const response = await sendChatMessage(messageText);
+            setAssistantStage('result');
 
             setMessages(prev => [...prev, {
                 role: 'assistant',
@@ -336,6 +422,7 @@ export default function VoiceChat() {
                 output: response.output,
                 visualization: response.visualization,
                 error: response.error,
+                followUps: response.error ? [] : getFollowUps(response.text),
                 timestamp: new Date()
             }]);
         } catch (error: any) {
@@ -347,6 +434,7 @@ export default function VoiceChat() {
             }]);
         } finally {
             setIsLoading(false);
+            window.setTimeout(() => setAssistantStage('idle'), 180);
         }
     };
 
@@ -428,6 +516,7 @@ export default function VoiceChat() {
                 }
 
                 setIsTranscribing(true);
+                setAssistantStage('understanding');
                 try {
                     const result = await transcribeAudio(audioBlob);
                     if (result.success && result.text) {
@@ -439,6 +528,7 @@ export default function VoiceChat() {
                     setVoiceError('Transcription failed');
                 } finally {
                     setIsTranscribing(false);
+                    if (!isLoading) setAssistantStage('idle');
                 }
                 resolve();
             };
@@ -455,7 +545,47 @@ export default function VoiceChat() {
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
+    const filteredCommands = input.trim().startsWith('/')
+        ? SLASH_COMMANDS.filter((item) =>
+            item.command.includes(input.trim().toLowerCase()) ||
+            item.description.toLowerCase().includes(input.trim().slice(1).toLowerCase()))
+        : [];
+
+    useEffect(() => {
+        setShowCommandPalette(input.trim().startsWith('/'));
+        setCommandHighlightIndex(0);
+    }, [input]);
+
+    const applyCommand = (command: string) => {
+        setInput(`${command} `);
+        setShowCommandPalette(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (showCommandPalette && filteredCommands.length > 0) {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setCommandHighlightIndex((prev) => (prev + 1) % filteredCommands.length);
+                return;
+            }
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setCommandHighlightIndex((prev) => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+                return;
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                applyCommand(filteredCommands[commandHighlightIndex].command);
+                return;
+            }
+        }
+
+        if (e.key === 'Enter' && showCommandPalette && filteredCommands.length > 0) {
+            e.preventDefault();
+            applyCommand(filteredCommands[commandHighlightIndex].command);
+            return;
+        }
+
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
@@ -476,10 +606,10 @@ export default function VoiceChat() {
     };
 
     const quickQuestions = [
-        "Show data summary",
-        "Which columns have missing values?",
-        "What is the average of numeric columns?",
-        "Create a correlation heatmap"
+        'Show data summary',
+        'Which columns have missing values?',
+        'What is the average of numeric columns?',
+        'Create a correlation heatmap'
     ];
 
     return (
@@ -501,6 +631,11 @@ export default function VoiceChat() {
                         <p className="text-[#8A5A5A] text-xs font-bold uppercase tracking-wider">
                             IntelliML Assistant Active
                         </p>
+                        {(isLoading || isTranscribing) && (
+                            <p className="text-[10px] text-[#8A5A5A] mt-1 font-semibold uppercase tracking-wider">
+                                {STAGE_LABELS[assistantStage]}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -519,6 +654,21 @@ export default function VoiceChat() {
                     >
                         Clear
                     </button>
+                </div>
+            </div>
+
+            <div className="px-4 py-3 border-b border-[#FFEDC1] bg-white/60">
+                <p className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest mb-2 px-1">Quick Actions</p>
+                <div className="flex flex-wrap gap-2">
+                    {QUICK_PROMPTS.map((item) => (
+                        <button
+                            key={item.label}
+                            onClick={() => handleSend(item.prompt)}
+                            className="px-3 py-1.5 text-xs bg-white hover:bg-[#FFEDC1] text-[#470102] border border-[#FFEDC1] rounded-full transition-all hover:border-[#FEB229] font-bold"
+                        >
+                            {item.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -551,9 +701,9 @@ export default function VoiceChat() {
                             <div className="absolute inset-0 rounded-[2rem] bg-[#FEB229]/5 animate-pulse"></div>
                             <div className="text-[#470102]"><BotIcon /></div>
                         </div>
-                        <h4 className="text-2xl font-bold text-[#470102] mb-3">How can I help you?</h4>
+                        <h4 className="text-2xl font-bold text-[#470102] mb-3">Hi {userDisplayName}, ready to analyze your data?</h4>
                         <p className="text-[#8A5A5A] mb-8 max-w-sm text-sm leading-relaxed">
-                            I can analyze your dataset, create visualizations, and answer questions. Just ask or use a preset below.
+                            I can help you clean data, generate charts, train models, and explain results in your context. Ask anything or start with a preset below.
                         </p>
                         <div className="grid grid-cols-2 gap-3 max-w-md w-full">
                             {quickQuestions.map((q, idx) => (
@@ -576,16 +726,18 @@ export default function VoiceChat() {
                             <div className={`max-w-[85%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                                 {/* Avatar */}
                                 <div className={`w-8 h-8 rounded-[12px] flex items-center justify-center flex-shrink-0 mt-1 shadow-sm border ${msg.role === 'user'
-                                    ? 'bg-[#470102] text-[#FFEDC1] border-[#470102]'
+                                    ? `bg-gradient-to-br ${userAvatarGradient} text-[#FFEDC1] border-[#470102]`
                                     : 'bg-white text-[#470102] border-[#FFEDC1]'
                                     }`}>
-                                    {msg.role === 'user' ? <UserIcon /> : <BotIcon />}
+                                    {msg.role === 'user' ? (
+                                        <span className="text-[10px] font-bold">{userInitials}</span>
+                                    ) : <BotIcon />}
                                 </div>
 
                                 <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                                     {/* Sender Label */}
                                     <span className="text-[10px] text-[#8A5A5A] mb-1 px-1 font-bold select-none">
-                                        {msg.role === 'user' ? 'You' : 'AI Assistant'}
+                                        {msg.role === 'user' ? userDisplayName : 'AI Assistant'}
                                     </span>
 
                                     {/* Message Bubble */}
@@ -647,6 +799,23 @@ export default function VoiceChat() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {msg.role === 'assistant' && !msg.error && msg.followUps && msg.followUps.length > 0 && (
+                                            <div className="mt-4 border-t border-[#FFEDC1] pt-3">
+                                                <div className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest mb-2">Suggested next actions</div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {msg.followUps.map((action) => (
+                                                        <button
+                                                            key={action}
+                                                            onClick={() => handleSend(action)}
+                                                            className="px-2.5 py-1.5 text-[11px] font-semibold rounded-full border border-[#FFEDC1] bg-[#FFF7EA] text-[#470102] hover:bg-[#FFEDC1] transition-all"
+                                                        >
+                                                            {action}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <span className="text-[10px] text-[#8A5A5A] mt-1.5 px-1 font-medium opacity-0 group-hover:opacity-100 transition-opacity select-none">
                                         {formatTime(msg.timestamp)}
@@ -671,8 +840,16 @@ export default function VoiceChat() {
                                         <div className="relative w-4 h-4 bg-[#FEB229] rounded-full shadow-lg shadow-[#FEB229]/50"></div>
                                     </div>
                                     <span className="text-xs font-bold text-[#8A5A5A] tracking-wide">
-                                        {isTranscribing ? 'Processing audio...' : 'Thinking...'}
+                                        {isTranscribing ? 'Processing audio...' : STAGE_LABELS[assistantStage]}
                                     </span>
+                                </div>
+                                <div className="mt-2 flex gap-1.5">
+                                    {['understanding', 'running', 'result'].map((step) => (
+                                        <span
+                                            key={step}
+                                            className={`h-1.5 rounded-full transition-all ${assistantStage === step ? 'w-8 bg-[#FEB229]' : 'w-4 bg-[#FFEDC1]'}`}
+                                        />
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -692,7 +869,7 @@ export default function VoiceChat() {
                                     key={i}
                                     className="w-1 bg-[#FEB229] rounded-full animate-pulse"
                                     style={{
-                                        height: `${8 + Math.random() * 12}px`,
+                                        height: `${RECORDER_BAR_HEIGHTS[i]}px`,
                                         animationDelay: `${i * 0.1}s`,
                                         animationDuration: '0.6s',
                                     }}
@@ -728,8 +905,8 @@ export default function VoiceChat() {
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder={isRecording ? "Listening..." : "Ask something..."}
+                        onKeyDown={handleKeyDown}
+                        placeholder={isRecording ? 'Listening...' : 'Ask something... or use /clean, /eda, /train, /simulate'}
                         className="flex-1 bg-transparent border-none rounded-none focus:ring-0 text-[#470102] placeholder-[#8A5A5A]/50 text-sm py-3 px-2 font-medium tracking-wide"
                         disabled={isLoading || isRecording || isTranscribing}
                     />
@@ -745,6 +922,25 @@ export default function VoiceChat() {
                         </div>
                     </button>
                 </div>
+                {showCommandPalette && filteredCommands.length > 0 && (
+                    <div className="max-w-3xl mx-auto mt-2 bg-white border border-[#FFEDC1] rounded-xl shadow-lg overflow-hidden">
+                        {filteredCommands.map((cmd, index) => (
+                            <button
+                                key={cmd.command}
+                                onClick={() => applyCommand(cmd.command)}
+                                className={`w-full text-left px-3 py-2.5 transition-colors ${index === commandHighlightIndex
+                                    ? 'bg-[#FFF7EA]'
+                                    : 'bg-white hover:bg-[#FFF7EA]'
+                                    }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-bold text-[#470102]">{cmd.command}</span>
+                                    <span className="text-[10px] text-[#8A5A5A] uppercase tracking-wider">{cmd.description}</span>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                )}
                 {voiceError && (
                     <p className="text-rose-600 text-[10px] mt-2 text-center absolute -bottom-6 left-0 right-0 animate-fadeIn font-medium">
                         {voiceError}

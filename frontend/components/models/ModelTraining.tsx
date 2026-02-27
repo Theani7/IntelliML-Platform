@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { trainModels } from '@/lib/api';
+import { getStoredUserPreferences, ModelMetricPreference } from '@/lib/userPreferences';
 
 interface ModelTrainingProps {
   columns: string[];
@@ -38,6 +39,9 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
   const [testSize, setTestSize] = useState(0.2);
   const [cvFolds, setCvFolds] = useState(5);
   const [enableTuning, setEnableTuning] = useState(false);
+  const [optimizationMetric, setOptimizationMetric] = useState<ModelMetricPreference>(
+    () => getStoredUserPreferences().defaultModelMetric
+  );
   const [isTraining, setIsTraining] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +55,14 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
     setError(null);
 
     try {
-      const result = await trainModels(targetColumn, undefined, testSize, cvFolds, enableTuning);
+      const result = await trainModels(
+        targetColumn,
+        undefined,
+        optimizationMetric === 'auto' ? undefined : optimizationMetric,
+        testSize,
+        cvFolds,
+        enableTuning
+      );
 
       if (onTrainingComplete) {
         onTrainingComplete(result);
@@ -65,8 +76,8 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
   };
 
   return (
-    <div className="bg-white rounded-[24px] border border-[#FFEDC1] p-6 shadow-sm">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="bg-white rounded-[20px] md:rounded-[24px] border border-[#FFEDC1] p-4 md:p-6 shadow-sm">
+      <div className="flex items-start sm:items-center gap-4 mb-6">
         <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#FEB229] shadow-sm">
           <BrainIcon />
         </div>
@@ -168,8 +179,35 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
           </p>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-[#470102] mb-2">
+            Optimization Metric
+          </label>
+          <div className="relative">
+            <select
+              value={optimizationMetric}
+              onChange={(e) => setOptimizationMetric(e.target.value as ModelMetricPreference)}
+              className="w-full px-4 py-3 bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl text-[#470102] focus:ring-2 focus:ring-[#FEB229]/50 focus:border-[#FEB229] appearance-none cursor-pointer hover:bg-[#FFEDC1]/20 transition-colors"
+              disabled={isTraining}
+            >
+              <option value="auto" className="bg-white text-[#8A5A5A]">Auto (recommended)</option>
+              <option value="accuracy" className="bg-white text-[#470102]">Accuracy</option>
+              <option value="f1" className="bg-white text-[#470102]">F1 Score</option>
+              <option value="roc_auc" className="bg-white text-[#470102]">ROC AUC</option>
+              <option value="r2" className="bg-white text-[#470102]">R2</option>
+              <option value="rmse" className="bg-white text-[#470102]">RMSE</option>
+            </select>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A5A5A] pointer-events-none">
+              <ChevronDownIcon />
+            </div>
+          </div>
+          <p className="text-xs text-[#8A5A5A] mt-2">
+            Default comes from Account Personalization settings.
+          </p>
+        </div>
+
         {/* Hyperparameter Tuning Toggle */}
-        <div className="flex items-center justify-between p-4 bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl">
+        <div className="flex items-start sm:items-center justify-between gap-4 p-4 bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl">
           <div>
             <label className="text-sm font-medium text-[#470102]">Hyperparameter Tuning</label>
             <p className="text-xs text-[#8A5A5A]">Automatically optimize model parameters (slower)</p>

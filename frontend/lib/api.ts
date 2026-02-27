@@ -3,24 +3,47 @@
  * Production-ready with comprehensive error handling
  */
 
-function getApiBaseUrl() {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-
-  // In the browser, use the same host as the frontend to avoid 127.0.0.1 mismatches.
-  if (typeof window !== 'undefined') {
-    const { protocol, hostname } = window.location;
-    // Avoid IPv6 localhost resolution issues by forcing IPv4.
-    const resolvedHost = hostname === 'localhost' ? '127.0.0.1' : hostname;
-    return `${protocol}//${resolvedHost}:8000`;
-  }
-
-  // Server-side fallback
-  return 'http://127.0.0.1:8000';
+export function getApiBaseUrl() {
+  // Always use same-origin Next.js proxy to avoid browser CORS/network issues.
+  return '/api/proxy';
 }
 
 const API_BASE_URL = getApiBaseUrl();
+const API_KEY = process.env.NEXT_PUBLIC_INTELLIML_API_KEY;
+
+function getSessionId(): string {
+  if (typeof window === 'undefined') return 'default';
+
+  const existing = localStorage.getItem('intelliml_session_id');
+  if (existing) return existing;
+
+  const generated = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  localStorage.setItem('intelliml_session_id', generated);
+  return generated;
+}
+
+function withSession(endpoint: string): string {
+  const sessionId = getSessionId();
+  const separator = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${separator}session_id=${encodeURIComponent(sessionId)}`;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+
+  if (API_KEY) {
+    return { 'X-API-Key': API_KEY };
+  }
+
+  return {};
+}
 
 // Custom error class for better error handling
 export class APIError extends Error {
@@ -41,7 +64,8 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const endpointWithSession = withSession(endpoint);
+  const url = `${API_BASE_URL}${endpointWithSession}`;
 
   console.log(`[API] ${options.method || 'GET'} ${url}`);
 
@@ -50,6 +74,7 @@ async function apiCall<T>(
       ...options,
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
         ...options.headers,
       },
     });
@@ -58,8 +83,9 @@ async function apiCall<T>(
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.detail || errorData.error || `API Error: ${response.status} ${response.statusText}`;
 
-      // Suppress 404 errors from console.error as they are often handled by the UI (session expiry)
-      if (response.status !== 404) {
+      // Treat client-side validation/auth errors as handled UI states.
+      // Keep console.error for server-side failures only.
+      if (response.status >= 500) {
         console.error(`[API Error] ${response.status}:`, errorMessage);
       } else {
         console.warn(`[API Info] ${response.status}:`, errorMessage);
@@ -103,7 +129,8 @@ export async function uploadFile<T>(
   // Set default filename based on blob type
   const defaultFileName = fileName || `recording.${getExtensionFromMimeType(file.type)}`;
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const endpointWithSession = withSession(endpoint);
+  const url = `${API_BASE_URL}${endpointWithSession}`;
   const formData = new FormData();
   formData.append(fieldName, file, defaultFileName);
 
@@ -118,6 +145,9 @@ export async function uploadFile<T>(
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
+      headers: {
+        ...getAuthHeaders(),
+      },
       // Don't set Content-Type - browser handles multipart/form-data boundary
     });
 
@@ -246,7 +276,7 @@ export async function uploadDataFile(file: File) {
 
   // Get URL at request time to ensure correct browser context
   const baseUrl = getApiBaseUrl();
-  const url = `${baseUrl}/api/data/upload`;
+  const url = `${baseUrl}${withSession('/api/data/upload')}`;
 
   console.log(`[API] Uploading data file to ${url}`, {
     name: file.name,
@@ -259,6 +289,9 @@ export async function uploadDataFile(file: File) {
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
+      headers: {
+        ...getAuthHeaders(),
+      },
     });
 
     if (!response.ok) {
@@ -332,6 +365,7 @@ export async function analyzeData() {
 export async function trainModels(
   targetColumn: string,
   modelTypes?: string[],
+  optimizationMetric?: string,
   testSize: number = 0.2,
   cvFolds: number = 5,
   enableTuning: boolean = false
@@ -341,10 +375,28 @@ export async function trainModels(
     body: JSON.stringify({
       target_column: targetColumn,
       model_types: modelTypes,
+      optimization_metric: optimizationMetric,
       test_size: testSize,
       cv_folds: cvFolds,
       enable_tuning: enableTuning
     }),
+  });
+}
+
+/**
+ * Get simulation schema for a trained job
+ */
+export async function getSimulationSchema(jobId: string) {
+  return apiCall<any>(`/api/data/simulate/schema/${jobId}`);
+}
+
+/**
+ * Run what-if simulation prediction
+ */
+export async function runSimulation(jobId: string, features: Record<string, any>) {
+  return apiCall<any>(`/api/data/simulate/predict/${jobId}`, {
+    method: 'POST',
+    body: JSON.stringify({ features }),
   });
 }
 
@@ -369,6 +421,27 @@ export async function getExperiments() {
   return apiCall<any[]>('/api/models/experiments');
 }
 
+export async function getCurrentUser() {
+  return apiCall<any>('/api/auth/me');
+}
+
+export async function updateCurrentUser(payload: { email?: string; full_name?: string }) {
+  return apiCall<any>('/api/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function changeCurrentPassword(currentPassword: string, newPassword: string) {
+  return apiCall<{ message: string }>('/api/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+}
+
 
 /**
  * Get SHAP explanations
@@ -377,8 +450,37 @@ export async function getExplanations(jobId: string, modelName?: string) {
   const endpoint = modelName
     ? `/api/data/explain/${jobId}?model=${modelName}`
     : `/api/data/explain/${jobId}`;
+  const raw = await apiCall<any>(endpoint);
 
-  return apiCall<any>(endpoint);
+  // Normalize backend variants:
+  // 1) { shap_results: { feature_importance: [{feature, importance}] } }
+  // 2) { feature_importance: { featureName: importance, ... } }
+  if (raw?.shap_results?.feature_importance) {
+    return raw;
+  }
+
+  if (raw?.feature_importance && typeof raw.feature_importance === 'object') {
+    const normalized = Object.entries(raw.feature_importance)
+      .map(([feature, importance]) => ({
+        feature,
+        importance: Number(importance) || 0,
+      }))
+      .sort((a, b) => b.importance - a.importance);
+
+    return {
+      ...raw,
+      shap_results: {
+        feature_importance: normalized,
+        plots: raw.plots || {},
+        fallback: true,
+      },
+      explanation: raw.explanation || 'Feature importance generated from the trained model.',
+      model_name: raw.model_name || 'best_model',
+      status: raw.status || 'success',
+    };
+  }
+
+  return raw;
 }
 
 /**
@@ -386,8 +488,11 @@ export async function getExplanations(jobId: string, modelName?: string) {
  */
 export async function downloadReport() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/data/report`, {
+    const response = await fetch(`${API_BASE_URL}${withSession('/api/data/report')}`, {
       method: 'GET',
+      headers: {
+        ...getAuthHeaders(),
+      },
     });
 
     if (!response.ok) {
@@ -414,11 +519,104 @@ export async function downloadReport() {
   }
 }
 
+export async function detectOutliers(method: 'iqr' | 'zscore', threshold: number) {
+  return apiCall<{
+    method: string;
+    threshold: number;
+    total_outlier_rows: number;
+    columns_analyzed: number;
+    details: Array<{ column: string; outlier_count: number; percentage: number; sample_values: number[] }>;
+  }>('/api/data/outliers/detect', {
+    method: 'POST',
+    body: JSON.stringify({ method, threshold }),
+  });
+}
+
+export async function removeOutliers(method: 'iqr' | 'zscore', threshold: number) {
+  return apiCall<{
+    status: string;
+    original_rows: number;
+    removed_rows: number;
+    remaining_rows: number;
+    columns_processed: string[];
+  }>('/api/data/outliers/remove', {
+    method: 'POST',
+    body: JSON.stringify({ method, threshold }),
+  });
+}
+
+export async function engineerFeatures(
+  operation: string,
+  columns: string[],
+  params: Record<string, unknown> = {}
+) {
+  return apiCall<any>('/api/data/engineer', {
+    method: 'POST',
+    body: JSON.stringify({ operation, columns, params }),
+  });
+}
+
+export async function runSinglePrediction(jobId: string, features: number[]) {
+  return apiCall<any>(`/api/models/predict/${jobId}`, {
+    method: 'POST',
+    body: JSON.stringify({ features }),
+  });
+}
+
+export async function explainSinglePrediction(jobId: string, features: number[]) {
+  return apiCall<any>(`/api/models/explain/${jobId}`, {
+    method: 'POST',
+    body: JSON.stringify({ features }),
+  });
+}
+
+export function getModelExportUrl(jobId: string): string {
+  return `${API_BASE_URL}${withSession(`/api/models/export/${jobId}`)}`;
+}
+
+export function getBatchPredictionUrl(jobId: string): string {
+  return `${API_BASE_URL}${withSession(`/api/models/predict-batch/${jobId}`)}`;
+}
+
+export function getAuthHeadersForRequest(): Record<string, string> {
+  return getAuthHeaders();
+}
+
+export async function downloadModelExport(jobId: string, fileName?: string) {
+  const response = await fetch(getModelExportUrl(jobId), {
+    method: 'GET',
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new APIError(errorData.detail || 'Failed to download model', response.status, errorData);
+  }
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName || `model_${jobId}.joblib`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 /**
  * Test data endpoint
  */
 export async function testData() {
   return apiCall<any>('/api/data/test-data');
+}
+
+export async function resetSessionData() {
+  return apiCall<{ status: string; message: string }>('/api/data/reset', {
+    method: 'POST',
+  });
 }
 
 // ============================================
@@ -462,4 +660,90 @@ export async function getVisualizationSuggestions(): Promise<{ suggestions: Visu
  */
 export async function clearChatHistory(): Promise<void> {
   return apiCall<void>('/api/chat/clear', { method: 'POST' });
+}
+
+export async function getAdminOverview() {
+  return apiCall<any>('/api/admin/overview');
+}
+
+export async function getAdminUsers() {
+  return apiCall<any[]>('/api/admin/users');
+}
+
+export async function setAdminUserStatus(userId: number, isActive: boolean) {
+  return apiCall<any>(`/api/admin/users/${userId}/status`, {
+    method: 'POST',
+    body: JSON.stringify({ is_active: isActive }),
+  });
+}
+
+export async function setAdminRole(userId: number, isAdmin: boolean) {
+  return apiCall<any>(`/api/admin/users/${userId}/admin-role`, {
+    method: 'POST',
+    body: JSON.stringify({ is_admin: isAdmin }),
+  });
+}
+
+export async function setAdminRoleWithReason(userId: number, isAdmin: boolean, reason?: string) {
+  return apiCall<any>(`/api/admin/users/${userId}/admin-role`, {
+    method: 'POST',
+    body: JSON.stringify({ is_admin: isAdmin, reason }),
+  });
+}
+
+export async function setAdminUserStatusWithReason(userId: number, isActive: boolean, reason?: string) {
+  return apiCall<any>(`/api/admin/users/${userId}/status`, {
+    method: 'POST',
+    body: JSON.stringify({ is_active: isActive, reason }),
+  });
+}
+
+export async function getAdminAnalytics() {
+  return apiCall<any>('/api/admin/analytics');
+}
+
+export async function getAdminSystemHealth() {
+  return apiCall<any>('/api/admin/system-health');
+}
+
+export async function getAdminAudit(limit: number = 200) {
+  return apiCall<any>(`/api/admin/audit?limit=${limit}`);
+}
+
+export async function adminResetPassword(userId: number, newPassword: string, reason: string) {
+  return apiCall<any>('/api/admin/actions/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      new_password: newPassword,
+      reason,
+    }),
+  });
+}
+
+export async function adminForceLogout(userId: number, reason: string) {
+  return apiCall<any>('/api/admin/actions/force-logout', {
+    method: 'POST',
+    body: JSON.stringify({
+      user_id: userId,
+      reason,
+    }),
+  });
+}
+
+export async function adminClearUserSession(sessionId: string, reason: string) {
+  return apiCall<any>('/api/admin/actions/clear-user-session', {
+    method: 'POST',
+    body: JSON.stringify({
+      session_id: sessionId,
+      reason,
+    }),
+  });
+}
+
+export async function adminClearStuckJobs(reason: string) {
+  return apiCall<any>('/api/admin/actions/clear-stuck-jobs', {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
 }

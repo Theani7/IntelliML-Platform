@@ -1,7 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
-
 interface CorrelationHeatmapProps {
   data: {
     columns: string[];

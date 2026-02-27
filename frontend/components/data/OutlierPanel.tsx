@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { detectOutliers as detectOutliersApi, removeOutliers as removeOutliersApi, getDatasetInfo } from '@/lib/api';
 // --- Icons ---
 const FunnelIcon = ({ className }: { className?: string }) => (
     <svg className={className || "w-4 h-4"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,12 +48,7 @@ export default function OutlierPanel({ onDataUpdate }: OutlierPanelProps) {
         setIsDetecting(true);
         setResults(null);
         try {
-            const response = await fetch('http://localhost:8000/api/data/outliers/detect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ method, threshold })
-            });
-            const data = await response.json();
+            const data = await detectOutliersApi(method, threshold);
             setResults(data);
         } catch (error) {
             console.error('Outlier detection failed:', error);
@@ -63,15 +59,9 @@ export default function OutlierPanel({ onDataUpdate }: OutlierPanelProps) {
     const removeOutliers = async () => {
         setIsRemoving(true);
         try {
-            const response = await fetch('http://localhost:8000/api/data/outliers/remove', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ method, threshold })
-            });
-            const data = await response.json();
-            if (data.dataset_info) {
-                onDataUpdate(data.dataset_info);
-            }
+            await removeOutliersApi(method, threshold);
+            const updated = await getDatasetInfo();
+            onDataUpdate(updated);
             setResults(null); // Clear results after removal
         } catch (error) {
             console.error('Outlier removal failed:', error);

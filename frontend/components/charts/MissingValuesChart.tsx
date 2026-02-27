@@ -26,10 +26,10 @@ export default function MissingValuesChart({ data }: MissingValuesChartProps) {
 
   if (!data || !data.columns || data.columns.length === 0) {
     return (
-      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-8 text-center">
-        <div className="text-4xl mb-3 text-green-400">✓</div>
-        <p className="text-green-300 font-bold text-lg">No Missing Values Found!</p>
-        <p className="text-sm text-green-400/60 mt-2">Your dataset is clean and complete.</p>
+      <div className="bg-[#FFF7EA] border border-[#FFEDC1] rounded-xl p-8 text-center">
+        <div className="text-4xl mb-3 text-[#307B65]">✓</div>
+        <p className="text-[#470102] font-bold text-lg">No Missing Values Found</p>
+        <p className="text-sm text-[#8A5A5A] mt-2">Your dataset is clean and complete.</p>
       </div>
     );
   }
@@ -90,8 +90,8 @@ export default function MissingValuesChart({ data }: MissingValuesChartProps) {
             cursor={{ fill: 'rgba(71, 1, 2, 0.05)' }}
           />
           <Legend />
-          <Bar dataKey="count" fill="#ef4444" name="Missing Count" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="percentage" fill="#f97316" name="Missing %" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="count" fill="#A93434" name="Missing Count" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="percentage" fill="#FEB229" name="Missing %" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

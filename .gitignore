@@ -54,6 +54,9 @@ model_cache/
 uploads/
 *.csv
 *.json
+*.db
+*.sqlite
+*.sqlite3
 *.pkl
 *.joblib
 

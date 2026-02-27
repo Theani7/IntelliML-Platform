@@ -42,25 +42,25 @@ export default function DataStats({ analysis }: DataStatsProps) {
         icon={<ChartIcon />}
         label="Total Rows"
         value={basic_info.num_rows.toLocaleString()}
-        gradient="from-blue-500 to-cyan-500"
+        gradient="from-[#FEB229] to-[#FCA408]"
       />
       <StatCard
         icon={<ColumnsIcon />}
         label="Total Columns"
         value={basic_info.num_columns}
-        gradient="from-indigo-500 to-purple-500"
+        gradient="from-[#8A5A5A] to-[#470102]"
       />
       <StatCard
         icon={<AlertIcon />}
         label="Missing Values"
         value={missing_values.total_missing.toLocaleString()}
-        gradient={missing_values.total_missing > 0 ? "from-amber-500 to-orange-500" : "from-green-500 to-emerald-500"}
+        gradient={missing_values.total_missing > 0 ? "from-[#C84C4C] to-[#A93434]" : "from-[#307B65] to-[#205A48]"}
       />
       <StatCard
         icon={<SparkleIcon />}
         label="Quality Score"
         value={`${data_quality.quality_score}/100`}
-        gradient={data_quality.quality_score > 80 ? "from-green-500 to-emerald-500" : "from-amber-500 to-orange-500"}
+        gradient={data_quality.quality_score > 80 ? "from-[#307B65] to-[#205A48]" : "from-[#FEB229] to-[#FCA408]"}
       />
     </div>
   );
