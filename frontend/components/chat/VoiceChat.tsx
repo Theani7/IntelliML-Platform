@@ -264,7 +264,7 @@ const CollapsibleCode = ({ lang, code, isPython }: { lang: string; code: string;
     );
 };
 
-// Markdown renderer for chat messages
+// Enhanced Markdown renderer for chat messages
 const renderMarkdown = (text: string) => {
     const parts: React.ReactNode[] = [];
     let remaining = text;
@@ -295,7 +295,40 @@ const renderMarkdown = (text: string) => {
             continue;
         }
 
-        // Match Lists ( - or * )
+        // Match Horizontal Rule ---
+        const hrMatch = remaining.match(/^---+$/);
+        if (hrMatch) {
+            parts.push(<hr key={key++} className="border-t border-[#FFEDC1] my-3" />);
+            remaining = remaining.slice(hrMatch[0].length);
+            continue;
+        }
+
+        // Match Blockquote >
+        const blockquoteMatch = remaining.match(/^>\s*(.+)$/);
+        if (blockquoteMatch) {
+            parts.push(
+                <div key={key++} className="border-l-4 border-[#FEB229] pl-3 py-1 my-2 bg-[#FFF7EA] rounded-r text-[#8A5A5A] italic">
+                    {blockquoteMatch[1]}
+                </div>
+            );
+            remaining = remaining.slice(blockquoteMatch[0].length);
+            continue;
+        }
+
+        // Match Numbered Lists (1. 2. 3.)
+        const numberedMatch = remaining.match(/^(\s*)(\d+)\.\s+(.+)$/);
+        if (numberedMatch) {
+            parts.push(
+                <div key={key++} className="flex gap-2 ml-4 my-1">
+                    <span className="text-[#FEB229] font-bold w-5">{numberedMatch[2]}.</span>
+                    <span className="text-[#470102]">{numberedMatch[3]}</span>
+                </div>
+            );
+            remaining = remaining.slice(numberedMatch[0].length);
+            continue;
+        }
+
+        // Match unordered lists - or *
         const listMatch = remaining.match(/^(\s*[-*]\s+.+?)(\n|$)/);
         if (listMatch) {
             parts.push(
@@ -305,6 +338,18 @@ const renderMarkdown = (text: string) => {
                 </div>
             );
             remaining = remaining.slice(listMatch[0].length);
+            continue;
+        }
+
+        // Match Links [text](url)
+        const linkMatch = remaining.match(/^\[([^\]]+)\]\(([^)]+)\)/);
+        if (linkMatch) {
+            parts.push(
+                <a key={key++} href={linkMatch[2]} className="text-[#470102] underline hover:text-[#FEB229]" target="_blank" rel="noopener">
+                    {linkMatch[1]}
+                </a>
+            );
+            remaining = remaining.slice(linkMatch[0].length);
             continue;
         }
 
@@ -320,16 +365,24 @@ const renderMarkdown = (text: string) => {
             continue;
         }
 
-        // Match Bold **...**
-        const boldMatch = remaining.match(/^\*\*([^*]+)\*\*/) || remaining.match(/^__([^_]+)__/);
+        // Match Bold **...** or __...__
+        const boldMatch = remaining.match(/^\*\*([^*]+)\*\* /) || remaining.match(/^__([^_]+)__/);
         if (boldMatch) {
             parts.push(<strong key={key++} className="font-bold text-[#470102]">{boldMatch[1]}</strong>);
             remaining = remaining.slice(boldMatch[0].length);
             continue;
         }
 
+        // Match Italic *...* or _..._
+        const italicMatch = remaining.match(/^\*([^*]+)\*/) || remaining.match(/^_([^_]+)_/);
+        if (italicMatch) {
+            parts.push(<em key={key++} className="italic text-[#470102]">{italicMatch[1]}</em>);
+            remaining = remaining.slice(italicMatch[0].length);
+            continue;
+        }
+
         // Plain Text
-        const nextSpecial = remaining.search(/```|`|\*\*|__|#{1,3}\s|^\s*[-*]\s/m);
+        const nextSpecial = remaining.search(/```|`|\*\*|__|#{1,3}\s|^\s*[-*]\s|^\d+\.\s|^>|^-\s|--/m);
 
         if (nextSpecial === -1) {
             parts.push(<span key={key++} className="text-[#470102] leading-relaxed whitespace-pre-wrap">{remaining}</span>);
@@ -617,105 +670,52 @@ export default function VoiceChat() {
             {/* Ambient Background Glow */}
             <div className="absolute top-0 right-0 w-96 h-96 bg-[#FEB229]/5 rounded-full blur-[120px] pointer-events-none" />
 
-            {/* Header */}
-            <div className="px-6 py-5 bg-[#FFF7EA]/80 backdrop-blur-xl border-b border-[#FFEDC1] z-10 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <div className="w-10 h-10 rounded-xl bg-[#470102] flex items-center justify-center shadow-lg shadow-[#470102]/20 text-[#FFEDC1]">
-                            <BotIcon />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#FEB229] rounded-full border-2 border-[#FFF7EA]"></div>
+{/* Header - Simplified */}
+            <div className="px-4 sm:px-6 py-3 bg-white/90 backdrop-blur border-b border-[#FFEDC1] z-10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#470102] flex items-center justify-center text-[#FFEDC1]">
+                        <BotIcon />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-[#470102] tracking-tight">AI Data Assistant</h3>
-                        <p className="text-[#8A5A5A] text-xs font-bold uppercase tracking-wider">
-                            IntelliML Assistant Active
-                        </p>
+                        <h3 className="text-sm font-bold text-[#470102]">AI Assistant</h3>
                         {(isLoading || isTranscribing) && (
-                            <p className="text-[10px] text-[#8A5A5A] mt-1 font-semibold uppercase tracking-wider">
-                                {STAGE_LABELS[assistantStage]}
-                            </p>
+                            <p className="text-[10px] text-[#8A5A5A]">{STAGE_LABELS[assistantStage]}</p>
                         )}
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={() => setShowSuggestions(!showSuggestions)}
-                        className={`px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 border ${showSuggestions
-                            ? 'bg-[#470102] text-[#FFEDC1] border-[#470102]'
-                            : 'bg-white text-[#470102] border-[#FFEDC1] hover:bg-[#FFF7EA]'
-                            }`}
-                    >
-                        <SparklesIcon /> Ideas
+                    <button onClick={() => setShowSuggestions(!showSuggestions)} className="text-xs text-gray-500 hover:text-[#470102]">
+                        Ideas
                     </button>
-                    <button
-                        onClick={handleClear}
-                        className="px-3 py-2 text-xs font-bold bg-white hover:bg-[#FFF7EA] text-[#470102] border border-[#FFEDC1] rounded-lg transition-all"
-                    >
+                    <button onClick={handleClear} className="text-xs text-gray-500 hover:text-[#470102]">
                         Clear
                     </button>
                 </div>
             </div>
 
-            <div className="px-4 py-3 border-b border-[#FFEDC1] bg-white/60">
-                <p className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest mb-2 px-1">Quick Actions</p>
-                <div className="flex flex-wrap gap-2">
-                    {QUICK_PROMPTS.map((item) => (
-                        <button
-                            key={item.label}
-                            onClick={() => handleSend(item.prompt)}
-                            className="px-3 py-1.5 text-xs bg-white hover:bg-[#FFEDC1] text-[#470102] border border-[#FFEDC1] rounded-full transition-all hover:border-[#FEB229] font-bold"
-                        >
-                            {item.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Suggestions Panel */}
+            {/* Suggestions Panel - only shows when clicked */}
             {showSuggestions && (
-                <div className="px-4 py-3 bg-[#FFF7EA] backdrop-blur-md border-b border-[#FFEDC1] animate-fadeIn z-10">
-                    <p className="text-[10px] font-bold text-[#8A5A5A] uppercase tracking-widest mb-3 px-1">Suggested Visualizations</p>
+                <div className="px-4 py-2 bg-white border-b border-[#FFEDC1]">
+                    <p className="text-[10px] text-[#8A5A5A] mb-2">Suggestions</p>
                     <div className="flex flex-wrap gap-2">
-                        {suggestions.map((s, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => {
-                                    handleSend(`Create a ${s.type} chart: ${s.description}`);
-                                    setShowSuggestions(false);
-                                }}
-                                className="px-3 py-1.5 text-xs bg-white hover:bg-[#FFEDC1] text-[#470102] border border-[#FFEDC1] rounded-full transition-all hover:border-[#FEB229] font-bold"
-                            >
-                                {s.title}
+                        {QUICK_PROMPTS.map((item) => (
+                            <button key={item.label} onClick={() => { handleSend(item.prompt); setShowSuggestions(false); }} className="text-xs px-2 py-1 bg-gray-100 rounded">
+                                {item.label}
                             </button>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Messages Area */}
+            {/* Messages Area - Full height */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 z-0 scrollbar-thin scrollbar-thumb-[#FFEDC1] scrollbar-track-transparent">
                 {messages.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                        <div className="w-24 h-24 rounded-[2rem] bg-white border border-[#FFEDC1] shadow-xl shadow-[#FEB229]/5 flex items-center justify-center mb-8 relative">
-                            <div className="absolute inset-0 rounded-[2rem] bg-[#FEB229]/5 animate-pulse"></div>
-                            <div className="text-[#470102]"><BotIcon /></div>
-                        </div>
-                        <h4 className="text-2xl font-bold text-[#470102] mb-3">Hi {userDisplayName}, ready to analyze your data?</h4>
-                        <p className="text-[#8A5A5A] mb-8 max-w-sm text-sm leading-relaxed">
-                            I can help you clean data, generate charts, train models, and explain results in your context. Ask anything or start with a preset below.
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                        <div className="text-4xl mb-4">🤖</div>
+                        <h4 className="text-lg font-bold text-[#470102] mb-2">Ask me about your data</h4>
+                        <p className="text-xs text-[#8A5A5A] max-w-xs">
+                            Ask anything - I'll analyze, visualize, and explain your data.
                         </p>
-                        <div className="grid grid-cols-2 gap-3 max-w-md w-full">
-                            {quickQuestions.map((q, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => handleSend(q)}
-                                    className="px-4 py-3 text-xs font-bold bg-white hover:bg-[#FFEDC1] hover:border-[#FEB229] hover:shadow-md rounded-xl text-[#470102] transition-all border border-[#FFEDC1] text-left shadow-sm"
-                                >
-                                    {q}
-                                </button>
-                            ))}
-                        </div>
                     </div>
                 ) : (
                     messages.map((msg, idx) => (

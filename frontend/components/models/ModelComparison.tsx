@@ -73,14 +73,17 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
   const explanation = results.explanation;
   const suggestions = results.suggestions || results.results?.suggestions || [];
   const job_id = results.job_id || results.results?.job_id;
-  const feature_names = results.results?.feature_names || [];
+const feature_names = results.feature_names || results.results?.feature_names || [];
 
   const handlePredict = async () => {
     if (!job_id) return;
     setIsPredicting(true);
     setShapExplanation(null);
     try {
-      const features = feature_names.map((name: string) => parseFloat(featureInputs[name] || '0'));
+      const features = feature_names.map((name: string) => {
+        const val = featureInputs[name];
+        return (val !== undefined && val !== '') ? parseFloat(val) : 0;
+      });
 
       const data = await runSinglePrediction(job_id, features);
       setPrediction(data);
@@ -574,25 +577,25 @@ print(f"Prediction: {prediction}")
       {/* PREDICTION PREVIEW */}
       {feature_names.length > 0 && job_id && (
         <div className="bg-white rounded-xl border border-[#FFEDC1] p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#470102]">
               <TargetIcon />
             </div>
             <h3 className="text-lg font-bold text-[#470102]">Prediction Preview</h3>
-            <span className="text-xs text-[#8A5A5A] bg-[#FFF7EA] px-2 py-1 rounded">Test your model with sample inputs</span>
           </div>
+          <p className="text-sm text-[#8A5A5A] mb-4">Enter values for each feature to test your model</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
             {feature_names.map((name: string) => (
               <div key={name}>
-                <label className="block text-xs font-bold text-[#8A5A5A] mb-1">{name}</label>
+                <label className="block text-xs font-bold text-[#8A5A5A] mb-1 truncate" title={name}>{name}</label>
                 <input
                   type="number"
                   step="any"
                   value={featureInputs[name] || ''}
                   onChange={(e) => setFeatureInputs({ ...featureInputs, [name]: e.target.value })}
                   className="w-full px-3 py-2 bg-white border border-[#FFEDC1] rounded-lg text-[#470102] text-sm focus:border-[#FEB229] focus:ring-1 focus:ring-[#FEB229] focus:outline-none"
-                  placeholder="0.0"
+                  placeholder="0"
                 />
               </div>
             ))}
@@ -615,53 +618,12 @@ print(f"Prediction: {prediction}")
                 </span>
                 {prediction.probability && (
                   <span className="text-xs text-[#8A5A5A]">
-                    (avg conf: {(Math.max(...prediction.probability) * 100).toFixed(1)}%)
+                    {(Math.max(...prediction.probability) * 100).toFixed(1)}%
                   </span>
                 )}
               </div>
             )}
           </div>
-
-          {/* SHAP Explanation */}
-          {shapExplanation?.explanations && (
-            <div className="mt-6 pt-6 border-t border-[#FFEDC1]">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="text-[#FEB229]"><LightBulbIcon /></div>
-                <h4 className="text-sm font-bold text-[#470102]">Why This Prediction?</h4>
-                <span className="text-xs text-[#8A5A5A]">(SHAP Feature Contributions)</span>
-              </div>
-              <div className="space-y-2">
-                {shapExplanation.explanations.map((exp: any, idx: number) => {
-                  const maxVal = Math.max(...shapExplanation.explanations.map((e: any) => Math.abs(e.shap_value)));
-                  const widthPercent = (Math.abs(exp.shap_value) / maxVal) * 100;
-                  return (
-                    <div key={idx} className="flex items-center gap-3">
-                      <div className="w-28 text-xs font-medium text-[#8A5A5A] truncate text-right" title={exp.feature}>
-                        {exp.feature}
-                      </div>
-                      <div className="flex-1 flex items-center gap-2">
-                        <div className="flex-1 h-5 bg-gray-100 rounded relative overflow-hidden border border-gray-200">
-                          <div
-                            className={`absolute h-full rounded transition-all ${exp.shap_value > 0 ? 'bg-emerald-500 left-1/2' : 'bg-rose-500 right-1/2'}`}
-                            style={{ width: `${widthPercent / 2}%` }}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-px h-full bg-gray-300" />
-                          </div>
-                        </div>
-                        <span className={`text-xs w-16 font-mono font-medium ${exp.shap_value > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                          {exp.shap_value > 0 ? '+' : ''}{exp.shap_value.toFixed(3)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-xs text-[#8A5A5A] mt-3 bg-[#FFF7EA] p-2 rounded inline-block">
-                <span className="text-emerald-600 font-bold">Green (+)</span> pushes prediction higher, <span className="text-rose-600 font-bold">Red (-)</span> pushes it lower.
-              </p>
-            </div>
-          )}
         </div>
       )}
 

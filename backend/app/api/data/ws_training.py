@@ -1,6 +1,6 @@
 """
 WebSocket endpoint for real-time training progress.
-Delegates to ModelTrainer from ml_engine for comprehensive model training.
+Delegates to ModelTrainer from app.ml for comprehensive model training.
 """
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -65,16 +65,8 @@ async def ws_train(websocket: WebSocket, session_id: str = "default", api_key: s
             await websocket.close()
             return
 
-        # ---- Setup ModelTrainer ----
-        ml_engine_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
-            'ml_engine'
-        )
-        if os.path.dirname(ml_engine_path) not in sys.path:
-            sys.path.insert(0, os.path.dirname(ml_engine_path))
-
         try:
-            from ml_engine.engines.model_trainer import ModelTrainer
+            from app.ml.engines.model_trainer import ModelTrainer
         except ImportError as ie:
             logger.error(f"Cannot import ModelTrainer: {ie}")
             await websocket.send_json({"type": "error", "message": f"ML Engine not available: {ie}"})
@@ -169,8 +161,8 @@ async def ws_train(websocket: WebSocket, session_id: str = "default", api_key: s
                     meta["metrics"] = matching[0]["metrics"]
                     meta["score"] = matching[0]["test_score"]
                 model_store.save_model(job_id, model_name_key, model_obj, meta)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to persist model {model_name_key}: {e}")
 
         # ---- Send final result ----
         results.sort(key=lambda x: x["test_score"], reverse=True)
@@ -217,4 +209,4 @@ async def ws_train(websocket: WebSocket, session_id: str = "default", api_key: s
         try:
             await websocket.close()
         except Exception:
-            pass
+            pass  # WebSocket close may fail if already closed

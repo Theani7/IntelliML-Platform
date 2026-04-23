@@ -4,6 +4,7 @@ Combines parser and handler mixins into the full NLUService.
 """
 
 from app.core.groq_client import groq_client
+from app.core.exceptions import ServiceUnavailableError
 from app.services.nlu.parser import NLUParserMixin
 from app.services.nlu.handlers import NLUHandlersMixin
 import logging
@@ -46,7 +47,7 @@ class NLUService(NLUParserMixin, NLUHandlersMixin):
     def __init__(self):
         """Initialize NLU Service"""
         if groq_client is None:
-            raise ValueError("Groq client not initialized. Please check your API configuration.")
+            raise ServiceUnavailableError("Groq client not initialized. Please check your API configuration.")
         self.client = groq_client
         logger.info("✓ NLUService initialized successfully")
 

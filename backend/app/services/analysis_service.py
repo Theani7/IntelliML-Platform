@@ -4,7 +4,7 @@ from pathlib import Path
 
 from app.services.data_service import DataService
 from app.core.groq_client import groq_client
-from ml_engine.engines.data_analyzer import DataAnalyzer
+from app.ml.engines.data_analyzer import DataAnalyzer
 
 logger = logging.getLogger(__name__)
 

@@ -228,9 +228,18 @@ export async function checkBackendHealth() {
  * Test Groq API connection
  */
 export async function testGroqConnection() {
-  return apiCall<{ status: string; message: string; response: string }>(
-    '/test-groq'
-  );
+  try {
+    return await apiCall<{ status: string; message: string; response: string }>(
+      '/test-groq'
+    );
+  } catch (error) {
+    // Return unavailable status instead of throwing
+    return {
+      status: 'unavailable',
+      message: 'Groq API not configured',
+      response: null
+    };
+  }
 }
 
 /**
@@ -452,14 +461,27 @@ export async function getExplanations(jobId: string, modelName?: string) {
     : `/api/data/explain/${jobId}`;
   const raw = await apiCall<any>(endpoint);
 
-  // Normalize backend variants:
-  // 1) { shap_results: { feature_importance: [{feature, importance}] } }
-  // 2) { feature_importance: { featureName: importance, ... } }
+  // If already has shap_results with feature_importance, return as-is
   if (raw?.shap_results?.feature_importance) {
     return raw;
   }
 
-  if (raw?.feature_importance && typeof raw.feature_importance === 'object') {
+  // If feature_importance is already an array, just add shap_results wrapper and return
+  if (raw?.feature_importance && Array.isArray(raw.feature_importance)) {
+    return {
+      ...raw,
+      shap_results: {
+        feature_importance: raw.feature_importance,
+        plots: {},
+      },
+      explanation: raw.explanation || 'Feature importance generated from the trained model.',
+      model_name: raw.model_name || 'best_model',
+      status: raw.status || 'success',
+    };
+  }
+
+  // If feature_importance is a plain object (dict format), normalize it
+  if (raw?.feature_importance && typeof raw.feature_importance === 'object' && !Array.isArray(raw.feature_importance)) {
     const normalized = Object.entries(raw.feature_importance)
       .map(([feature, importance]) => ({
         feature,

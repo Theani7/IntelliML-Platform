@@ -76,18 +76,18 @@ export default function ModelTraining({ columns, onTrainingComplete }: ModelTrai
   };
 
   return (
-    <div className="bg-white rounded-[20px] md:rounded-[24px] border border-[#FFEDC1] p-4 md:p-6 shadow-sm">
-      <div className="flex items-start sm:items-center gap-4 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#FEB229] shadow-sm">
+    <div className="bg-white rounded-xl sm:rounded-[20px] md:rounded-[24px] border border-[#FFEDC1] p-4 sm:p-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FFF7EA] border border-[#FFEDC1] flex items-center justify-center text-[#FEB229] shadow-sm">
           <BrainIcon />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-[#470102]">Train ML Models</h3>
-          <p className="text-sm text-[#8A5A5A]">Select a target column to predict</p>
+          <h3 className="text-lg sm:text-xl font-bold text-[#470102]">Train ML Models</h3>
+          <p className="text-xs sm:text-sm text-[#8A5A5A]">Select a target column to predict</p>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <label className="block text-sm font-medium text-[#470102] mb-2">
             Target Column

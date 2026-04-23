@@ -6,46 +6,36 @@ from sklearn.model_selection import cross_val_score
 import numpy as np
 from typing import Dict, Any, Optional
 import logging
+from app.core.exceptions import ValidationError, NotFoundError
 
 logger = logging.getLogger(__name__)
+
 
 class LinearModelsServer:
     """
     MCP Server for Linear Model Family
     Handles Linear Regression, Logistic Regression, Ridge, Lasso, ElasticNet,
     SVC/SVR, KNN, and Naive Bayes.
-    
+
     Stores ALL trained models (not just the last one) so they can be
     persisted and compared after training.
     """
-    
+
     def __init__(self):
-        self.trained_models: Dict[str, Any] = {}   # name → sklearn model
-        self.trained_model = None                   # last trained (legacy compat)
+        self.trained_models: Dict[str, Any] = {}
+        self.trained_model = None
         self.model_type = None
-    
+
     def train(
-        self, 
-        X_train: np.ndarray, 
-        y_train: np.ndarray, 
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
         problem_type: str,
         model_name: str = "auto"
     ) -> Dict[str, Any]:
-        """
-        Train linear model
-        
-        Args:
-            X_train: Training features
-            y_train: Training target
-            problem_type: 'classification' or 'regression'
-            model_name: Specific model to use or 'auto'
-            
-        Returns:
-            Training results
-        """
         try:
             logger.info(f"Training linear model: {model_name} for {problem_type}")
-            
+
             if problem_type == "classification":
                 if model_name == "svc":
                     model = SVC(kernel='rbf', probability=True, random_state=42)
@@ -56,10 +46,10 @@ class LinearModelsServer:
                 elif model_name == "naive_bayes":
                     model = GaussianNB()
                     self.model_type = "Gaussian Naive Bayes"
-                else:  # auto or logistic
+                else:
                     model = LogisticRegression(max_iter=1000, random_state=42)
                     self.model_type = "Logistic Regression"
-            else:  # regression
+            else:
                 if model_name == "ridge":
                     model = Ridge(random_state=42)
                     self.model_type = "Ridge Regression"
@@ -75,23 +65,21 @@ class LinearModelsServer:
                 elif model_name == "knn":
                     model = KNeighborsRegressor(n_neighbors=5, n_jobs=-1)
                     self.model_type = "K-Nearest Neighbors"
-                else:  # auto or linear
+                else:
                     model = LinearRegression()
                     self.model_type = "Linear Regression"
-            
-            # Train
+
             model.fit(X_train, y_train)
             self.trained_model = model
-            self.trained_models[self.model_type] = model  # store ALL models
-            
-            # Train score
+            self.trained_models[self.model_type] = model
+
             from sklearn.metrics import accuracy_score, r2_score
             y_train_pred = model.predict(X_train)
             if problem_type == "classification":
                 train_score = float(accuracy_score(y_train, y_train_pred))
             else:
                 train_score = float(r2_score(y_train, y_train_pred))
-            
+
             return {
                 "model_name": self.model_type,
                 "cv_score_mean": 0.0,
@@ -100,28 +88,24 @@ class LinearModelsServer:
                 "num_features": X_train.shape[1],
                 "training_samples": X_train.shape[0],
             }
-            
+
         except Exception as e:
             logger.error(f"Linear model training error: {str(e)}")
             raise
-    
+
     def predict(self, X_test: np.ndarray) -> np.ndarray:
-        """Make predictions"""
         if self.trained_model is None:
-            raise ValueError("Model not trained")
+            raise NotFoundError("Model not trained")
         return self.trained_model.predict(X_test)
-    
+
     def get_feature_importance(self) -> Optional[np.ndarray]:
-        """Get coefficients as feature importance"""
         if self.trained_model is None:
             return None
-        
+
         if hasattr(self.trained_model, 'coef_'):
             coef = np.abs(self.trained_model.coef_)
-            # For linear models, coef_ could be (1, n_features) or (n_features,)
             return coef.ravel()
         return None
-    
+
     def get_all_models(self) -> Dict[str, Any]:
-        """Return all trained models"""
         return self.trained_models

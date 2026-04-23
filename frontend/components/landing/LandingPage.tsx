@@ -131,12 +131,12 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
       </div>
 
       {/* --- HERO SECTION --- */}
-      <section className="relative pt-6 pb-20 lg:pt-10 lg:pb-28 container mx-auto px-6">
-        <div className="mb-4 flex justify-end gap-3">
+      <section className="relative pt-6 pb-12 sm:pb-20 lg:pt-10 lg:pb-28 container mx-auto px-4 sm:px-6">
+        <div className="mb-4 sm:mb-6 flex justify-end gap-2 sm:gap-3">
           {onLogin && (
             <button
               onClick={onLogin}
-              className="rounded-xl border border-[#FFEDC1] bg-white px-5 py-2 text-sm font-bold text-[#470102] transition-colors hover:border-[#FEB229]"
+              className="rounded-xl border border-[#FFEDC1] bg-white px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-[#470102] transition-colors hover:border-[#FEB229]"
             >
               Log In
             </button>
@@ -144,27 +144,27 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
           {onSignup && (
             <button
               onClick={onSignup}
-              className="rounded-xl bg-[#470102] px-5 py-2 text-sm font-bold text-[#FFEDC1] transition-colors hover:bg-[#5D0203]"
+              className="rounded-xl bg-[#470102] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-[#FFEDC1] transition-colors hover:bg-[#5D0203]"
             >
               Sign Up
             </button>
           )}
         </div>
-        <div className="flex flex-col lg:flex-row items-center gap-16">
+        <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
 
-          <div className="flex-1 space-y-8 z-10 animate-fade-in-up">
+          <div className="flex-1 space-y-6 sm:space-y-8 z-10 animate-fade-in-up">
             <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-              <h1 className="text-6xl md:text-8xl font-display font-bold tracking-tight leading-[1] text-[#470102]">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold tracking-tight leading-[1] text-[#470102]">
                 Intelligent <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FEB229] to-[#d97706] drop-shadow-sm">
                   Data Future
                 </span>
               </h1>
-              <div className="absolute -z-10 top-10 left-10 w-32 h-32 bg-[#FEB229]/20 rounded-full blur-3xl"></div>
+              <div className="absolute -z-10 top-8 sm:top-10 left-6 sm:left-10 w-24 sm:w-32 h-24 sm:h-32 bg-[#FEB229]/20 rounded-full blur-3xl"></div>
             </div>
 
             <p
-              className="text-xl md:text-2xl text-[#8A5A5A] max-w-xl leading-relaxed font-serif animate-fade-in-up"
+              className="text-base sm:text-lg md:text-xl lg:text-2xl text-[#8A5A5A] max-w-xl leading-relaxed font-serif animate-fade-in-up"
               style={{ animationDelay: '0.4s' }}
             >
               Upload your data. Ask questions.
@@ -173,12 +173,12 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
             </p>
 
             <div
-              className="flex flex-wrap items-center gap-4 pt-4 animate-fade-in-up"
+              className="flex flex-wrap items-center gap-3 sm:gap-4 pt-2 sm:pt-4 animate-fade-in-up"
               style={{ animationDelay: '0.6s' }}
             >
               <button
                 onClick={onGetStarted}
-                className="group relative px-8 py-4 bg-[#FEB229] text-[#470102] rounded-xl font-bold text-lg hover:bg-[#FCA408] transition-all hover:scale-105 shadow-[4px_4px_0px_0px_#470102] hover:shadow-[2px_2px_0px_0px_#470102] active:translate-y-0.5 active:shadow-none border-2 border-[#470102]"
+                className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-[#FEB229] text-[#470102] rounded-xl font-bold text-base sm:text-lg hover:bg-[#FCA408] transition-all hover:scale-105 shadow-[3px_3px_0px_0px_#470102] hover:shadow-[2px_2px_0px_0px_#470102] active:translate-y-0.5 active:shadow-none border-2 border-[#470102]"
               >
                 <span className="flex items-center gap-2">
                   Start Analysis Free
@@ -190,7 +190,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
                 href="https://www.youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-8 py-4 flex items-center gap-2 rounded-xl font-bold text-[#470102] border-2 border-[#470102]/10 hover:border-[#470102] transition-all bg-white/50 hover:bg-white"
+                className="px-6 sm:px-8 py-3 sm:py-4 flex items-center gap-2 rounded-xl font-bold text-[#470102] border-2 border-[#470102]/10 hover:border-[#470102] transition-all bg-white/50 hover:bg-white text-sm sm:text-base"
               >
                 <PlayIcon />
                 Watch Demo
@@ -198,7 +198,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
             </div>
 
             <div
-              className="pt-8 flex items-center gap-6 text-sm text-[#8A5A5A] font-bold tracking-wide uppercase animate-fade-in-up"
+              className="pt-6 sm:pt-8 flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-[#8A5A5A] font-bold tracking-wide uppercase animate-fade-in-up"
               style={{ animationDelay: '0.8s' }}
             >
               <span className="flex items-center gap-2"><CheckCircleIcon /> No Coding</span>
@@ -207,25 +207,25 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
             </div>
           </div>
 
-          <div className="flex-1 w-full relative h-[600px] flex items-center justify-center lg:justify-end">
-            {/* Abstract Visualization of "AI Thinking" */}
+          <div className="flex-1 w-full relative h-[300px] sm:h-[400px] md:h-[500px] lg:h-[600px] flex items-center justify-center lg:justify-end hidden sm:block">
+            {/* Abstract Visualization - hidden on small mobile */}
             <div className="relative w-full max-w-xl aspect-square">
               <div className="relative z-10 w-full h-full scale-110">
                 <CreativeVisual />
               </div>
 
-              {/* Floating Cards simulating analysis */}
-              <div className="absolute top-20 left-0 bg-[#FFF7EA] border-2 border-[#470102]/10 p-5 rounded-2xl shadow-xl shadow-[#470102]/5 animate-float" style={{ animationDelay: '0s' }}>
+              {/* Floating Cards */}
+              <div className="absolute top-20 left-0 bg-[#FFF7EA] border-2 border-[#470102]/10 p-5 rounded-2xl shadow-xl shadow-[#470102]/5 animate-float hidden md:block" style={{ animationDelay: '0s' }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-[#FEB229] flex items-center justify-center text-[#470102] font-bold border border-[#470102]"><ChatBubbleIcon /></div>
-                  <div className="text-sm font-bold text-[#470102]">"Analyze sales trend"</div>
+                  <div className="text-sm font-bold text-[#470102]">"Analyze sales"</div>
                 </div>
                 <div className="h-1.5 w-32 bg-[#FFEDC1] rounded-full overflow-hidden border border-[#470102]/10">
                   <div className="h-full w-2/3 bg-[#470102] rounded-full animate-progress"></div>
                 </div>
               </div>
 
-              <div className="absolute bottom-32 right-10 bg-[#FFF7EA] border-2 border-[#470102]/10 p-5 rounded-2xl shadow-xl shadow-[#470102]/5 animate-float" style={{ animationDelay: '2s' }}>
+              <div className="absolute bottom-32 right-10 bg-[#FFF7EA] border-2 border-[#470102]/10 p-5 rounded-2xl shadow-xl shadow-[#470102]/5 animate-float hidden md:block" style={{ animationDelay: '2s' }}>
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 border border-emerald-200"><CheckCircleIcon /></div>
                   <div>
@@ -234,18 +234,17 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
       </section>
 
       {/* --- DATA SCIENCE LIFECYCLE --- */}
-      <section className="py-24 bg-[#FFEDC1]/30 border-y border-[#FFEDC1] backdrop-blur-sm">
-        <div className="container mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-[#470102] font-display">Data Science, Democratized.</h2>
-            <p className="text-lg text-[#8A5A5A]">
+      <section className="py-12 sm:py-16 lg:py-24 bg-[#FFEDC1]/30 border-y border-[#FFEDC1] backdrop-blur-sm">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-[#470102] font-display">Data Science, Democratized.</h2>
+            <p className="text-sm sm:text-base lg:text-lg text-[#8A5A5A]">
               IntelliML covers the complete lifecycle—from raw data to production deployment.
             </p>
           </div>
@@ -255,7 +254,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
             {/* Connection Line */}
             <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-[#470102]/10 transform -translate-y-1/2" />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 lg:gap-4">
               <LifecycleStep number={1} title="Collect" icon={<DatabaseIcon />} desc="Upload" />
               <LifecycleStep number={2} title="Understand" icon={<SearchIcon />} desc="EDA" />
               <LifecycleStep number={3} title="Prepare" icon={<WrenchIcon />} desc="Clean" />
@@ -267,29 +266,29 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
           </div>
 
           {/* Feature Highlights */}
-          <div className="mt-20 grid md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group">
-              <div className="mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><TargetIcon /></div>
-              <h4 className="text-xl font-bold text-[#470102] mb-3">Smart Preparation</h4>
-              <ul className="text-sm text-[#8A5A5A] space-y-2 font-medium">
+          <div className="mt-10 sm:mt-16 lg:mt-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group">
+              <div className="mb-3 sm:mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><TargetIcon /></div>
+              <h4 className="text-lg sm:text-xl font-bold text-[#470102] mb-2 sm:mb-3">Smart Preparation</h4>
+              <ul className="text-xs sm:text-sm text-[#8A5A5A] space-y-1 sm:space-y-2 font-medium">
                 <li>• Outlier Detection</li>
                 <li>• Automated Cleaning</li>
                 <li>• Smart Imputation</li>
               </ul>
             </div>
-            <div className="p-8 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group">
-              <div className="mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><LightningIcon /></div>
-              <h4 className="text-xl font-bold text-[#470102] mb-3">AutoML Engine</h4>
-              <ul className="text-sm text-[#8A5A5A] space-y-2 font-medium">
+            <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group">
+              <div className="mb-3 sm:mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><LightningIcon /></div>
+              <h4 className="text-lg sm:text-xl font-bold text-[#470102] mb-2 sm:mb-3">AutoML Engine</h4>
+              <ul className="text-xs sm:text-sm text-[#8A5A5A] space-y-1 sm:space-y-2 font-medium">
                 <li>• Multi-Model Training</li>
                 <li>• Hyperparameter Tuning</li>
                 <li>• Best Model Selection</li>
               </ul>
             </div>
-            <div className="p-8 rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group">
-              <div className="mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><CubeIcon /></div>
-              <h4 className="text-xl font-bold text-[#470102] mb-3">Instant Deploy</h4>
-              <ul className="text-sm text-[#8A5A5A] space-y-2 font-medium">
+            <div className="p-4 sm:p-6 lg:p-8 rounded-xl sm:rounded-2xl bg-[#FFF7EA] border border-[#FFEDC1] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 group sm:col-span-2 lg:col-span-1">
+              <div className="mb-3 sm:mb-4 text-[#FEB229] group-hover:scale-110 transition-transform"><CubeIcon /></div>
+              <h4 className="text-lg sm:text-xl font-bold text-[#470102] mb-2 sm:mb-3">Instant Deploy</h4>
+              <ul className="text-xs sm:text-sm text-[#8A5A5A] space-y-1 sm:space-y-2 font-medium">
                 <li>• One-Click Export</li>
                 <li>• Batch Prediction</li>
                 <li>• Python Code Gen</li>
@@ -300,53 +299,53 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
       </section>
 
       {/* --- USE CASES --- */}
-      <section className="py-24 container mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <section className="py-12 sm:py-16 lg:py-24 container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
           <div>
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-6 text-[#470102]">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl md:text-5xl font-display font-bold mb-4 sm:mb-6 text-[#470102]">
               Built for <span className="text-[#FEB229] underline decoration-4 decoration-[#FEB229]/30">Every Team</span>
             </h2>
-            <p className="text-[#8A5A5A] mb-10 text-xl leading-relaxed">
+            <p className="text-[#8A5A5A] mb-6 sm:mb-10 text-base sm:text-lg lg:text-xl leading-relaxed">
               Whether you're in finance, marketing, or operations, IntelliML adapts to your data.
             </p>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <UseCaseRow title="Marketing Teams" desc="Predict customer churn and optimize campaign ROI." />
               <UseCaseRow title="Financial Analysts" desc="Forecast revenue and detect anomalies in transaction data." />
               <UseCaseRow title="Product Managers" desc="Analyze user feedback sentiment and prioritize features." />
               <UseCaseRow title="Researchers" desc="Process experimental data and identify correlations quickly." />
             </div>
 
-            <div className="mt-10">
-              <a href="#" className="text-[#470102] hover:text-[#FEB229] font-bold text-lg flex items-center gap-2 transition-colors">
+            <div className="mt-6 sm:mt-10">
+              <a href="#" className="text-[#470102] hover:text-[#FEB229] font-bold text-base sm:text-lg flex items-center gap-2 transition-colors">
                 View all use cases <ArrowRightIcon />
               </a>
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-tr from-[#FEB229]/20 to-[#470102]/5 rounded-[3rem] blur-2xl transform rotate-3"></div>
-            <div className="relative bg-[#FFF7EA] border-[3px] border-[#470102] rounded-[2rem] p-8 shadow-[10px_10px_0px_0px_#470102]">
-              <div className="flex items-center justify-between mb-8 border-b-2 border-[#FFEDC1] pb-4">
+          <div className="relative mt-6 sm:mt-0">
+            <div className="absolute inset-0 bg-gradient-to-tr from-[#FEB229]/20 to-[#470102]/5 rounded-2xl sm:rounded-[3rem] blur-2xl transform rotate-3"></div>
+            <div className="relative bg-[#FFF7EA] border-[2px] sm:border-[3px] border-[#470102] rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 lg:p-8 shadow-[6px_6px_0px_0px_#470102] sm:shadow-[10px_10px_0px_0px_#470102]">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-8 border-b-2 border-[#FFEDC1] pb-4 gap-2">
                 <div>
-                  <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider">Project</div>
-                  <div className="font-bold text-xl text-[#470102]">Q3 Sales Forecast</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-[#8A5A5A] uppercase tracking-wider">Project</div>
+                  <div className="font-bold text-base sm:text-xl text-[#470102]">Q3 Sales Forecast</div>
                 </div>
-                <div className="px-4 py-1.5 bg-[#470102] text-[#FFEDC1] text-xs font-bold rounded-full">Analysis Complete</div>
+                <div className="px-3 sm:px-4 py-1 sm:py-1.5 bg-[#470102] text-[#FFEDC1] text-[10px] sm:text-xs font-bold rounded-full">Analysis Complete</div>
               </div>
 
-              <div className="space-y-4">
-                <div className="h-40 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] relative overflow-hidden group">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="h-32 sm:h-40 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] relative overflow-hidden group">
                   <SalesForecastChart />
                 </div>
-                <div className="flex gap-4">
-                  <div className="flex-1 h-24 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] p-4 flex flex-col justify-between">
-                    <div className="text-xs font-bold text-[#8A5A5A] uppercase">R2 Score</div>
-                    <div className="text-3xl font-bold text-[#470102]">0.892</div>
+                <div className="flex gap-3 sm:gap-4">
+                  <div className="flex-1 h-20 sm:h-24 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] p-3 sm:p-4 flex flex-col justify-between">
+                    <div className="text-[10px] sm:text-xs font-bold text-[#8A5A5A] uppercase">R2 Score</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#470102]">0.892</div>
                   </div>
-                  <div className="flex-1 h-24 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] p-4 flex flex-col justify-between">
-                    <div className="text-xs font-bold text-[#8A5A5A] uppercase">MSE</div>
-                    <div className="text-3xl font-bold text-[#470102]">124.5</div>
+                  <div className="flex-1 h-20 sm:h-24 bg-[#FFEDC1]/20 rounded-xl border border-[#FFEDC1] p-3 sm:p-4 flex flex-col justify-between">
+                    <div className="text-[10px] sm:text-xs font-bold text-[#8A5A5A] uppercase">MSE</div>
+                    <div className="text-2xl sm:text-3xl font-bold text-[#470102]">124.5</div>
                   </div>
                 </div>
               </div>
@@ -356,41 +355,41 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
       </section>
 
       {/* --- FOOTER --- */}
-      <footer className="border-t-[3px] border-[#FEB229] bg-[#470102] pt-20 pb-10 relative z-10 text-[#FFF7EA]">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 mb-16">
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-3xl font-display font-bold text-[#FEB229] mb-6">IntelliML</h3>
-              <p className="text-[#FFF7EA]/80 max-w-sm text-lg leading-relaxed">
+      <footer className="border-t-[2px] sm:border-t-[3px] border-[#FEB229] bg-[#470102] pt-12 sm:pt-16 lg:pt-20 pb-6 sm:pb-8 lg:pb-10 relative z-10 text-[#FFF7EA]">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-16">
+            <div className="sm:col-span-2 md:col-span-2">
+              <h3 className="text-2xl sm:text-3xl font-display font-bold text-[#FEB229] mb-4 sm:mb-6">IntelliML</h3>
+              <p className="text-[#FFF7EA]/80 max-w-sm text-sm sm:text-base lg:text-lg leading-relaxed">
                 Empowering teams to make data-driven decisions with the power of autonomous AI.
               </p>
             </div>
             <div>
-              <h4 className="font-bold text-[#FFF7EA] mb-6 uppercase tracking-wider">Developers</h4>
-              <ul className="space-y-4 text-[#FFEDC1]/80">
+              <h4 className="font-bold text-[#FFF7EA] mb-4 sm:mb-6 text-sm sm:text-base uppercase tracking-wider">Developers</h4>
+              <ul className="space-y-3 sm:space-y-4 text-[#FFEDC1]/80 text-sm sm:text-base">
                 <li>
-                  <a href="https://github.com/ani7" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-3">
+                  <a href="https://github.com/ani7" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
                     <GitHubIcon /> <span className="font-medium">Anil Paneru</span>
                   </a>
                 </li>
                 <li>
-                  <a href="https://github.com/NeonNinjaX" className="hover:text-white transition-colors flex items-center gap-3 group">
-                    <div className="p-1.5 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
+                  <a href="https://github.com/NeonNinjaX" className="hover:text-white transition-colors flex items-center gap-2 sm:gap-3 group">
+                    <div className="p-1 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
                       <GitHubIcon />
                     </div>
                     <span className="font-medium">Rahul Mishra</span>
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-[#FEB229] transition-colors flex items-center gap-3">
+                  <a href="#" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
                     <GitHubIcon /> <span className="font-medium">Mahesh Karki</span>
                   </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-[#FFF7EA] mb-6 uppercase tracking-wider">Resources</h4>
-              <ul className="space-y-3 text-[#FFEDC1]/80">
+              <h4 className="font-bold text-[#FFF7EA] mb-4 sm:mb-6 text-sm sm:text-base uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-2 sm:space-y-3 text-[#FFEDC1]/80 text-sm sm:text-base">
                 <li>
                   <button onClick={() => setShowDocs(true)} className="hover:text-[#FEB229] transition-colors text-left font-medium">
                     Documentation
@@ -401,9 +400,9 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
               </ul>
             </div>
           </div>
-          <div className="border-t border-[#FFF7EA]/10 pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-[#FFEDC1]/50 font-medium">
+          <div className="border-t border-[#FFF7EA]/10 pt-4 sm:pt-6 lg:pt-8 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-[#FFEDC1]/50 font-medium gap-2">
             <div>&copy; 2026 IntelliML Inc. All rights reserved.</div>
-            <div className="flex gap-8 mt-4 md:mt-0">
+            <div className="flex gap-4 sm:gap-6 lg:gap-8">
               <a href="#" className="hover:text-[#FEB229]">Privacy</a>
               <a href="#" className="hover:text-[#FEB229]">Terms</a>
               <a href="#" className="hover:text-[#FEB229]">Twitter</a>
@@ -419,11 +418,11 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
 
 function UseCaseRow({ title, desc }: any) {
   return (
-    <div className="flex items-start gap-5 p-5 rounded-xl hover:bg-[#FFEDC1]/50 transition-colors cursor-default border border-transparent hover:border-[#470102]/10 group">
-      <div className="mt-1.5 w-3 h-3 rounded-full bg-[#FEB229] shadow-[0_0_0_4px_#FFF7EA] group-hover:scale-125 transition-transform"></div>
+    <div className="flex items-start gap-3 sm:gap-5 p-3 sm:p-5 rounded-xl hover:bg-[#FFEDC1]/50 transition-colors cursor-default border border-transparent hover:border-[#470102]/10 group">
+      <div className="mt-1.5 w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-full bg-[#FEB229] shadow-[0_0_0_3px_#FFF7EA] sm:shadow-[0_0_0_4px_#FFF7EA] group-hover:scale-125 transition-transform"></div>
       <div>
-        <h4 className="text-[#470102] font-bold text-lg mb-1">{title}</h4>
-        <p className="text-[#8A5A5A]">{desc}</p>
+        <h4 className="text-[#470102] font-bold text-sm sm:text-lg mb-0.5 sm:mb-1">{title}</h4>
+        <p className="text-[#8A5A5A] text-xs sm:text-base">{desc}</p>
       </div>
     </div>
   );
@@ -431,12 +430,12 @@ function UseCaseRow({ title, desc }: any) {
 
 function LifecycleStep({ number, title, icon, desc }: any) {
   return (
-    <div className="relative p-5 rounded-xl bg-white border-2 border-[#470102]/5 hover:border-[#FEB229] hover:scale-105 transition-all cursor-default group shadow-sm hover:shadow-lg">
+    <div className="relative p-3 sm:p-5 rounded-xl bg-white border-2 border-[#470102]/5 hover:border-[#FEB229] hover:scale-[1.02] sm:hover:scale-105 transition-all cursor-default group shadow-sm hover:shadow-lg">
       <div className="text-center">
-        <div className="text-4xl mb-3 text-[#470102] group-hover:text-[#FEB229] transition-colors transform group-hover:rotate-6 duration-300">{icon}</div>
-        <div className="text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-1">Step 0{number}</div>
-        <h4 className="font-bold text-[#470102] text-lg">{title}</h4>
-        <p className="text-xs text-[#8A5A5A] mt-1 font-medium bg-[#FFF7EA] inline-block px-2 py-0.5 rounded-full">{desc}</p>
+        <div className="text-2xl sm:text-3xl lg:text-4xl mb-2 sm:mb-3 text-[#470102] group-hover:text-[#FEB229] transition-colors transform group-hover:rotate-6 duration-300">{icon}</div>
+        <div className="text-[9px] sm:text-xs font-bold text-[#8A5A5A] uppercase tracking-wider mb-0.5 sm:mb-1">Step 0{number}</div>
+        <h4 className="font-bold text-[#470102] text-sm sm:text-base lg:text-lg">{title}</h4>
+        <p className="text-[9px] sm:text-xs text-[#8A5A5A] mt-0.5 sm:mt-1 font-medium bg-[#FFF7EA] inline-block px-1.5 sm:px-2 py-0.5 sm:py-0.5 rounded-full">{desc}</p>
       </div>
     </div>
   );

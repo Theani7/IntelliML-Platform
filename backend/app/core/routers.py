@@ -54,10 +54,15 @@ def _try_import(module_path: str, name: str):
     try:
         import importlib
         module = importlib.import_module(module_path)
-        logger.info(f"✓ {name} router imported")
+        if hasattr(module, 'router'):
+            logger.info(f"✓ {name} router imported (has router)")
+        else:
+            logger.warning(f"{name} module imported but no 'router' attribute found")
         return module
     except Exception as e:
-        logger.warning(f"{name} router not available: {e}")
+        logger.error(f"{name} router import FAILED: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

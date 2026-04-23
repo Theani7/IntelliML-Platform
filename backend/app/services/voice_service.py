@@ -1,6 +1,7 @@
 import os
 import logging
 import httpx
+from app.core.exceptions import ValidationError, ExternalAPIError, NotFoundError, ServiceUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class VoiceService:
         
         if not self.api_key:
             logger.error("GROQ_API_KEY not found in environment variables")
-            raise ValueError("GROQ_API_KEY environment variable is required")
+            raise ValidationError("GROQ_API_KEY environment variable is required")
         
         self.api_url = "https://api.groq.com/openai/v1/audio/transcriptions"
         logger.info("Voice service initialized with Groq Whisper API")
@@ -31,14 +32,14 @@ class VoiceService:
             
             # Check if file exists
             if not os.path.exists(audio_file_path):
-                raise FileNotFoundError(f"Audio file not found: {audio_file_path}")
+                raise NotFoundError(f"Audio file not found: {audio_file_path}")
             
             # Check file size
             file_size = os.path.getsize(audio_file_path)
             logger.info(f"Audio file size: {file_size} bytes")
             
             if file_size == 0:
-                raise ValueError("Audio file is empty")
+                raise ValidationError("Audio file is empty")
             
             # Read audio file
             with open(audio_file_path, "rb") as audio_file:
@@ -88,18 +89,18 @@ class VoiceService:
             if response.status_code != 200:
                 error_text = response.text
                 logger.error(f"Groq API error ({response.status_code}): {error_text}")
-                raise Exception(f"Groq API error: {error_text}")
+                raise ExternalAPIError(f"Groq API error: {error_text}")
             
             transcription = response.text.strip()
             logger.info(f"Transcription successful: {transcription}")
             return transcription
             
-        except FileNotFoundError as e:
+        except NotFoundError as e:
             logger.error(f"File not found: {e}")
             raise
         except httpx.TimeoutException:
             logger.error("Transcription request timed out")
-            raise Exception("Transcription request timed out. Please try again.")
+            raise ServiceUnavailableError("Transcription request timed out. Please try again.")
         except Exception as e:
             logger.error(f"Transcription error: {e}", exc_info=True)
-            raise Exception(f"Transcription failed: {str(e)}")
+            raise ExternalAPIError(f"Transcription failed: {str(e)}")

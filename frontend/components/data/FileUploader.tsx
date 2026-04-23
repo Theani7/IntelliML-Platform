@@ -9,25 +9,25 @@ interface FileUploaderProps {
 
 // --- Icons ---
 const CloudUploadIcon = () => (
-  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-12 h-12 sm:w-16 sm:h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
   </svg>
 );
 
 const CheckCircleIcon = () => (
-  <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-10 h-10 sm:w-12 sm:h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
 const AlertIcon = () => (
-  <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
   </svg>
 );
 
 const SpinnerIcon = () => (
-  <svg className="w-10 h-10 animate-spin text-[#470102]" fill="none" viewBox="0 0 24 24">
+  <svg className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-[#470102]" fill="none" viewBox="0 0 24 24">
     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
   </svg>
@@ -268,7 +268,7 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
         onDrop={handleDrop}
         className={`
           relative overflow-hidden group
-          rounded-[24px] p-12 text-center
+          rounded-2xl sm:rounded-[24px] p-8 sm:p-10 md:p-12 text-center
           transition-all duration-500 ease-out
           border-2 border-dashed
           ${isDragging
@@ -289,13 +289,13 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
 
         <label htmlFor="file-upload" className="block relative z-10 cursor-pointer">
 
-          {/* Default State */}
+{/* Default State */}
           {!isUploading && !uploadedFile && !selectedFile && !isPreparingPreview && (
-            <div className="space-y-6 animate-fade-in-up">
+            <div className="space-y-4 sm:space-y-6 animate-fade-in-up">
               <div className={`
-                w-24 h-24 mx-auto rounded-full
+                w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-2xl sm:rounded-full
                 bg-[#FFF7EA] border border-[#FFEDC1] shadow-lg shadow-[#FEB229]/10
-                flex items-center justify-center 
+                flex items-center justify-center
                 text-[#FEB229] group-hover:scale-110
                 transition-all duration-500
               `}>
@@ -303,17 +303,26 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
               </div>
 
               <div>
-                <h3 className="text-2xl font-bold text-[#470102] mb-2">
+                <h3 className="text-xl sm:text-2xl font-bold text-[#470102] mb-2">
                   Upload your dataset
                 </h3>
-                <p className="text-[#8A5A5A] text-lg">
+                <p className="text-sm sm:text-base md:text-lg text-[#8A5A5A]">
                   Drag & drop or <span className="text-[#FEB229] underline decoration-[#FFEDC1] hover:decoration-[#FEB229] underline-offset-4 transition-all">browse</span>
                 </p>
               </div>
 
-              <div className="flex justify-center gap-3 pt-2">
+              <div className="flex justify-center gap-2 sm:gap-3 pt-2">
                 <FileTypeBadge ext="CSV" color="bg-[#FEB229]/10 text-[#470102] border-[#FEB229]/20" />
               </div>
+            </div>
+          )}
+
+          {/* Preparing Preview */}
+          {isPreparingPreview && (
+            <div className="py-4 sm:py-8">
+              <div className="mb-4 sm:mb-6 flex justify-center text-[#470102]"><SpinnerIcon /></div>
+              <h3 className="text-lg sm:text-xl font-bold text-[#470102] mb-2">Preparing preview...</h3>
+              <p className="text-xs sm:text-sm text-[#8A5A5A]">Reading first rows from your CSV file</p>
             </div>
           )}
 
@@ -328,11 +337,11 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
 
           {/* Preview State */}
           {!isUploading && selectedFile && (
-            <div className="space-y-4 text-left">
-              <div className="flex items-center justify-between">
+            <div className="space-y-3 sm:space-y-4 text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xl font-bold text-[#470102]">Preview before upload</h3>
-                  <p className="text-sm text-[#8A5A5A]">{selectedFile.name}</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-[#470102]">Preview before upload</h3>
+                  <p className="text-xs sm:text-sm text-[#8A5A5A]">{selectedFile.name}</p>
                 </div>
                 <button
                   type="button"
@@ -341,19 +350,19 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
                     setPreviewRows([]);
                     setPreviewColumns([]);
                   }}
-                  className="text-xs font-bold text-[#8A5A5A] hover:text-[#470102]"
+                  className="text-xs font-bold text-[#8A5A5A] hover:text-[#470102] self-start sm:self-auto"
                 >
-                  Choose another file
+                  Choose another
                 </button>
               </div>
 
-              <div className="max-h-64 overflow-auto rounded-xl border border-[#FFEDC1] bg-white">
+              <div className="max-h-48 sm:max-h-64 overflow-auto rounded-xl border border-[#FFEDC1] bg-white">
                 <table className="w-full text-xs">
                   <thead className="bg-[#FFF7EA] text-[#470102]">
                     <tr>
                       {previewColumns.map((col) => (
-                        <th key={col} className="px-3 py-2 text-left font-bold border-b border-[#FFEDC1]">
-                          <div>{col}</div>
+                        <th key={col} className="px-2 sm:px-3 py-2 text-left font-bold border-b border-[#FFEDC1]">
+                          <div className="truncate max-w-[80px] sm:max-w-[120px]">{col}</div>
                           <div className="text-[10px] text-[#8A5A5A] font-medium normal-case">{columnTypes[col] || 'unknown'}</div>
                         </th>
                       ))}
@@ -363,7 +372,7 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
                     {previewRows.map((row, index) => (
                       <tr key={index} className="border-b border-[#FFEDC1]/70">
                         {previewColumns.map((col) => (
-                          <td key={`${index}-${col}`} className="px-3 py-2 text-[#8A5A5A]">{row[col]}</td>
+                          <td key={`${index}-${col}`} className="px-2 sm:px-3 py-2 text-[#8A5A5A] truncate max-w-[80px] sm:max-w-[120px]">{row[col]}</td>
                         ))}
                       </tr>
                     ))}
@@ -371,18 +380,18 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
                 </table>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div className="rounded-lg border border-[#FFEDC1] bg-[#FFF7EA] p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-xs">
+                <div className="rounded-lg border border-[#FFEDC1] bg-[#FFF7EA] p-2 sm:p-3">
                   <p className="font-bold text-[#470102]">Detected format</p>
                   <p className="text-[#8A5A5A] mt-1">Delimiter: <span className="font-mono">{detectedDelimiter === '\t' ? '\\t' : detectedDelimiter}</span></p>
                   <p className="text-[#8A5A5A]">Encoding: <span className="font-mono">{detectedEncoding}</span></p>
-                  <p className="text-[#8A5A5A]">Rows: <span className="font-mono">{estimatedRows}</span> | Columns: <span className="font-mono">{previewColumns.length}</span></p>
+                  <p className="text-[#8A5A5A]">Rows: <span className="font-mono">{estimatedRows}</span> | Cols: <span className="font-mono">{previewColumns.length}</span></p>
                 </div>
-                <div className="rounded-lg border border-[#FFEDC1] bg-[#FFF7EA] p-3 space-y-1.5">
-                  <p className="font-bold text-[#470102]">Quick fixes before upload</p>
-                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixTrimHeaders} onChange={(e) => setFixTrimHeaders(e.target.checked)} /> Trim header spaces</label>
-                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixSnakeCaseHeaders} onChange={(e) => setFixSnakeCaseHeaders(e.target.checked)} /> Convert headers to snake_case</label>
-                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixDropEmptyRows} onChange={(e) => setFixDropEmptyRows(e.target.checked)} /> Remove empty rows</label>
+                <div className="rounded-lg border border-[#FFEDC1] bg-[#FFF7EA] p-2 sm:p-3 space-y-1 sm:space-y-1.5">
+                  <p className="font-bold text-[#470102]">Quick fixes</p>
+                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixTrimHeaders} onChange={(e) => setFixTrimHeaders(e.target.checked)} /> Trim headers</label>
+                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixSnakeCaseHeaders} onChange={(e) => setFixSnakeCaseHeaders(e.target.checked)} /> snake_case</label>
+                  <label className="flex items-center gap-2 text-[#8A5A5A]"><input type="checkbox" checked={fixDropEmptyRows} onChange={(e) => setFixDropEmptyRows(e.target.checked)} /> Drop empty</label>
                 </div>
               </div>
 
@@ -398,10 +407,10 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
 
           {/* Uploading State */}
           {isUploading && (
-            <div className="py-8 animate-pulse">
-              <div className="mb-6 flex justify-center text-[var(--primary)]"><SpinnerIcon /></div>
-              <h3 className="text-xl font-bold text-[#470102] mb-2">Processing Data...</h3>
-              <div className="w-64 mx-auto h-1.5 bg-[#FFEDC1] rounded-full overflow-hidden">
+            <div className="py-4 sm:py-8 animate-pulse">
+              <div className="mb-4 sm:mb-6 flex justify-center text-[var(--primary)]"><SpinnerIcon /></div>
+              <h3 className="text-lg sm:text-xl font-bold text-[#470102] mb-2">Processing Data...</h3>
+              <div className="w-48 sm:w-64 mx-auto h-1.5 bg-[#FFEDC1] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-[#470102] to-[#FEB229] transition-all duration-300"
                   style={{ width: `${progress}%` }}
@@ -413,11 +422,11 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
           {/* Success State */}
           {uploadedFile && !isUploading && (
             <div className="py-4 animate-scale-in">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-50 flex items-center justify-center text-green-500 border border-green-100 shadow-sm">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-full bg-green-50 flex items-center justify-center text-green-500 border border-green-100 shadow-sm">
                 <CheckCircleIcon />
               </div>
-              <h3 className="text-xl font-bold text-[#470102] mb-1">Upload Complete!</h3>
-              <p className="text-green-600 font-mono text-sm bg-green-50 py-1 px-3 rounded-full inline-block border border-green-100">
+              <h3 className="text-lg sm:text-xl font-bold text-[#470102] mb-1">Upload Complete!</h3>
+              <p className="text-green-600 font-mono text-xs sm:text-sm bg-green-50 py-1 px-3 rounded-full inline-block border border-green-100">
                 {uploadedFile}
               </p>
             </div>

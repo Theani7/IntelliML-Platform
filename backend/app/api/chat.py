@@ -3,12 +3,13 @@ Chat API Router
 Handles AI-powered data chat functionality
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Any
 import logging
 
 from app.services.data_chat_service import data_chat_service
+from app.core.exceptions import NotFoundError, DataProcessingError
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["chat"])
@@ -21,53 +22,31 @@ class ChatMessage(BaseModel):
 class ChatResponse(BaseModel):
     text: str
     code: Optional[str] = None
-    output: Optional[str] = None
+    output: Optional[Any] = None  # Allow any type for output
     visualization: Optional[str] = None
     error: bool = False
 
 
 @router.post("/message", response_model=ChatResponse)
 async def send_message(request: ChatMessage, session_id: str = "default"):
-    """
-    Send a message to the AI data assistant.
+    """Send a message to the AI data assistant."""
+    logger.info(f"Chat message received: {request.message[:50]}...")
     
-    The AI can:
-    - Answer questions about your dataset
-    - Generate and execute Python code
-    - Create visualizations
-    - Provide data insights
-    """
-    try:
-        logger.info(f"Chat message received: {request.message[:50]}...")
-        
-        result = data_chat_service.chat(request.message, session_id=session_id)
-        
-        return ChatResponse(**result)
-        
-    except Exception as e:
-        logger.error(f"Chat endpoint error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+    result = data_chat_service.chat(request.message, session_id=session_id)
+    return ChatResponse(**result)
 
 
 @router.get("/suggestions")
 async def get_visualization_suggestions(session_id: str = "default"):
-    """
-    Get AI-suggested visualizations based on the current dataset.
-    
-    Returns a list of suggested charts with:
-    - Type (histogram, scatter, heatmap, etc.)
-    - Title and description
-    - Python code to generate the visualization
-    """
+    """Get AI-suggested visualizations based on the current dataset."""
     try:
         suggestions = data_chat_service.get_visualization_suggestions(session_id=session_id)
         return {"suggestions": suggestions}
-        
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except NotFoundError:
+        raise
     except Exception as e:
         logger.error(f"Suggestions error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Failed to get suggestions: {str(e)}")
 
 
 @router.post("/clear")

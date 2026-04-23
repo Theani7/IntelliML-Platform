@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from typing import Set
+from app.core.exceptions import ValidationError, ForbiddenError
 
 
 MAX_ADMINS = 2
@@ -30,7 +31,7 @@ def save_admin_usernames(usernames: Set[str]) -> None:
     normalized = _normalize(usernames)
     normalized.add(PRIMARY_ADMIN_USERNAME)
     if len(normalized) > MAX_ADMINS:
-        raise ValueError(f"Maximum {MAX_ADMINS} admins allowed")
+        raise ValidationError(f"Maximum {MAX_ADMINS} admins allowed")
 
     payload = {"admin_usernames": sorted(normalized)}
     _ADMIN_FILE.write_text(json.dumps(payload, indent=2))
@@ -42,7 +43,7 @@ def add_admin(username: str) -> None:
     if username in admins:
         return
     if len(admins) >= MAX_ADMINS:
-        raise ValueError(f"Maximum {MAX_ADMINS} admins allowed")
+        raise ValidationError(f"Maximum {MAX_ADMINS} admins allowed")
     admins.add(username)
     save_admin_usernames(admins)
 
@@ -50,7 +51,7 @@ def add_admin(username: str) -> None:
 def remove_admin(username: str) -> None:
     username = username.strip().lower()
     if username == PRIMARY_ADMIN_USERNAME:
-        raise ValueError("Primary admin cannot be removed")
+        raise ForbiddenError("Primary admin cannot be removed")
     admins = get_admin_usernames()
     admins.discard(username)
     save_admin_usernames(admins)

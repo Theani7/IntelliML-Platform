@@ -39,7 +39,7 @@ import {
 } from '@/lib/api';
 
 
-// ... other imports
+import MobileNavigation from '@/components/layout/responsive/MobileNavigation';
 
 type Tab = 'upload' | 'chat' | 'analyze' | 'train' | 'results' | 'simulate' | 'cleaning' | 'engineering' | 'account' | 'admin';
 type Status = 'checking' | 'connected' | 'error';
@@ -246,7 +246,9 @@ export default function Home() {
     try {
       const jobId = results.job_id || results.results?.job_id;
       if (jobId) {
-        const exp = await getExplanations(jobId, 'best_model');
+        const exp = await getExplanations(jobId);
+        console.log('Explanations raw:', JSON.stringify(exp).slice(0, 500));
+        console.log('Feature importance entries:', exp?.feature_importance?.map((f: any) => `${f.feature}:${f.importance}`));
         setExplanations(exp);
       }
     } catch (error) {
@@ -355,43 +357,43 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#FFF7EA]/80 backdrop-blur-xl border-b border-[#FFEDC1] transition-colors duration-300">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 bg-[#FFF7EA]/90 backdrop-blur-xl border-b border-[#FFEDC1] transition-colors duration-300">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center justify-between sm:justify-start gap-3">
               <div>
-                <h1 className="text-2xl md:text-3xl font-display font-bold text-[#470102] tracking-tight">IntelliML</h1>
-                <p className="text-xs text-[#8A5A5A] font-bold tracking-wider uppercase">AI-Powered Analytics Platform</p>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-[#470102] tracking-tight">IntelliML</h1>
+                <p className="text-[10px] sm:text-xs text-[#8A5A5A] font-bold tracking-wider uppercase hidden sm:block">AI-Powered Analytics Platform</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 md:gap-6">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
-                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${backendStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : backendStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
-                <span className="text-xs font-bold text-[#470102] tracking-wide">Backend</span>
+            <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
+                <div className={`w-2 h-2 rounded-full shadow-sm ${backendStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : backendStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className="text-[10px] sm:text-xs font-bold text-[#470102] tracking-wide hidden sm:inline">Backend</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
-                <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${groqStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : groqStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
-                <span className="text-xs font-bold text-[#470102] tracking-wide">AI Engine</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-white/50 rounded-full border border-[#FFEDC1] shadow-sm">
+                <div className={`w-2 h-2 rounded-full shadow-sm ${groqStatus === 'connected' ? 'bg-emerald-500 shadow-emerald-500/50' : groqStatus === 'error' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-amber-500 animate-pulse'}`}></div>
+                <span className="text-[10px] sm:text-xs font-bold text-[#470102] tracking-wide hidden sm:inline">AI Engine</span>
               </div>
               {datasetInfo && !isAdmin && (
                 <button
                   onClick={handleReset}
-                  className="px-4 py-1.5 text-xs font-bold bg-[#470102] hover:bg-[#5D0203] text-[#FFEDC1] rounded-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                  className="px-2 sm:px-3 sm:px-4 py-1.5 text-[10px] sm:text-xs font-bold bg-[#470102] hover:bg-[#5D0203] text-[#FFEDC1] rounded-lg transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5"
                 >
-                  Reset Session
+                  Reset
                 </button>
               )}
               {isAuthenticated && !isAdmin && (
                 <button
                   onClick={() => setActiveTab('account')}
-                  className={`flex items-center gap-2.5 px-2 py-1.5 text-xs font-bold border rounded-full transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-bold border rounded-full transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 ${
                     activeTab === 'account'
                       ? 'bg-[#470102] border-[#470102] text-[#FFEDC1]'
                       : 'border-[#FFEDC1] bg-white text-[#470102]'
                   }`}
                 >
-                  <span className={`w-7 h-7 rounded-full bg-gradient-to-br ${avatarGradient} text-[#FFEDC1] flex items-center justify-center text-[10px] font-bold`}>
+                  <span className={`w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-gradient-to-br ${avatarGradient} text-[#FFEDC1] flex items-center justify-center text-[9px] sm:text-[10px] font-bold`}>
                     {avatarInitials}
                   </span>
                   <span className="pr-1 hidden sm:inline">{user?.full_name || user?.username || 'Account'}</span>
@@ -400,7 +402,7 @@ export default function Home() {
               {isAuthenticated && isAdmin && (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="px-4 py-2 text-xs font-bold border border-[#FFEDC1] bg-white text-[#470102] rounded-lg transition-all shadow-sm hover:shadow-md"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-bold border border-[#FFEDC1] bg-white text-[#470102] rounded-lg transition-all shadow-sm hover:shadow-md"
                 >
                   Logout
                 </button>
@@ -410,7 +412,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex flex-col md:flex-row">
+      <div className="flex flex-col md:flex-row min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-80px)]">
         <WorkflowNavigation
           tabs={mainTabs}
           activeTab={activeTab}
@@ -421,22 +423,29 @@ export default function Home() {
           showDatasetCard={!isAdmin}
         />
 
+        {/* Mobile Bottom Navigation */}
+        <MobileNavigation
+          tabs={mainTabs}
+          activeTab={activeTab}
+          onTabChange={(tabId) => setActiveTab(tabId as Tab)}
+        />
+
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 bg-[var(--background)]">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-[var(--background)] pb-24 md:pb-8">
           {/* Upload Tab */}
           {
             activeTab === 'upload' && !isAdmin && (
               <div className="animate-fadeIn">
-                <div className="text-center mb-10">
-                  <h2 className="text-5xl font-medium tracking-tight text-display mb-3 text-[#470102]">Upload Your Data</h2>
-                  <p className="text-lg text-[#8A5A5A] max-w-2xl mx-auto">Start by uploading a CSV, Excel, or JSON file to begin your analysis.</p>
+                <div className="text-center mb-6 sm:mb-10">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-medium tracking-tight text-display mb-2 sm:mb-3 text-[#470102]">Upload Your Data</h2>
+                  <p className="text-sm sm:text-base md:text-lg text-[#8A5A5A] max-w-2xl mx-auto px-4">Start by uploading a CSV file to begin your analysis.</p>
                 </div>
 
-                <div className="max-w-2xl mx-auto mb-16">
+                <div className="max-w-2xl mx-auto mb-8 sm:mb-12 px-2 sm:px-0">
                   <FileUploader onUploadSuccess={handleDataUpload} />
                 </div>
 
-                <div className="max-w-6xl mx-auto mb-8">
+                <div className="max-w-6xl mx-auto mb-4 sm:mb-8 px-2 sm:px-0">
                   <OnboardingChecklist
                     hasDataset={!!datasetInfo}
                     hasAnalysis={!!analysisResults}
@@ -457,12 +466,12 @@ export default function Home() {
           {
             activeTab === 'cleaning' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Data Cleaning Station</h2>
-                  <p className="text-gray-500">Handle missing values and remove outliers</p>
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Data Cleaning</h2>
+                  <p className="text-sm text-gray-500 hidden sm:block">Handle missing values and remove outliers</p>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-6 sm:space-y-8">
                   <OutlierDetection onDataUpdate={(newData) => setDatasetInfo(newData)} />
                   <DataCleaning
                     data={datasetInfo}
@@ -477,9 +486,9 @@ export default function Home() {
           {
             activeTab === 'engineering' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Feature Engineering</h2>
-                  <p className="text-gray-500">Transform variables and create new features</p>
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Feature Engineering</h2>
+                  <p className="text-sm text-gray-500 hidden sm:block">Transform variables and create new features</p>
                 </div>
 
                 <div className="space-y-3">
@@ -492,7 +501,7 @@ export default function Home() {
           {/* Chat Tab */}
           {
             activeTab === 'chat' && datasetInfo && !isAdmin && (
-              <div className="animate-fadeIn h-[calc(100dvh-240px)] md:h-[calc(100vh-140px)] rounded-[24px] overflow-hidden shadow-2xl shadow-black/5 border border-gray-200 bg-white">
+              <div className="animate-fadeIn h-[calc(100dvh-280px)] md:h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)] rounded-2xl sm:rounded-[24px] overflow-hidden shadow-xl sm:shadow-2xl shadow-black/5 border border-gray-200 bg-white">
                 <VoiceChat />
               </div>
             )
@@ -532,83 +541,83 @@ export default function Home() {
           {/* Analyze Tab */}
           {
             activeTab === 'analyze' && datasetInfo && !isAdmin && (
-              <div className="animate-fadeIn space-y-8 max-w-7xl mx-auto">
+              <div className="animate-fadeIn space-y-6 sm:space-y-8 max-w-7xl mx-auto">
                 {isHeavyTabLoading ? (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <SkeletonState rows={6} />
                     <SkeletonState rows={6} />
                   </div>
                 ) : !analysisResults ? (
                   <div className="animate-fadeIn">
-                    <div className="bg-[#FFF7EA] rounded-[24px] border border-[#FFEDC1] p-12 text-center shadow-lg shadow-[#FEB229]/5">
+                    <div className="bg-[#FFF7EA] rounded-2xl sm:rounded-[24px] border border-[#FFEDC1] p-6 sm:p-10 md:p-12 text-center shadow-lg shadow-[#FEB229]/5">
                       {/* Hero Content */}
-                      <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#FEB229] to-[#F59E0B] flex items-center justify-center mx-auto mb-8 text-[#470102] shadow-xl shadow-[#FEB229]/20 rotate-3 transition-transform hover:rotate-6">
-                        <div className="scale-150">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#FEB229] to-[#F59E0B] flex items-center justify-center mx-auto mb-6 sm:mb-8 text-[#470102] shadow-xl shadow-[#FEB229]/20 rotate-3 transition-transform hover:rotate-6">
+                        <div className="scale-125 sm:scale-150">
                           <ChartIcon />
                         </div>
                       </div>
 
-                      <h2 className="text-4xl font-bold text-[#470102] mb-4 tracking-tight">Exploratory Data Analysis</h2>
-                      <p className="text-lg text-[#8A5A5A] mb-10 max-w-2xl mx-auto leading-relaxed">
-                        Unlock the power of your data. Our AI automatically discovers patterns, detects anomalies, and generates interactive visualizations to help you understand your dataset instantly.
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-[#470102] mb-3 sm:mb-4 tracking-tight">Exploratory Data Analysis</h2>
+                      <p className="text-sm sm:text-base md:text-lg text-[#8A5A5A] mb-6 sm:mb-10 max-w-2xl mx-auto leading-relaxed">
+                        Unlock the power of your data. Our AI automatically discovers patterns and generates visualizations.
                       </p>
 
                       <button
                         onClick={handleAnalyze}
                         disabled={isAnalyzing}
-                        className="group relative inline-flex items-center gap-3 px-8 py-4 bg-[#470102] text-[#FFEDC1] text-lg font-bold rounded-xl hover:bg-[#5D0203] transition-all shadow-lg shadow-[#470102]/20 hover:shadow-xl hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
+                        className="group relative inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-[#470102] text-[#FFEDC1] text-base sm:text-lg font-bold rounded-xl sm:rounded-xl hover:bg-[#5D0203] transition-all shadow-lg shadow-[#470102]/20 hover:shadow-xl hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden"
                       >
                         {isAnalyzing ? (
                           <>
                             <SpinnerIcon />
-                            <span>Running Analysis...</span>
+                            <span>Running...</span>
                           </>
                         ) : (
                           <>
-                            <span>Start Automated Analysis</span>
-                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                            <span>Start Analysis</span>
+                            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                           </>
                         )}
                       </button>
                     </div>
 
                     {isAnalyzing && (
-                      <div className="mt-6 grid md:grid-cols-2 gap-4">
+                      <div className="mt-4 sm:mt-6 grid sm:grid-cols-2 gap-4">
                         <SkeletonState rows={6} />
                         <SkeletonState rows={6} />
                       </div>
                     )}
 
                     {/* Feature Grid */}
-                    <div className="grid md:grid-cols-3 gap-6 mt-8">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
                       {/* Feature 1 */}
-                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
-                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <div className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                           <ChartIcon />
                         </div>
-                        <h3 className="text-lg font-bold text-[#470102] mb-2">Smart Visualizations</h3>
-                        <p className="text-[#8A5A5A] text-sm">Automatically generated distributions, correlation heatmaps, and scatter matrices.</p>
+                        <h3 className="text-base sm:text-lg font-bold text-[#470102] mb-1 sm:mb-2">Visualizations</h3>
+                        <p className="text-[#8A5A5A] text-xs sm:text-sm">Distributions, heatmaps, and scatter matrices.</p>
                       </div>
                       {/* Feature 2 */}
-                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
-                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <div className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                           <BrainIcon />
                         </div>
-                        <h3 className="text-lg font-bold text-[#470102] mb-2">AI Insights</h3>
-                        <p className="text-[#8A5A5A] text-sm">Natural language summaries and key findings extracted directly from your data.</p>
+                        <h3 className="text-base sm:text-lg font-bold text-[#470102] mb-1 sm:mb-2">AI Insights</h3>
+                        <p className="text-[#8A5A5A] text-xs sm:text-sm">Natural language summaries and key findings.</p>
                       </div>
                       {/* Feature 3 */}
-                      <div className="p-6 bg-white rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group">
-                        <div className="w-12 h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <div className="p-4 sm:p-6 bg-white rounded-xl sm:rounded-2xl border border-[#FFEDC1] shadow-sm hover:shadow-md transition-all group sm:col-span-2 lg:col-span-1">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#FFF7EA] text-[#470102] flex items-center justify-center mb-3 sm:mb-4 group-hover:scale-110 transition-transform">
                           <CheckIcon />
                         </div>
-                        <h3 className="text-lg font-bold text-[#470102] mb-2">Data Quality</h3>
-                        <p className="text-[#8A5A5A] text-sm">Instant detection of missing values, outliers, and data type inconsistencies.</p>
+                        <h3 className="text-base sm:text-lg font-bold text-[#470102] mb-1 sm:mb-2">Data Quality</h3>
+                        <p className="text-[#8A5A5A] text-xs sm:text-sm">Detection of missing values and outliers.</p>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-8">
+                  <div className="space-y-6 sm:space-y-8">
                     <DataPreview data={datasetInfo} />
                     <DataStats analysis={analysisResults.analysis} />
                     <AIInsights insights={analysisResults.ai_insights} />
@@ -623,9 +632,9 @@ export default function Home() {
           {
             activeTab === 'train' && datasetInfo && !isAdmin && (
               <div className="animate-fadeIn max-w-4xl mx-auto">
-                <div className="text-center mb-10">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Train ML Models</h2>
-                  <p className="text-gray-500">Select a target column and train multiple models</p>
+                <div className="text-center mb-6 sm:mb-10">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Train ML Models</h2>
+                  <p className="text-sm sm:text-base text-gray-500 hidden sm:block">Select a target column and train multiple models</p>
                 </div>
 
                 {isHeavyTabLoading ? (
@@ -634,8 +643,8 @@ export default function Home() {
                     <SkeletonState rows={4} />
                   </div>
                 ) : (
-                  <div className="bg-white p-1 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
-                    <div className="bg-[var(--background)] p-8 rounded-[20px]">
+                  <div className="bg-white p-2 sm:p-1 rounded-2xl sm:rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100">
+                    <div className="bg-[var(--background)] p-4 sm:p-6 md:p-8 rounded-xl sm:rounded-[20px]">
                       <ModelTraining
                         columns={datasetInfo.columns}
                         onTrainingComplete={handleTrainingComplete}
@@ -650,10 +659,10 @@ export default function Home() {
           {/* Results Tab */}
           {
             activeTab === 'results' && trainingResults && !isAdmin && (
-              <div className="animate-fadeIn space-y-8 max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">Training Complete</h2>
-                  <p className="text-gray-500">View model performance and explanations</p>
+              <div className="animate-fadeIn space-y-6 sm:space-y-8 max-w-6xl mx-auto">
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">Training Complete</h2>
+                  <p className="text-sm sm:text-base text-gray-500 hidden sm:block">View model performance and explanations</p>
                 </div>
 
                 <ModelComparison results={trainingResults} />
@@ -669,12 +678,12 @@ export default function Home() {
           {
             activeTab === 'simulate' && trainingResults && !isAdmin && (
               <div className="animate-fadeIn max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">What-If Simulation</h2>
-                  <p className="text-gray-500">Adjust input features and see live prediction impact</p>
+                <div className="text-center mb-6 sm:mb-8">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">What-If Simulation</h2>
+                  <p className="text-sm sm:text-base text-gray-500 hidden sm:block">Adjust features and see live prediction impact</p>
                 </div>
                 {isHeavyTabLoading ? (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <SkeletonState rows={8} />
                     <SkeletonState rows={8} />
                   </div>
@@ -684,7 +693,7 @@ export default function Home() {
               </div>
             )
           }
-        </main >
+        </main>
       </div>
 
       <ResetModal

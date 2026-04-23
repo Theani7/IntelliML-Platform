@@ -33,23 +33,27 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
     );
   }
 
-  const { shap_results, explanation, model_name } = explanations;
+  // Handle both structures: { shap_results: {...} } or direct { feature_importance: [...], explanation: "..." }
+  const shap_results = explanations.shap_results || explanations;
+  const explanation = explanations.explanation;
+  const model_name = explanations.model_name;
 
-  if (!shap_results) {
+  if (!shap_results && !explanations.feature_importance) {
     return (
       <div className="bg-white rounded-xl border border-[#FFEDC1] p-8 text-center shadow-sm">
         <div className="text-4xl mb-3 grayscale opacity-50">⚠️</div>
         <h3 className="text-lg font-bold text-[#470102] mb-2">
-          No SHAP Results
+          Feature Importance Not Available
         </h3>
         <p className="text-[#8A5A5A]">
-          SHAP analysis could not be performed on this model.
+          Could not generate model explanations.
         </p>
       </div>
     );
   }
 
-  const rawFeatureImportance = shap_results.feature_importance;
+  // Extract feature importance - handle both array and object formats
+  let rawFeatureImportance = shap_results?.feature_importance || explanations.feature_importance || [];
   const feature_importance = Array.isArray(rawFeatureImportance)
     ? rawFeatureImportance
     : rawFeatureImportance && typeof rawFeatureImportance === 'object'
@@ -58,7 +62,7 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
         importance: Number(importance) || 0,
       })).sort((a, b) => b.importance - a.importance)
       : [];
-  const { plots } = shap_results;
+  const plots = shap_results?.plots || {};
 
   return (
     <div className="space-y-6">
@@ -103,7 +107,7 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
                       {feature.feature}
                     </span>
                     <span className="text-xs font-mono text-[#8A5A5A]">
-                      {feature.importance.toFixed(4)}
+                      {feature.importance < 0.0001 ? feature.importance.toExponential(2) : feature.importance.toFixed(4)}
                     </span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden border border-gray-200">

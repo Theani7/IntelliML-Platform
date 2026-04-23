@@ -1,6 +1,7 @@
 from app.services.data_service import DataService
 from app.core.groq_client import groq_client
-from ml_engine.engines.model_trainer import ModelTrainer
+from app.ml.engines.model_trainer import ModelTrainer
+from app.core.exceptions import MLTrainingError, ValidationError, NotFoundError
 from typing import Dict, Any, Optional, List
 import logging
 import uuid
@@ -41,7 +42,7 @@ class MLService:
                 "problem_type": job_data['results']['problem_type'],
                 "best_model": job_data['results']['best_model']['model_name'],
                 "score": job_data['results']['best_model']['test_score'],
-                "metric": job_data['results']['best_model']['metric_name'],
+                "metric": job_data['results']['best_model'].get('metric_name', job_data['results']['problem_type']),
                 "models_trained": len(job_data['results']['results'])
             }
             
@@ -50,8 +51,8 @@ class MLService:
                 try:
                     with open("experiments.json", "r") as f:
                         experiments = json.load(f)
-                except:
-                    pass
+                except (json.JSONDecodeError, IOError) as e:
+                    logger.warning(f"Could not load experiments.json: {e}")
             
             experiments.append(experiment_entry)
             
@@ -85,9 +86,9 @@ class MLService:
             # Validate target column
             if target_column not in df.columns:
                 available_cols = df.columns.tolist()
-                raise ValueError(
-                    f"Column '{target_column}' not found in dataset. "
-                    f"Available columns: {available_cols}"
+                raise ValidationError(
+                    f"Column '{target_column}' not found in dataset",
+                    details={"available_columns": available_cols}
                 )
             
             # Create job ID
@@ -108,18 +109,22 @@ class MLService:
             # Generate AI explanation
             explanation = self._generate_model_explanation(results)
             
-            # Make results JSON-safe (convert numpy arrays to lists, handle NaN)
-            def make_json_safe(obj):
+            # Make results JSON-safe (convert numpy arrays to lists, handle NaN, strip non-serializable objects)
+            def make_json_safe(obj, depth=0):
+                if depth > 10:  # Prevent infinite recursion
+                    return None
+                if obj is None:
+                    return None
                 if isinstance(obj, dict):
-                    return {k: make_json_safe(v) for k, v in obj.items()}
+                    return {k: make_json_safe(v, depth+1) for k, v in obj.items() if k != 'model'}
                 elif isinstance(obj, list):
-                    return [make_json_safe(item) for item in obj]
-                elif hasattr(obj, 'tolist'):  # numpy array
+                    return [make_json_safe(item, depth+1) for item in obj]
+                elif hasattr(obj, 'tolist'):  # numpy array/matrix
                     return obj.tolist()
-                elif isinstance(obj, float):
-                    if obj != obj or obj == float('inf') or obj == float('-inf'):
-                        return None
+                elif isinstance(obj, (float, int, str, bool)):
                     return obj
+                elif hasattr(obj, '__dict__'):  # sklearn models or other objects - skip
+                    return None
                 return obj
             
             # Generate Suggestions
@@ -174,12 +179,15 @@ class MLService:
             
         except Exception as e:
             logger.error(f"Model training error: {str(e)}", exc_info=True)
-            raise
+            raise MLTrainingError(
+                f"Training failed: {str(e)}",
+                details={"target_column": target_column}
+            )
     
     def get_job_status(self, job_id: str) -> Dict[str, Any]:
         """Get training job status"""
         if job_id not in self.jobs:
-            raise ValueError(f"Job {job_id} not found")
+            raise NotFoundError(f"Job {job_id} not found")
         
         job = self.jobs[job_id]
         return {
@@ -191,13 +199,27 @@ class MLService:
     def get_job_results(self, job_id: str) -> Dict[str, Any]:
         """Get complete job results"""
         if job_id not in self.jobs:
-            raise ValueError(f"Job {job_id} not found")
-        
+            raise NotFoundError(f"Job {job_id} not found")
+
         job = self.jobs[job_id]
-        
-        # Remove trainer from response (not JSON serializable)
-        response = {k: v for k, v in job.items() if k != 'trainer'}
-        
+
+        # Create clean response with only serializable data
+        response = {}
+        for k, v in job.items():
+            if k == 'trainer':
+                continue  # Skip non-serializable trainer
+            if hasattr(v, '__dict__') and not hasattr(v, '__slots__'):
+                # Skip objects with __dict__ (likely non-serializable)
+                continue
+            try:
+                # Test if serializable
+                import json
+                json.dumps(v)
+                response[k] = v
+            except (TypeError, ValueError):
+                # Skip non-serializable values
+                continue
+
         return response
     
     def _generate_model_explanation(self, results: Dict[str, Any]) -> str:
@@ -209,7 +231,7 @@ class MLService:
 
 Training Results:
 - Best Model: {best_model['model_name']}
-- Score: {best_model['test_score']:.3f} ({best_model['metric_name']})
+- Score: {best_model['test_score']:.3f} ({best_model.get('metric_name', results.get('problem_type', 'accuracy'))})
 - Problem Type: {results['problem_type']}
 - Features: {results['num_features']}
 - Samples: {results['num_samples']}

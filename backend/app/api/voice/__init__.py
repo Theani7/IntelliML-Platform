@@ -4,7 +4,7 @@ Handles voice command processing: transcription, intent parsing, and execution.
 Split into sub-modules for easier debugging and maintenance.
 """
 
-from fastapi import APIRouter, UploadFile, HTTPException
+from fastapi import APIRouter, UploadFile
 import logging
 import os
 import tempfile
@@ -14,15 +14,14 @@ import time
 
 from app.services.voice_service import VoiceService
 from app.services.nlu_service import NLUService
+from app.core.exceptions import ValidationError, ServiceUnavailableError
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Create router
 router = APIRouter(
     tags=["voice"],
     responses={
@@ -31,7 +30,6 @@ router = APIRouter(
     }
 )
 
-# Initialize services with error handling
 voice_service = None
 nlu_service = None
 
@@ -48,55 +46,40 @@ except Exception as e:
     logger.error(f"✗ Failed to initialize NLUService: {e}", exc_info=True)
 
 
-# ==================== Helper Functions ====================
-
 def validate_services():
     """Validate that required services are initialized"""
     if voice_service is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Voice service not available. Please check GROQ_API_KEY configuration."
+        raise ServiceUnavailableError(
+            "Voice service not available. Please check GROQ_API_KEY configuration."
         )
     if nlu_service is None:
-        raise HTTPException(
-            status_code=503,
-            detail="NLU service not available. Please check configuration."
+        raise ServiceUnavailableError(
+            "NLU service not available. Please check configuration."
         )
 
 
 def validate_audio_file(audio: UploadFile) -> None:
     """Validate uploaded audio file"""
     if not audio or not audio.filename:
-        raise HTTPException(
-            status_code=400,
-            detail="No audio file provided"
-        )
+        raise ValidationError("No audio file provided")
 
     allowed_extensions = ['.webm', '.wav', '.mp3', '.m4a', '.ogg', '.flac']
     suffix = Path(audio.filename).suffix.lower()
 
     if suffix and suffix not in allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported audio format: {suffix}. Allowed: {', '.join(allowed_extensions)}"
+        raise ValidationError(
+            f"Unsupported audio format: {suffix}",
+            details={"allowed_formats": allowed_extensions}
         )
 
 
 async def save_upload_file(audio: UploadFile) -> tuple[str, bytes]:
-    """
-    Save uploaded file to temporary location
-
-    Returns:
-        Tuple of (temp_file_path, content_bytes)
-    """
+    """Save uploaded file to temporary location"""
     suffix = Path(audio.filename).suffix or ".webm"
     content = await audio.read()
 
     if not content or len(content) == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Empty audio file received"
-        )
+        raise ValidationError("Empty audio file received")
 
     logger.info(f"Received audio: {audio.filename}, size: {len(content)} bytes")
 
@@ -117,13 +100,10 @@ def cleanup_temp_file(file_path: str) -> None:
             logger.warning(f"Failed to delete temp file {file_path}: {e}")
 
 
-# Import sub-modules to register their routes on the router.
-# These must be imported AFTER router and services are defined.
 from app.api.voice import transcription  # noqa: E402, F401
 from app.api.voice import commands       # noqa: E402, F401
 from app.api.voice import intents        # noqa: E402, F401
 
-# Log initialization on module load
 logger.info("=" * 60)
 logger.info("Voice API Router Loaded (package)")
 logger.info(f"Voice Service: {'✓ Available' if voice_service else '✗ Not Available'}")

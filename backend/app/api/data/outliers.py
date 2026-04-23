@@ -3,7 +3,6 @@ Outlier Detection & Removal Endpoints
 Handles outlier detection (IQR/Z-score) and removal.
 """
 
-from fastapi import HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 import pandas as pd
@@ -11,12 +10,13 @@ import numpy as np
 
 from app.api.data import router, get_current_dataset, logger, make_json_safe
 from app.services.data_service import DataService
+from app.core.exceptions import NotFoundError, ValidationError, DataProcessingError
 
 
 class OutlierRequest(BaseModel):
     columns: Optional[List[str]] = None
-    method: str = "iqr"  # iqr or zscore
-    threshold: float = 1.5  # IQR multiplier or Z-score threshold
+    method: str = "iqr"
+    threshold: float = 1.5
 
 
 @router.post("/outliers/detect")
@@ -26,13 +26,12 @@ async def detect_outliers(request: OutlierRequest, session_id: str = "default"):
     df = state.get("df")
     
     if df is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded")
+        raise NotFoundError("No dataset loaded")
 
     try:
         df = state["df"]
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
-        # Filter to requested columns or use all numeric
         target_cols = request.columns if request.columns else numeric_cols
         target_cols = [c for c in target_cols if c in numeric_cols]
 
@@ -46,7 +45,7 @@ async def detect_outliers(request: OutlierRequest, session_id: str = "default"):
                 from scipy import stats
                 z_scores = np.abs(stats.zscore(col_data))
                 outlier_mask = z_scores > request.threshold
-            else:  # IQR
+            else:
                 q1 = col_data.quantile(0.25)
                 q3 = col_data.quantile(0.75)
                 iqr = q3 - q1
@@ -71,9 +70,11 @@ async def detect_outliers(request: OutlierRequest, session_id: str = "default"):
             "columns_analyzed": len(target_cols),
             "details": outlier_info
         }
+    except (NotFoundError, ValidationError):
+        raise
     except Exception as e:
         logger.error(f"Outlier detection error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Outlier detection failed: {str(e)}")
 
 
 @router.post("/outliers/remove")
@@ -83,7 +84,7 @@ async def remove_outliers(request: OutlierRequest, session_id: str = "default"):
     df_current = state.get("df")
     
     if df_current is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded")
+        raise NotFoundError("No dataset loaded")
 
     try:
         df = df_current.copy()
@@ -103,7 +104,7 @@ async def remove_outliers(request: OutlierRequest, session_id: str = "default"):
                 z_scores = np.abs(stats.zscore(col_data.dropna()))
                 mask = pd.Series(False, index=df.index)
                 mask.loc[col_data.dropna().index] = z_scores > request.threshold
-            else:  # IQR
+            else:
                 q1 = col_data.quantile(0.25)
                 q3 = col_data.quantile(0.75)
                 iqr = q3 - q1
@@ -113,10 +114,8 @@ async def remove_outliers(request: OutlierRequest, session_id: str = "default"):
 
             rows_to_remove.update(df[mask].index.tolist())
 
-        # Remove outlier rows
         df = df.drop(index=list(rows_to_remove))
 
-        # Update state dataset
         state["df"] = df
         DataService().set_dataframe(
             df,
@@ -146,6 +145,8 @@ async def remove_outliers(request: OutlierRequest, session_id: str = "default"):
             "columns_processed": target_cols,
             "dataset_info": dataset_info
         }
+    except (NotFoundError, ValidationError):
+        raise
     except Exception as e:
         logger.error(f"Outlier removal error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Outlier removal failed: {str(e)}")

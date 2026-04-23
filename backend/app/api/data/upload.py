@@ -3,111 +3,109 @@ Data Upload & Info Endpoints
 Handles file upload, dataset info, columns, and test-data.
 """
 
-from fastapi import File, UploadFile, HTTPException
+from fastapi import File, UploadFile
+from pydantic import BaseModel
 import pandas as pd
 import tempfile
 import os
 
 from app.api.data import router, get_current_dataset, data_service, logger, make_json_safe
 from app.services.data_service import DataService
-
+from app.core.exceptions import ValidationError, NotFoundError, DataProcessingError
 
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
+
+class UploadResponse(BaseModel):
+    filename: str
+    rows: int
+    columns: list
+    dtypes: dict
+    preview: list
+
 
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...), session_id: str = "default"):
     """
     Upload a CSV file and store it in session registry
     """
+    content = await file.read()
+    
+    if len(content) > MAX_FILE_SIZE:
+        raise ValidationError(
+            f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB",
+            details={"max_size_mb": MAX_FILE_SIZE // (1024*1024)}
+        )
+
+    if not file.filename.endswith('.csv'):
+        raise ValidationError(
+            "Only CSV files are supported",
+            details={"supported_types": [".csv"]}
+        )
+
+    logger.info(f"Uploading file: {file.filename} ({len(content)} bytes)")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='wb') as temp_file:
+        temp_file.write(content)
+        temp_path = temp_file.name
+
     try:
-        # Security Guard: File size limit
-        content = await file.read()
-        if len(content) > MAX_FILE_SIZE:
-             raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB"
-            )
+        df = pd.read_csv(temp_path)
+        
+        if df.empty:
+            raise ValidationError("The CSV file is empty")
+        
+        state = get_current_dataset(session_id)
+        state["df"] = df
 
-        # Validate file type
-        if not file.filename.endswith('.csv'):
-            raise HTTPException(
-                status_code=400,
-                detail="Only CSV files are supported"
-            )
+        data_service.process_uploaded_file(content, file.filename, session_id=session_id)
+        logger.info("✓ DataFrame synced to DataService for session access")
 
-        logger.info(f"Uploading file: {file.filename} ({len(content)} bytes)")
+        preview_records = []
+        for _, row in df.head(10).iterrows():
+            safe_row = {col: make_json_safe(val) for col, val in row.items()}
+            preview_records.append(safe_row)
 
-        # Save to temporary file for pandas
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='wb') as temp_file:
-            temp_file.write(content)
-            temp_path = temp_file.name
+        info = {
+            "filename": file.filename,
+            "rows": len(df),
+            "columns": df.columns.tolist(),
+            "dtypes": {col: str(dtype) for col, dtype in df.dtypes.items()},
+            "preview": preview_records
+        }
 
-        try:
-            # Read CSV with pandas
-            df = pd.read_csv(temp_path)
+        state["info"] = info
+        logger.info(f"✓ File uploaded successfully: {info['rows']} rows")
 
-            # Store in session registry
-            state = get_current_dataset(session_id)
-            state["df"] = df
+        return info
 
-            # Sync to DataService
-            data_service.process_uploaded_file(content, file.filename, session_id=session_id)
-            logger.info("✓ DataFrame synced to DataService for session access")
-
-            # Create JSON-safe preview
-            preview_records = []
-            for _, row in df.head(10).iterrows():
-                safe_row = {col: make_json_safe(val) for col, val in row.items()}
-                preview_records.append(safe_row)
-
-            # Get dataset info
-            info = {
-                "filename": file.filename,
-                "rows": len(df),
-                "columns": df.columns.tolist(),
-                "dtypes": {col: str(dtype) for col, dtype in df.dtypes.items()},
-                "preview": preview_records
-            }
-
-            state["info"] = info
-            logger.info(f"✓ File uploaded successfully: {info['rows']} rows")
-
-            return info
-
-        finally:
-            # Clean up temp file
-            if os.path.exists(temp_path):
-                os.unlink(temp_path)
-
-    except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=400, detail="The CSV file is empty")
+    except (ValidationError, DataProcessingError):
+        raise
     except pd.errors.ParserError as e:
-        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+        raise DataProcessingError(f"Failed to parse CSV: {str(e)}")
     except Exception as e:
         logger.error(f"Upload error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        raise DataProcessingError(f"Upload failed: {str(e)}")
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 @router.get("/info")
 async def get_dataset_info(session_id: str = "default"):
-    """
-    Get information about the session dataset
-    """
+    """Get information about the session dataset"""
     state = get_current_dataset(session_id)
     if state["df"] is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded.")
+        raise NotFoundError("No dataset loaded")
 
     return state["info"]
 
 
 @router.get("/columns")
 async def get_columns(session_id: str = "default"):
-    """
-    Get list of columns in the session dataset
-    """
+    """Get list of columns in the session dataset"""
     state = get_current_dataset(session_id)
     if state["df"] is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded.")
+        raise NotFoundError("No dataset loaded")
 
     return {
         "columns": state["df"].columns.tolist()
@@ -116,9 +114,7 @@ async def get_columns(session_id: str = "default"):
 
 @router.get("/test-data")
 async def test_data(session_id: str = "default"):
-    """
-    Test endpoint to verify data is loaded correctly
-    """
+    """Test endpoint to verify data is loaded correctly"""
     try:
         state = get_current_dataset(session_id)
         if state["df"] is None:
@@ -138,8 +134,8 @@ async def test_data(session_id: str = "default"):
                 "filename": info.get("filename"),
                 "rows": len(df),
                 "columns": len(df.columns),
-                "column_names": df.columns.tolist()[:5],  # First 5 columns
-                "sample_data": df.head(3).to_dict('records')  # First 3 rows
+                "column_names": df.columns.tolist()[:5],
+                "sample_data": df.head(3).to_dict('records')
             }
         }
     except Exception as e:
@@ -153,9 +149,7 @@ async def test_data(session_id: str = "default"):
 
 @router.post("/reset")
 async def reset_session_data(session_id: str = "default"):
-    """
-    Reset dataset and session state for the current session_id.
-    """
+    """Reset dataset and session state for the current session_id."""
     try:
         state = get_current_dataset(session_id)
         state["df"] = None
@@ -168,4 +162,4 @@ async def reset_session_data(session_id: str = "default"):
         return {"status": "ok", "message": "Session reset successfully"}
     except Exception as e:
         logger.error(f"Session reset error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to reset session: {str(e)}")
+        raise DataProcessingError(f"Failed to reset session: {str(e)}")

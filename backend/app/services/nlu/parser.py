@@ -4,6 +4,8 @@ Handles parsing user intent from text using LLM and fallback keyword matching.
 """
 
 from app.core.groq_client import groq_client
+from app.core.exceptions import DataProcessingError
+from app.services.nlu.handlers import NLUHandlersMixin
 import logging
 import json
 import re
@@ -131,7 +133,7 @@ Return ONLY a valid JSON object in this exact format (no markdown, no explanatio
                 except json.JSONDecodeError:
                     pass
 
-            raise ValueError("Could not parse LLM response as JSON")
+            raise DataProcessingError("Could not parse LLM response as JSON")
 
     def _validate_intent_data(self, intent_data: Dict[str, Any], original_text: str) -> Dict[str, Any]:
         """Validate and enrich the parsed intent data"""

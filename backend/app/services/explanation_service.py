@@ -1,6 +1,7 @@
 from app.services.ml_service import MLService
-from ml_engine.engines.explainer import ModelExplainer
+from app.ml.engines.explainer import ModelExplainer
 from app.core.groq_client import groq_client
+from app.core.exceptions import NotFoundError, MLTrainingError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,9 +66,9 @@ class ExplanationService:
                     X_sample = disk_x_sample
 
             if model is None:
-                raise ValueError("Model could not be recovered from memory or disk.")
+                raise NotFoundError("Model could not be recovered from memory or disk.")
             if X_sample is None:
-                raise ValueError("Background data could not be recovered from memory or disk.")
+                raise NotFoundError("Background data could not be recovered from memory or disk.")
 
             # Generate SHAP explanations
             shap_results = self.explainer.explain_model(

@@ -42,30 +42,8 @@ export default function WorkflowNavigation({
 }: WorkflowNavigationProps) {
   return (
     <>
-      <div className="md:hidden border-b border-[#FFEDC1] bg-[#FFF7EA] px-4 py-3">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => tab.available && onTabChange(tab.id)}
-              disabled={!tab.available}
-              className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-bold ${
-                activeTab === tab.id
-                  ? 'bg-[#470102] text-[#FFEDC1] border-[#470102]'
-                  : tab.available
-                    ? 'bg-white text-[#470102] border-[#FFEDC1]'
-                    : 'bg-white text-[#8A5A5A]/50 border-[#FFEDC1]'
-              }`}
-            >
-              <span className="scale-90">{tab.icon}</span>
-              <span>{tab.label}</span>
-              {!tab.available && tab.id !== 'upload' && <LockIcon />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <aside className="hidden md:block w-72 min-h-[calc(100vh-80px)] p-5 bg-[#FFF7EA] border-r border-[#FFEDC1]">
+      {/* Desktop Sidebar - Hidden on mobile/tablet */}
+      <aside className="hidden lg:block w-72 min-h-[calc(100vh-80px)] p-5 bg-[#FFF7EA] border-r border-[#FFEDC1]">
         <div className="h-full rounded-[24px] border border-[#FFEDC1] bg-white shadow-sm p-4 flex flex-col">
           <div className="mb-4 px-1">
             <p className="text-[10px] font-black text-[#8A5A5A] uppercase tracking-[0.22em]">Workspace Flow</p>

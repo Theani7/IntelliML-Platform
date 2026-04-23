@@ -1,9 +1,55 @@
 """
-EDA (Exploratory Data Analysis) Endpoints
-Handles analyze, report generation, and AI insights.
+================================================================================
+EDA (Exploratory Data Analysis) API
+================================================================================
+
+PURPOSE:
+    Provides comprehensive data analysis and reporting capabilities.
+    Generates statistics, charts, and AI-powered insights.
+
+ANALYSIS COMPONENTS:
+
+1. BASIC INFO
+   - Number of rows/columns
+   - Column names and types
+   - Numeric vs categorical breakdown
+
+2. DATA QUALITY SCORING
+   - Composite score (0-100)
+   - Weighted by:
+     - Missing values (30% penalty max)
+     - Duplicates (20% penalty max)
+     - Single-value columns (5% penalty each)
+
+3. DESCRIPTIVE STATISTICS
+   - Count, mean, std, min, max
+   - Percentiles (25%, 50%, 75%)
+   - Skewness and kurtosis
+   - Per numeric column
+
+4. CHART DATA
+   - Distribution histograms (numeric columns)
+   - Categorical value counts (bar charts)
+   - Correlation heatmap (numeric pairs)
+   - Missing values chart
+   - Box plots with outliers
+   - Scatter plot matrix
+
+5. AI INSIGHTS
+   - Dataset summary
+   - Potential target columns
+   - Data quality observations
+   - Recommendations
+
+6. EDA REPORT (PDF)
+   - Comprehensive PDF export
+   - AI-generated narrative
+   - Charts and statistics
+   - Downloadable
+
+================================================================================
 """
 
-from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 import pandas as pd
 import numpy as np
@@ -12,23 +58,58 @@ import json
 
 from app.api.data import router, get_current_dataset, data_service, logger
 from app.core.cache import analysis_cache
+from app.core.exceptions import NotFoundError, DataProcessingError
 
 
 def safe_float(val):
-    """Make a float value JSON-safe."""
+    """
+    Convert value to JSON-safe float.
+    
+    Handles special float values that can't be JSON serialized:
+    - NaN (not a number)
+    - Infinity / -Infinity
+    
+    Args:
+        val: Any numeric value
+        
+    Returns:
+        float or None (for invalid values)
+    """
     if pd.isna(val) or val != val or val == float('inf') or val == float('-inf'):
         return None
     return float(val)
 
 
 def safe_list(arr):
-    """Make a list of floats JSON-safe."""
+    """
+    Convert array to JSON-safe list of floats.
+    
+    Args:
+        arr: Iterable of numeric values
+        
+    Returns:
+        List of floats (None for invalid values)
+    """
     return [safe_float(x) for x in arr]
 
 
 def generate_insights(df: pd.DataFrame, analysis: Dict) -> List[str]:
     """
-    Generate AI-powered insights about the dataset
+    Generate AI-powered insights about the dataset.
+    
+    Creates human-readable insights covering:
+    - Dataset size
+    - Missing values
+    - Column types
+    - Potential target columns
+    - Data quality issues
+    
+    Args:
+        df: Input DataFrame
+        analysis: Basic analysis dict for context
+        
+    Returns:
+        List of insight strings
     """
     insights = []
 
@@ -55,6 +136,7 @@ def generate_insights(df: pd.DataFrame, analysis: Dict) -> List[str]:
         insights.append(f"Found {len(categorical_cols)} categorical columns that may need encoding")
 
     # Check for potential target variables
+    # Good targets have low cardinality and numeric type
     for col in df.columns:
         if df[col].dtype in [np.int64, np.float64]:
             unique_ratio = df[col].nunique() / len(df)
@@ -72,19 +154,71 @@ def generate_insights(df: pd.DataFrame, analysis: Dict) -> List[str]:
 @router.get("/analyze")
 async def analyze_data(session_id: str = "default"):
     """
-    Analyze the current dataset and return comprehensive statistics,
-    chart data, and AI-powered insights for the Data Insights Dashboard.
+    Analyze the dataset and return comprehensive statistics.
+    
+    Performs full EDA including:
+    - Basic statistics
+    - Data quality scoring
+    - Distribution analysis
+    - Correlation analysis
+    - Outlier detection
+    - AI-generated insights
+    
+    Results are cached to avoid redundant computation.
+    
+    Returns:
+        {
+            "analysis": {
+                "basic_info": {
+                    "num_rows": 1000,
+                    "num_columns": 10,
+                    "numeric_columns": 7,
+                    "categorical_columns": 3,
+                    "column_names": [...],
+                    "column_types": {...}
+                },
+                "data_quality": {
+                    "quality_score": 85,
+                    "issues": [...],
+                    "duplicate_rows": 5,
+                    "completeness": 98.5
+                },
+                "missing_values": {
+                    "total_missing": 50,
+                    "missing_percentage": 0.5,
+                    "per_column": {"col1": 30, "col2": 20}
+                },
+                "descriptive_stats": {
+                    "age": {"mean": 30, "std": 12, "min": 0, "max": 100, ...},
+                    ...
+                },
+                "chart_data": {
+                    "distributions": [...],      # Histogram data
+                    "categorical_counts": [...],  # Bar chart data
+                    "correlation_heatmap": {...}, # Heatmap matrix
+                    "box_plots": [...],           # Box plot data
+                    "scatter_matrix": [...],      # Scatter plot data
+                    "missing_values_chart": {...} # Missing values viz
+                },
+                "recommendations": [...]
+            },
+            "ai_insights": {
+                "insights": "Human-readable insights string",
+                "timestamp": "2024-01-15T10:30:00"
+            },
+            "warnings": [...]
+        }
     """
     state = get_current_dataset(session_id)
     df = state.get("df")
 
     if df is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded. Please upload a file first.")
+        raise NotFoundError("No dataset loaded. Please upload a file first.")
 
     try:
-        df = state["df"]
-
-        # Check cache first
+        # =====================================================================
+        # CHECK CACHE (avoid redundant computation)
+        # =====================================================================
         cached = analysis_cache.get("analysis", df)
         if cached is not None:
             return cached
@@ -98,7 +232,9 @@ async def analyze_data(session_id: str = "default"):
         numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
         categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
 
-        # ========== 1. Basic Info ==========
+        # =====================================================================
+        # 1. BASIC INFO
+        # =====================================================================
         basic_info = {
             "num_rows": rows,
             "num_columns": cols,
@@ -108,7 +244,9 @@ async def analyze_data(session_id: str = "default"):
             "column_types": {col: str(dtype) for col, dtype in df.dtypes.items()}
         }
 
-        # ========== 2. Missing Values Analysis ==========
+        # =====================================================================
+        # 2. MISSING VALUES ANALYSIS
+        # =====================================================================
         missing_per_col = df.isnull().sum()
         total_missing = int(missing_per_col.sum())
 
@@ -118,10 +256,13 @@ async def analyze_data(session_id: str = "default"):
             "per_column": {col: int(count) for col, count in missing_per_col.items() if count > 0}
         }
 
-        # ========== 3. Data Quality Scoring ==========
+        # =====================================================================
+        # 3. DATA QUALITY SCORING
+        # =====================================================================
         quality_score = 100
         issues = []
 
+        # Penalize for missing values
         if total_missing > 0:
             missing_pct = (total_missing / (rows * cols)) * 100
             if missing_pct > 20:
@@ -134,6 +275,7 @@ async def analyze_data(session_id: str = "default"):
                 quality_score -= 5
                 issues.append(f"Low missing values: {missing_pct:.1f}% of data is missing")
 
+        # Penalize for duplicates
         duplicate_count = int(df.duplicated().sum())
         if duplicate_count > 0:
             dup_pct = (duplicate_count / rows) * 100
@@ -144,12 +286,13 @@ async def analyze_data(session_id: str = "default"):
                 quality_score -= 10
                 issues.append(f"{duplicate_count} duplicate rows found ({dup_pct:.1f}%)")
 
+        # Penalize constant columns
         for col in df.columns:
             if df[col].nunique() == 1:
                 quality_score -= 5
                 issues.append(f"Column '{col}' has only one unique value")
 
-        quality_score = max(0, quality_score)
+        quality_score = max(0, quality_score)  # Don't go negative
 
         data_quality = {
             "quality_score": quality_score,
@@ -158,7 +301,9 @@ async def analyze_data(session_id: str = "default"):
             "completeness": round(100 - (total_missing / (rows * cols) * 100), 2) if rows * cols > 0 else 100
         }
 
-        # ========== 3b. Descriptive Statistics ==========
+        # =====================================================================
+        # 3b. DESCRIPTIVE STATISTICS
+        # =====================================================================
         descriptive_stats = {}
         if len(numeric_cols) > 0:
             try:
@@ -171,6 +316,7 @@ async def analyze_data(session_id: str = "default"):
                     stats_dict['skew'] = round(skew.get(col, 0), 4)
                     stats_dict['kurtosis'] = round(kurt.get(col, 0), 4)
 
+                    # Round floats for cleaner output
                     for k, v in stats_dict.items():
                         if isinstance(v, float):
                             stats_dict[k] = round(v, 4)
@@ -180,10 +326,12 @@ async def analyze_data(session_id: str = "default"):
                 logger.warning(f"Could not calculate descriptive stats: {e}")
                 warnings.append(f"Descriptive statistics unavailable: {e}")
 
-        # ========== 4. Generate Chart Data ==========
+        # =====================================================================
+        # 4. CHART DATA GENERATION
+        # =====================================================================
         chart_data = {}
 
-        # 4a. Distribution charts for numeric columns
+        # 4a. Distribution histograms (first 8 numeric columns)
         distributions = []
         for col in numeric_cols[:8]:
             try:
@@ -199,10 +347,9 @@ async def analyze_data(session_id: str = "default"):
                     })
             except Exception as e:
                 logger.warning(f"Could not generate distribution for {col}: {e}")
-                warnings.append(f"Distribution chart skipped for '{col}': {e}")
         chart_data["distributions"] = distributions
 
-        # 4b. Categorical value counts
+        # 4b. Categorical value counts (first 8 categorical columns)
         categorical_counts = []
         for col in categorical_cols[:8]:
             try:
@@ -214,10 +361,9 @@ async def analyze_data(session_id: str = "default"):
                 })
             except Exception as e:
                 logger.warning(f"Could not generate categorical counts for {col}: {e}")
-                warnings.append(f"Category counts skipped for '{col}': {e}")
         chart_data["categorical_counts"] = categorical_counts
 
-        # 4c. Correlation heatmap
+        # 4c. Correlation heatmap (first 10 numeric columns)
         if len(numeric_cols) >= 2:
             try:
                 corr_cols = numeric_cols[:10]
@@ -229,7 +375,6 @@ async def analyze_data(session_id: str = "default"):
                 }
             except Exception as e:
                 logger.warning(f"Could not generate correlation heatmap: {e}")
-                warnings.append(f"Correlation heatmap unavailable: {e}")
                 chart_data["correlation_heatmap"] = {"columns": [], "values": []}
         else:
             chart_data["correlation_heatmap"] = {"columns": [], "values": []}
@@ -245,7 +390,7 @@ async def analyze_data(session_id: str = "default"):
         else:
             chart_data["missing_values_chart"] = None
 
-        # 4e. Box plots for numeric columns
+        # 4e. Box plots with outliers (first 6 numeric columns)
         box_plots = []
         for col in numeric_cols[:6]:
             try:
@@ -265,14 +410,13 @@ async def analyze_data(session_id: str = "default"):
                         "median": safe_float(col_data.median()),
                         "q3": safe_float(q3),
                         "max": safe_float(col_data.max()),
-                        "outliers": safe_list(outliers_data.head(50).tolist())
+                        "outliers": safe_list(outliers_data.head(50).tolist())  # Limit outliers
                     })
             except Exception as e:
                 logger.warning(f"Could not generate box plot for {col}: {e}")
-                warnings.append(f"Box plot skipped for '{col}': {e}")
         chart_data["box_plots"] = box_plots
 
-        # 4f. Scatter plot matrix
+        # 4f. Scatter plot matrix (top correlated pairs)
         scatter_matrix = []
         if len(numeric_cols) >= 2:
             try:
@@ -287,6 +431,7 @@ async def analyze_data(session_id: str = "default"):
                                 corr_val = corr_matrix_scatter.loc[col1, col2]
                                 if pd.notna(corr_val) and abs(corr_val) > 0.3:
                                     sample_df = df[[col1, col2]].dropna()
+                                    # Sample for large datasets
                                     if len(sample_df) > 200:
                                         sample_df = sample_df.sample(200, random_state=42)
 
@@ -305,10 +450,11 @@ async def analyze_data(session_id: str = "default"):
                         break
             except Exception as e:
                 logger.warning(f"Could not generate scatter matrix: {e}")
-                warnings.append(f"Scatter matrix unavailable: {e}")
         chart_data["scatter_matrix"] = scatter_matrix
 
-        # ========== 5. Recommendations ==========
+        # =====================================================================
+        # 5. RECOMMENDATIONS
+        # =====================================================================
         recommendations = []
 
         if total_missing > 0:
@@ -320,11 +466,13 @@ async def analyze_data(session_id: str = "default"):
         if len(categorical_cols) > 0:
             recommendations.append("Encode categorical variables before training ML models")
 
+        # High cardinality warning
         for col in categorical_cols:
             if df[col].nunique() > 50:
                 recommendations.append(f"Column '{col}' has high cardinality ({df[col].nunique()} unique values) - consider binning")
                 break
 
+        # Potential classification target
         for col in numeric_cols:
             unique_ratio = df[col].nunique() / len(df)
             if unique_ratio < 0.05 and df[col].nunique() <= 10:
@@ -334,10 +482,14 @@ async def analyze_data(session_id: str = "default"):
         if len(recommendations) == 0:
             recommendations.append("Dataset looks well-prepared for analysis!")
 
-        # ========== 6. AI Insights ==========
+        # =====================================================================
+        # 6. AI INSIGHTS
+        # =====================================================================
         insights = generate_insights(df, basic_info)
 
-        # ========== Compile Result ==========
+        # =====================================================================
+        # COMPILE AND CACHE RESULT
+        # =====================================================================
         result = {
             "analysis": {
                 "basic_info": basic_info,
@@ -360,13 +512,31 @@ async def analyze_data(session_id: str = "default"):
 
     except Exception as e:
         logger.error(f"Analysis failed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Analysis failed: {str(e)}")
 
 
 @router.get("/report")
 def get_report(session_id: str = "default"):
     """
-    Generate and download EDA PDF Report with AI Analysis
+    Generate and download a comprehensive EDA PDF report.
+    
+    Creates a downloadable PDF containing:
+    - Executive summary
+    - Dataset statistics
+    - Charts (Distribution, Heatmap, Boxplots)
+    - AI-generated narrative analysis
+    - Recommendations
+    
+    PDF is generated using reportlab and includes:
+    - Professional formatting
+    - Charts as images
+    - Table data
+    
+    Returns:
+        StreamingResponse with PDF content-type
+        
+    Headers:
+        Content-Disposition: attachment; filename=eda_report.pdf
     """
     from app.utils.pdf_generator import generate_eda_pdf
     from app.core.groq_client import groq_client
@@ -374,7 +544,7 @@ def get_report(session_id: str = "default"):
     state = get_current_dataset(session_id)
     df = state.get("df")
     if df is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded")
+        raise NotFoundError("No dataset loaded")
 
     # 1. Prepare Data Summary for AI
     description = df.describe().to_dict()
@@ -392,7 +562,7 @@ def get_report(session_id: str = "default"):
             top_corr = pairs.head(5).to_dict()
             correlations = {f"{k[0]} vs {k[1]}": v for k, v in top_corr.items()}
 
-    # 2. Generate AI Analysis
+    # 2. Generate AI Analysis (if Groq available)
     ai_analysis_text = "AI Analysis unavailable."
     try:
         prompt = f"""
@@ -428,6 +598,7 @@ def get_report(session_id: str = "default"):
         logger.error(f"AI Report Generation Failed: {e}")
         ai_analysis_text = f"Could not generate AI analysis due to an error: {str(e)}"
 
+    # 3. Prepare analysis results for PDF
     analysis_results = {
         'descriptive_stats': description,
         'data_quality': {
@@ -437,8 +608,10 @@ def get_report(session_id: str = "default"):
         'ai_analysis': ai_analysis_text
     }
 
+    # 4. Generate PDF
     pdf_buffer = generate_eda_pdf(df, analysis_results)
 
+    # 5. Return as downloadable file
     return StreamingResponse(
         pdf_buffer,
         media_type="application/pdf",

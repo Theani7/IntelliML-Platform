@@ -3,7 +3,6 @@ Data Cleaning Endpoints
 Handles data cleaning operations (drop, fill, rename, cast, etc.) and quality analysis.
 """
 
-from fastapi import HTTPException
 import pandas as pd
 import numpy as np
 from typing import Dict, Any
@@ -11,88 +10,71 @@ import json
 
 from app.api.data import router, get_current_dataset, logger, make_json_safe
 from app.services.data_service import DataService
+from app.core.exceptions import NotFoundError, ValidationError, DataProcessingError
 
 
 @router.post("/clean")
 async def clean_data(request: Dict[str, Any], session_id: str = "default"):
-    """
-    Apply data cleaning operations to the current dataset.
-    ...
-    """
+    """Apply data cleaning operations to the current dataset."""
     state = get_current_dataset(session_id)
     df = state.get("df")
     
     if df is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded. Please upload a file first.")
+        raise NotFoundError("No dataset loaded. Please upload a file first.")
+
+    operation = request.get("operation")
+    params = request.get("params", {})
+
+    logger.info(f"Applying operation '{operation}' with params: {params}")
+
+    def get_history_status():
+        return {
+            "can_undo": len(state["history"]) > 0,
+            "can_redo": len(state["future"]) > 0
+        }
+
+    if operation == "undo":
+        if not state["history"]:
+            raise ValidationError("Nothing to undo")
+
+        state["future"].append((df.copy(), state["info"]))
+        prev_df, prev_info = state["history"].pop()
+        state["df"] = prev_df
+        state["info"] = prev_info
+        DataService().set_dataframe(prev_df, session_id=session_id, filename=state["info"]["filename"] if state.get("info") else None)
+
+        return {
+            "status": "success",
+            "message": "Undone last operation",
+            "dataset_info": prev_info,
+            "history_status": get_history_status()
+        }
+
+    elif operation == "redo":
+        if not state["future"]:
+            raise ValidationError("Nothing to redo")
+
+        state["history"].append((df.copy(), state["info"]))
+        next_df, next_info = state["future"].pop()
+        state["df"] = next_df
+        state["info"] = next_info
+        DataService().set_dataframe(next_df, session_id=session_id, filename=state["info"]["filename"] if state.get("info") else None)
+
+        return {
+            "status": "success",
+            "message": "Redone last operation",
+            "dataset_info": next_info,
+            "history_status": get_history_status()
+        }
+
+    if operation in ["drop_column", "fill_na", "drop_na", "drop_duplicates", "rename", "cast", "encode", "handle_outliers", "scale"]:
+        if len(state["history"]) >= 20:
+            state["history"].pop(0)
+
+        state["history"].append((df.copy(), state["info"]))
+        state["future"] = []
 
     try:
-        operation = request.get("operation")
-        params = request.get("params", {})
-
-        df = state["df"]
-        logger.info(f"Applying operation '{operation}' with params: {params}")
-
-        # Helper to get history status
-        def get_history_status():
-            return {
-                "can_undo": len(state["history"]) > 0,
-                "can_redo": len(state["future"]) > 0
-            }
-
-        # --- UNDO / REDO LOGIC ---
-        if operation == "undo":
-            if not state["history"]:
-                raise HTTPException(status_code=400, detail="Nothing to undo")
-
-            # Save current to future
-            state["future"].append((df.copy(), state["info"]))
-
-            # Pop from history
-            prev_df, prev_info = state["history"].pop()
-            state["df"] = prev_df
-            state["info"] = prev_info
-            # Sync to shared data service session
-            DataService().set_dataframe(prev_df, session_id=session_id, filename=state["info"]["filename"] if state.get("info") else None)
-
-            return {
-                "status": "success",
-                "message": "Undone last operation",
-                "dataset_info": prev_info,
-                "history_status": get_history_status()
-            }
-
-        elif operation == "redo":
-            if not state["future"]:
-                raise HTTPException(status_code=400, detail="Nothing to redo")
-
-            # Save current to history
-            state["history"].append((df.copy(), state["info"]))
-
-            # Pop from future
-            next_df, next_info = state["future"].pop()
-            state["df"] = next_df
-            state["info"] = next_info
-            # Sync to shared data service session
-            DataService().set_dataframe(next_df, session_id=session_id, filename=state["info"]["filename"] if state.get("info") else None)
-
-            return {
-                "status": "success",
-                "message": "Redone last operation",
-                "dataset_info": next_info,
-                "history_status": get_history_status()
-            }
-
-        # --- NORMAL OPERATIONS ---
-        # Save state before modification
-        if operation in ["drop_column", "fill_na", "drop_na", "drop_duplicates", "rename", "cast", "encode", "handle_outliers", "scale"]:
-            # Limit history size to 20 to prevent memory explosion
-            if len(state["history"]) >= 20:
-                state["history"].pop(0)
-
-            state["history"].append((df.copy(), state["info"]))
-            # Clear future stack on new operation
-            state["future"] = []
-
         if operation == "drop_column":
             col = params.get("column")
             if col and col in df.columns:
@@ -101,7 +83,7 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
         elif operation == "fill_na":
             col = params.get("column")
             value = params.get("value")
-            method = params.get("method")  # 'mean', 'median', 'mode'
+            method = params.get("method")
 
             if col and col in df.columns:
                 if method:
@@ -113,12 +95,10 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
                         mode_res = df[col].mode()
                         fill_val = mode_res.iloc[0] if not mode_res.empty else 0
                     else:
-                        fill_val = 0  # Default fallback
+                        fill_val = 0
                     df[col] = df[col].fillna(fill_val)
                 elif value is not None:
                     df[col] = df[col].fillna(value)
-            elif not col:
-                pass
 
         elif operation == "drop_na":
             df.dropna(inplace=True)
@@ -150,12 +130,12 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
                     elif dtype == 'string':
                         df[col] = df[col].astype('string')
                 except Exception as e:
-                    logger.warning(f"Cast failed for {col} to {dtype}: {e}")
-                    raise HTTPException(status_code=400, detail=f"Failed to cast {col} to {dtype}")
+                    logger.error(f"Failed to cast {col} to {dtype}: {e}")
+                    raise ValidationError(f"Failed to cast {col} to {dtype}")
 
         elif operation == "encode":
             col = params.get("column")
-            method = params.get("method")  # 'one_hot', 'label'
+            method = params.get("method")
             if col in df.columns:
                 if method == 'one_hot':
                     dummies = pd.get_dummies(df[col], prefix=col, drop_first=True)
@@ -170,7 +150,7 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
 
         elif operation == "handle_outliers":
             col = params.get("column")
-            method = params.get("method")  # 'clip', 'drop'
+            method = params.get("method")
             threshold = float(params.get("threshold", 1.5))
 
             if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
@@ -188,7 +168,7 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
 
         elif operation == "scale":
             col = params.get("column")
-            method = params.get("method")  # 'standard', 'minmax'
+            method = params.get("method")
 
             if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
                 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -202,17 +182,14 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
                     scaler = MinMaxScaler()
                     df[col] = scaler.fit_transform(data_reshaped).flatten()
             else:
-                raise HTTPException(status_code=400, detail=f"Column {col} is not numeric or not found")
+                raise ValidationError(f"Column {col} is not numeric or not found")
 
         else:
-            raise HTTPException(status_code=400, detail=f"Unknown operation: {operation}")
+            raise ValidationError(f"Unknown operation: {operation}")
 
-        # Update state reference (and Service sync)
         state["df"] = df
-        # Sync to shared data service session
         DataService().set_dataframe(df, session_id=session_id, filename=state["info"]["filename"] if state.get("info") else None)
 
-        # Regenerate info
         preview_records = []
         for _, row in df.head(10).iterrows():
             safe_row = {col: make_json_safe(val) for col, val in row.items()}
@@ -234,29 +211,26 @@ async def clean_data(request: Dict[str, Any], session_id: str = "default"):
             "history_status": get_history_status()
         }
 
-    except HTTPException:
+    except (ValidationError, NotFoundError):
         raise
     except Exception as e:
         logger.error(f"Cleaning error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Cleaning failed: {str(e)}")
 
 
 @router.get("/quality")
 async def analyze_quality(session_id: str = "default"):
-    """
-    Analyze data quality (missing values, types, outliers, encoding) and get AI recommendations.
-    """
+    """Analyze data quality (missing values, types, outliers, encoding) and get AI recommendations."""
     state = get_current_dataset(session_id)
     df = state.get("df")
     
     if df is None:
-        raise HTTPException(status_code=404, detail="No dataset loaded")
+        raise NotFoundError("No dataset loaded")
 
     try:
         df = state["df"]
         total_rows = len(df)
 
-        # 1. Missing Values
         missing_summary = []
         for col in df.columns:
             missing_count = int(df[col].isnull().sum())
@@ -276,7 +250,6 @@ async def analyze_quality(session_id: str = "default"):
                     "heuristic_recommendation": recommendation
                 })
 
-        # 2. Encoding Needs (Categorical columns)
         encoding_summary = []
         categorical_cols = df.select_dtypes(include=['object', 'category', 'string']).columns
 
@@ -291,7 +264,6 @@ async def analyze_quality(session_id: str = "default"):
                     "heuristic_recommendation": rec
                 })
 
-        # 3. Outlier Detection (Numeric columns)
         outlier_summary = []
         numeric_cols = df.select_dtypes(include=[np.number]).columns
 
@@ -314,7 +286,6 @@ async def analyze_quality(session_id: str = "default"):
                     "heuristic_recommendation": "clip"
                 })
 
-        # 4. Get AI Recommendations
         ai_recommendations = {}
         if missing_summary or encoding_summary or outlier_summary:
             from app.core.groq_client import groq_client
@@ -334,13 +305,6 @@ async def analyze_quality(session_id: str = "default"):
             {json.dumps(outlier_summary, indent=2)}
 
             Return ONLY a valid JSON object mapping column names to strategies.
-            Format:
-            {{
-                "column_name": {{
-                    "strategy": "mean" | "median" | "mode" | "drop_rows" | "drop_column" | "one_hot" | "label" | "clip" | "drop_outliers",
-                    "reasoning": "Brief explanation why"
-                }}
-            }}
             """
 
             try:
@@ -356,14 +320,19 @@ async def analyze_quality(session_id: str = "default"):
             except Exception as e:
                 logger.error(f"AI recommendation failed: {e}")
 
-        # Helper to merge AI recommendation
         def enhance_summary(summary_list, default_rec_key="heuristic_recommendation"):
             for item in summary_list:
                 col = item["column"]
                 if col in ai_recommendations:
                     rec = ai_recommendations[col]
-                    item["ai_recommendation"] = rec.get("strategy")
-                    item["ai_reasoning"] = rec.get("reasoning")
+                    # Ensure rec is a dict before calling .get()
+                    if isinstance(rec, dict):
+                        item["ai_recommendation"] = rec.get("strategy")
+                        item["ai_reasoning"] = rec.get("reasoning")
+                    else:
+                        # AI returned something unexpected
+                        item["ai_recommendation"] = item[default_rec_key]
+                        item["ai_reasoning"] = "AI returned unexpected format"
                 else:
                     item["ai_recommendation"] = item[default_rec_key]
                     item["ai_reasoning"] = "Heuristic suggestion (AI unavailable)"
@@ -381,6 +350,8 @@ async def analyze_quality(session_id: str = "default"):
             "outlier_summary": outlier_summary
         }
 
+    except NotFoundError:
+        raise
     except Exception as e:
         logger.error(f"Quality analysis error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise DataProcessingError(f"Quality analysis failed: {str(e)}")

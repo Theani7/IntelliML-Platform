@@ -36,6 +36,20 @@ body {
   text-wrap: balance;
 }
 
+@utility line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@utility line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Typography Utilities */
 .text-display {
   font-family: var(--font-display);
@@ -162,11 +176,204 @@ body {
 }
 
 
-/* Utilities */
-.gradient-text {
-  background: linear-gradient(135deg, #1d1d1f 0%, #434344 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* ============================================
+   MOBILE RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+}
+
+/* Touch-friendly tap targets */
+@layer utilities {
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Full-width on mobile */
+  .mobile-full {
+    width: 100%;
+  }
+  
+  /* Horizontal scroll container for mobile */
+  .scroll-x-touch {
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+  
+  .scroll-x-touch > * {
+    scroll-snap-align: start;
+  }
+}
+
+/* Mobile-optimized text sizes */
+@media (max-width: 640px) {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .leading-tight {
+    line-height: 1.25;
+  }
+}
+
+/* Hide scrollbar but keep functionality on mobile */
+@media (max-width: 768px) {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Bottom sheet mobile pattern */
+@media (max-width: 768px) {
+  .bottom-sheet {
+    border-radius: 1.5rem 1.5rem 0 0;
+  }
+  
+  .bottom-sheet-handle {
+    width: 2.5rem;
+    height: 0.25rem;
+    background: #ccc;
+    border-radius: 9999px;
+  }
+}
+
+/* ============================================
+   MOBILE NAVIGATION FIXES
+   ============================================ */
+@media (max-width: 768px) {
+  /* Ensure main content scrolls properly behind mobile nav */
+  main {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent layout shift when mobile nav appears */
+  .mobile-nav-safe {
+    scroll-padding-bottom: 5rem;
+  }
+  
+  /* Better touch feedback */
+  button, a {
+    -webkit-tap-highlight-color: rgba(71, 1, 2, 0.1);
+  }
+  
+  /* Prevent iOS Safari address bar issues */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix modals/dropdowns on mobile */
+  .modal-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+  }
+}
+
+/* ============================================
+   RESPONSIVE CARD GRID
+   ============================================ */
+@media (max-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* ============================================
+   INPUT FIELDS
+   ============================================ */
+@media (max-width: 640px) {
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
 }
 
 
