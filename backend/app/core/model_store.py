@@ -68,12 +68,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import joblib
+import os
+import platform
 
 logger = logging.getLogger(__name__)
 
-# Store models under /tmp so they auto-clean on restart
-# In production, use a persistent directory
-MODEL_DIR = Path("/tmp/intelliml_models")
+# Cross-platform model storage
+if platform.system() == "Windows":
+    MODEL_DIR = Path(os.environ.get("TEMP", ".")) / "intelliml_models"
+else:
+    MODEL_DIR = Path("/tmp/intelliml_models")
 
 
 class ModelStore:

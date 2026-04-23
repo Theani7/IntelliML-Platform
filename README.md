@@ -13,6 +13,9 @@ It supports dataset upload, cleaning, EDA, feature engineering, training, SHAP-s
 - What-If Simulation screen integrated with model schema/prediction APIs
 - Responsive navigation and mobile-friendly workflow screens
 - Frontend API proxy to reduce direct CORS/network issues
+- AI Assistant with auto-generated visualizations (correlation heatmaps, histograms, scatter plots)
+- Markdown rendering in chat responses
+- Voice assistant support
 
 ## Tech Stack
 
@@ -20,13 +23,14 @@ It supports dataset upload, cleaning, EDA, feature engineering, training, SHAP-s
 - Next.js 16 (App Router, TypeScript)
 - Tailwind CSS
 - Recharts
+- Markdown rendering
 - API proxy route: `frontend/app/api/proxy/[...path]/route.ts`
 
 ### Backend (`/backend`)
-- FastAPI
+- FastAPI 0.136.0
 - SQLModel / SQLite
-- scikit-learn, XGBoost, LightGBM, SHAP
-- Groq integration for assistant and voice-related flows
+- scikit-learn 1.8.0, XGBoost, LightGBM, SHAP
+- Groq integration for AI assistant and voice
 
 ## Repository Structure
 
@@ -275,6 +279,22 @@ These are local runtime artifacts and should not be committed.
 
 ## Deployment Notes (Short)
 
+### Render Deployment
+
+1. **Backend (Web Service)**
+   - Build command: `pip install -r requirements.txt`
+   - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+   - Environment variables:
+     - `GROQ_API_KEY` = your Groq API key
+
+2. **Frontend (Static Site or Web Service)**
+   - Build command: `npm run build`
+   - Start command: `npm run start`
+   - Environment variables:
+     - `API_URL` = your backend Render URL
+
+### Heroku/Vercel Alternative
+
 - Run backend behind a production ASGI server.
 - Set `API_URL` in frontend runtime env to backend origin.
 - Use strong secrets and HTTPS.
@@ -282,6 +302,8 @@ These are local runtime artifacts and should not be committed.
 
 ## Recent Project Changes Reflected in This README
 
+- AI Assistant with auto-generated visualizations (heatmaps, histograms)
+- Simplified chat UI with enhanced markdown rendering
 - Admin dashboard and role-management flow
 - JWT auth, signup/login/account management
 - What-If Simulation integration

@@ -368,12 +368,12 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
               <h4 className="font-bold text-[#FFF7EA] mb-4 sm:mb-6 text-sm sm:text-base uppercase tracking-wider">Developers</h4>
               <ul className="space-y-3 sm:space-y-4 text-[#FFEDC1]/80 text-sm sm:text-base">
                 <li>
-                  <a href="https://github.com/ani7" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
-                    <GitHubIcon /> <span className="font-medium">Anil Paneru</span>
+                  <a href="https://github.com/theani7" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
+                    <GitHubIcon /> <span className="font-medium">theani7</span>
                   </a>
                 </li>
-                <li>
-                  <a href="https://github.com/NeonNinjaX" className="hover:text-white transition-colors flex items-center gap-2 sm:gap-3 group">
+<li>
+                  <a href="https://github.com/NeonNinjaX" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-2 sm:gap-3 group">
                     <div className="p-1 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
                       <GitHubIcon />
                     </div>
@@ -381,7 +381,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
+                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
                     <GitHubIcon /> <span className="font-medium">Mahesh Karki</span>
                   </a>
                 </li>

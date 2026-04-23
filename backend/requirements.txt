@@ -1,23 +1,23 @@
 # ============================================
 # CORE FRAMEWORK
 # ============================================
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
-pydantic-settings==2.1.0
-python-multipart==0.0.6
+fastapi==0.136.0
+uvicorn[standard]==0.46.0
+pydantic==2.12.4
+pydantic-settings==2.12.0
+python-multipart==0.0.26
 
 # ============================================
 # AI / LLM
 # ============================================
-groq==0.4.2
+groq==1.2.0
 
 # ============================================
 # MACHINE LEARNING - CORE
 # ============================================
-scikit-learn==1.4.0
-pandas==2.1.4
-numpy==1.26.3
+scikit-learn==1.8.0
+pandas==3.0.2
+numpy==2.4.4
 
 # ============================================
 # MACHINE LEARNING - BOOSTING
