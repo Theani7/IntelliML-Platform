@@ -368,22 +368,13 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
               <h4 className="font-bold text-[#FFF7EA] mb-4 sm:mb-6 text-sm sm:text-base uppercase tracking-wider">Developers</h4>
               <ul className="space-y-3 sm:space-y-4 text-[#FFEDC1]/80 text-sm sm:text-base">
                 <li>
-                  <a href="https://github.com/theani7" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
-                    <GitHubIcon /> <span className="font-medium">theani7</span>
-                  </a>
-                </li>
-<li>
-                  <a href="https://github.com/NeonNinjaX" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-2 sm:gap-3 group">
-                    <div className="p-1 bg-white/5 rounded-lg border border-white/10 group-hover:border-white/20 transition-colors">
-                      <GitHubIcon />
-                    </div>
-                    <span className="font-medium">Rahul Mishra</span>
-                  </a>
+                  <DeveloperLink href="https://github.com/theani7" label="theani7" />
                 </li>
                 <li>
-                  <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#FEB229] transition-colors flex items-center gap-2 sm:gap-3">
-                    <GitHubIcon /> <span className="font-medium">Mahesh Karki</span>
-                  </a>
+                  <DeveloperLink href="https://github.com/RahulMishra26" label="Rahul Mishra" />
+                </li>
+                <li>
+                  <DeveloperLink href="https://github.com" label="Mahesh Karki" />
                 </li>
               </ul>
             </div>
@@ -413,6 +404,22 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
 
       <DocumentationModal isOpen={showDocs} onClose={() => setShowDocs(false)} />
     </div>
+  );
+}
+
+function DeveloperLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex items-center gap-2 sm:gap-3 transition-colors hover:text-[#FEB229]"
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#FFF7EA]/10 bg-[#FFF7EA]/5 text-[#FFEDC1] transition-colors group-hover:border-[#FEB229]/40 group-hover:text-[#FEB229]">
+        <GitHubIcon />
+      </span>
+      <span className="font-medium">{label}</span>
+    </a>
   );
 }
 
