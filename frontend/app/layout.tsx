@@ -20,9 +20,11 @@ export const metadata: Metadata = {
     title: "IntelliML",
     description: "Upload data. Ask questions. Get instant ML insights.",
     type: "website",
+    url: "/",
+    siteName: "IntelliML",
     images: [
       {
-        url: "/og-image.png",
+        url: "/intelliml-og-v2.png",
         width: 1731,
         height: 909,
         alt: "IntelliML - Intelligent Data Future",
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "IntelliML",
     description: "Upload data. Ask questions. Get instant ML insights.",
-    images: ["/og-image.png"],
+    images: ["/intelliml-og-v2.png"],
   },
 };
 
