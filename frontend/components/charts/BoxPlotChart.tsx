@@ -38,7 +38,17 @@ function SingleBoxPlot({ data, index }: { data: any; index: number }) {
   const range = data.max - data.min;
   const height = 200;
 
+  if (range === 0 || !isFinite(data.min) || !isFinite(data.max)) {
+    return (
+      <div id={chartId} className="border border-[#FFEDC1] rounded-xl p-4 bg-[#FFF7EA]">
+        <h5 className="text-sm font-semibold text-[#8A5A5A]">{data.column}</h5>
+        <p className="text-xs text-[#8A5A5A] mt-2">No valid numeric data for box plot</p>
+      </div>
+    );
+  }
+
   const getY = (value: number) => {
+    if (!isFinite(value)) return height / 2;
     return height - ((value - data.min) / range) * (height - 40);
   };
 
