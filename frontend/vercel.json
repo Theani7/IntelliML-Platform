@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "routes": [
+    {
+      "src": "/api/proxy/(.*)",
+      "dest": "/api/proxy/$1"
+    }
+  ]
+}
