@@ -282,10 +282,16 @@ These are local runtime artifacts and should not be committed.
 ### Render Deployment
 
 1. **Backend (Web Service)**
+   - Root directory: `backend`
    - Build command: `pip install -r requirements.txt`
    - Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
    - Environment variables:
      - `GROQ_API_KEY` = your Groq API key
+
+   If you do not set Render's root directory to `backend`, use root-relative
+   commands instead:
+   - Build command: `pip install -r backend/requirements.txt`
+   - Start command: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 
 2. **Frontend (Static Site or Web Service)**
    - Build command: `npm run build`
