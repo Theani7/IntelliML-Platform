@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import {
-    sendChatMessage, getVisualizationSuggestions, clearChatHistory, transcribeAudio } from '@/lib/api';
+    sendChatMessage, clearChatHistory, transcribeAudio } from '@/lib/api';
 
 import { useAuth } from '@/context/AuthContext';
 

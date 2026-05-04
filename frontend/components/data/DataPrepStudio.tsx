@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getDataQuality } from '@/lib/api';
 // --- Icons ---
 const TableCellsIcon = ({ className }: { className?: string }) => (
@@ -37,19 +37,24 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
     const columns = data?.columns || [];
     const preview = data?.preview || [];
 
-    // --- Initial Analysis ---
-    useEffect(() => {
-        if (data) fetchQuality();
-    }, [data]);
-
-    const fetchQuality = async () => {
+    const fetchQuality = useCallback(async () => {
         try {
             const report = await getDataQuality();
             setQualityReport(report);
         } catch (err) {
             console.error("Failed to fetch quality report", err);
         }
-    };
+    }, []);
+
+    // --- Initial Analysis ---
+    useEffect(() => {
+        if (data) {
+            // Use a self-invoking async function to avoid synchronous setState warning
+            (async () => {
+                await fetchQuality();
+            })();
+        }
+    }, [data, fetchQuality]);
 
 return (
         <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-140px)] gap-0 animate-fadeIn overflow-hidden rounded-xl sm:rounded-2xl border border-[#FFEDC1] bg-white">

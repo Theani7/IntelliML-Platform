@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { SparklesIcon, ChartIcon, TargetIcon, SpinnerIcon } from '@/components/icons/Icons';
+import { SparklesIcon, ChartIcon } from '@/components/icons/Icons';
 import { getSimulationSchema, runSimulation } from '@/lib/api';
 import SkeletonState from '@/components/ui/SkeletonState';
 
@@ -99,6 +99,24 @@ export default function Simulate({ jobId }: SimulateProps) {
         });
     }, [schema, sensitivityMap]);
 
+    const triggerSimulation = React.useCallback(async (currentFeatures: Record<string, any>) => {
+        if (!jobId) return;
+
+        try {
+            setIsSimulating(true);
+            const result = await runSimulation(jobId, currentFeatures);
+
+            setPrediction(result.prediction);
+            setProbability(result.probability);
+            setBaseValue(result.base_value);
+            setExplanations(result.explanations);
+        } catch (err: any) {
+            console.error('Simulation failed:', err);
+        } finally {
+            setIsSimulating(false);
+        }
+    }, [jobId]);
+
     useEffect(() => {
         if (!jobId) return;
 
@@ -131,25 +149,7 @@ export default function Simulate({ jobId }: SimulateProps) {
         };
 
         fetchSchema();
-    }, [jobId]);
-
-    const triggerSimulation = async (currentFeatures: Record<string, any>) => {
-        if (!jobId) return;
-
-        try {
-            setIsSimulating(true);
-            const result = await runSimulation(jobId, currentFeatures);
-
-            setPrediction(result.prediction);
-            setProbability(result.probability);
-            setBaseValue(result.base_value);
-            setExplanations(result.explanations);
-        } catch (err: any) {
-            console.error('Simulation failed:', err);
-        } finally {
-            setIsSimulating(false);
-        }
-    };
+    }, [jobId, triggerSimulation]);
 
     const handleFeatureChange = (name: string, value: any) => {
         const newFeatures = { ...features, [name]: value };

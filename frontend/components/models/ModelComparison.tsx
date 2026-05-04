@@ -15,7 +15,7 @@ import {
   ReferenceLine,
   Cell
 } from 'recharts';
-import { downloadModelExport, explainSinglePrediction, runSinglePrediction } from '@/lib/api';
+import { downloadModelExport, runSinglePrediction } from '@/lib/api';
 
 interface ModelComparisonProps {
   results: any;
@@ -56,7 +56,6 @@ export default function ModelComparison({ results }: ModelComparisonProps) {
   const [prediction, setPrediction] = useState<any>(null);
   const [isPredicting, setIsPredicting] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({ key: 'test_score', direction: 'desc' });
-  const [shapExplanation, setShapExplanation] = useState<any>(null);
 
   const handleSort = (key: string) => {
     setSortConfig(prev => ({
@@ -78,7 +77,6 @@ const feature_names = results.feature_names || results.results?.feature_names ||
   const handlePredict = async () => {
     if (!job_id) return;
     setIsPredicting(true);
-    setShapExplanation(null);
     try {
       const features = feature_names.map((name: string) => {
         const val = featureInputs[name];
@@ -87,10 +85,6 @@ const feature_names = results.feature_names || results.results?.feature_names ||
 
       const data = await runSinglePrediction(job_id, features);
       setPrediction(data);
-
-      explainSinglePrediction(job_id, features)
-        .then(shapData => setShapExplanation(shapData))
-        .catch(err => console.warn('SHAP explanation failed:', err));
     } catch (error) {
       console.error('Prediction failed:', error);
     }
@@ -500,8 +494,8 @@ print(f"Prediction: {prediction}")
             </thead>
             <tbody className="divide-y divide-[#FFEDC1]">
               {[...models].sort((a: any, b: any) => {
-                let aVal = sortConfig.key === 'test_score' ? (a.test_score ?? a.score ?? 0) : (a.metrics?.[sortConfig.key] ?? 0);
-                let bVal = sortConfig.key === 'test_score' ? (b.test_score ?? b.score ?? 0) : (b.metrics?.[sortConfig.key] ?? 0);
+                const aVal = sortConfig.key === 'test_score' ? (a.test_score ?? a.score ?? 0) : (a.metrics?.[sortConfig.key] ?? 0);
+                const bVal = sortConfig.key === 'test_score' ? (b.test_score ?? b.score ?? 0) : (b.metrics?.[sortConfig.key] ?? 0);
                 return sortConfig.direction === 'desc' ? bVal - aVal : aVal - bVal;
               }).map((model: any, idx: number) => (
                 <tr

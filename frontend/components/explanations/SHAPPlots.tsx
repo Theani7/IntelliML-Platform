@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 // Icons
 const ChartIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +38,6 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
   // Handle both structures: { shap_results: {...} } or direct { feature_importance: [...], explanation: "..." }
   const shap_results = explanations.shap_results || explanations;
   const explanation = explanations.explanation;
-  const model_name = explanations.model_name;
 
   if (!shap_results && !explanations.feature_importance) {
     return (
@@ -53,7 +54,7 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
   }
 
   // Extract feature importance - handle both array and object formats
-  let rawFeatureImportance = shap_results?.feature_importance || explanations.feature_importance || [];
+  const rawFeatureImportance = shap_results?.feature_importance || explanations.feature_importance || [];
   const feature_importance = Array.isArray(rawFeatureImportance)
     ? rawFeatureImportance
     : rawFeatureImportance && typeof rawFeatureImportance === 'object'
@@ -144,10 +145,13 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
                   Summary Plot
                 </h4>
                 <div className="bg-white rounded-lg border border-[#FFEDC1] p-2">
-                  <img
+                  <Image
                     src={plots.summary}
                     alt="SHAP Summary Plot"
-                    className="w-full rounded"
+                    width={800}
+                    height={400}
+                    className="w-full h-auto rounded"
+                    unoptimized
                   />
                 </div>
               </div>
@@ -159,10 +163,13 @@ export default function SHAPPlots({ explanations }: SHAPPlotsProps) {
                   Feature Importance Bar Plot
                 </h4>
                 <div className="bg-white rounded-lg border border-[#FFEDC1] p-2">
-                  <img
+                  <Image
                     src={plots.bar}
                     alt="SHAP Bar Plot"
-                    className="w-full rounded"
+                    width={800}
+                    height={400}
+                    className="w-full h-auto rounded"
+                    unoptimized
                   />
                 </div>
               </div>

@@ -1,11 +1,5 @@
 'use client';
 
-const MicIcon = () => (
-  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-  </svg>
-);
-
 export default function Header() {
   return (
     <header className="bg-[#FFF7EA]/90 backdrop-blur-md border-b border-[#FFEDC1] sticky top-0 z-50">

@@ -2,6 +2,52 @@
 
 import { useEffect, useRef } from 'react';
 
+class Particle {
+  theta: number;
+  phi: number;
+  x: number = 0;
+  y: number = 0;
+  z: number = 0;
+  projected2D = { x: 0, y: 0 };
+  particleCount: number;
+
+  constructor(i: number, particleCount: number, radius: number, rotation: number, width: number, height: number) {
+    // Distribute particles evenly on sphere using Fibonacci sphere
+    this.particleCount = particleCount;
+    this.phi = Math.acos(1 - 2 * (i + 0.5) / particleCount);
+    this.theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    this.update(radius, rotation, width, height);
+  }
+
+  update(radius: number, rotation: number, width: number, height: number) {
+    // 3D position on sphere
+    this.x = radius * Math.sin(this.phi) * Math.cos(this.theta + rotation);
+    this.y = radius * Math.sin(this.phi) * Math.sin(this.theta + rotation);
+    this.z = radius * Math.cos(this.phi);
+
+    // Project to 2D
+    const scale = 400 / (400 + this.z);
+    this.projected2D = {
+      x: this.x * scale + width / 2,
+      y: this.y * scale + height / 2,
+    };
+  }
+
+  draw(ctx: CanvasRenderingContext2D, radius: number) {
+    // Color based on z-position (depth)
+    const depth = (this.z + radius) / (2 * radius);
+    // Gold (35) to Red (10) gradient
+    const hue = 35 - depth * 25;
+    const opacity = 0.3 + depth * 0.7;
+    const size = 1 + depth * 2;
+
+    ctx.fillStyle = `hsla(${hue}, 90%, 60%, ${opacity})`;
+    ctx.beginPath();
+    ctx.arc(this.projected2D.x, this.projected2D.y, size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 export default function AnimatedSphere() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -24,8 +70,8 @@ export default function AnimatedSphere() {
     window.addEventListener('resize', updateSize);
 
     // Sphere parameters
-    const particles: Particle[] = [];
     const particleCount = 2000;
+    const particles: Particle[] = [];
 
     // Captured variables to avoid null checks in loop
     let width = canvas.width;
@@ -33,55 +79,9 @@ export default function AnimatedSphere() {
     let radius = Math.min(width, height) * 0.35;
     let rotation = 0;
 
-    class Particle {
-      theta: number;
-      phi: number;
-      x: number = 0;
-      y: number = 0;
-      z: number = 0;
-      projected2D = { x: 0, y: 0 };
-
-      constructor(i: number) {
-        // Distribute particles evenly on sphere using Fibonacci sphere
-        this.phi = Math.acos(1 - 2 * (i + 0.5) / particleCount);
-        this.theta = Math.PI * (1 + Math.sqrt(5)) * i;
-        this.update();
-      }
-
-      update() {
-        // 3D position on sphere
-        this.x = radius * Math.sin(this.phi) * Math.cos(this.theta + rotation);
-        this.y = radius * Math.sin(this.phi) * Math.sin(this.theta + rotation);
-        this.z = radius * Math.cos(this.phi);
-
-        // Project to 2D
-        const scale = 400 / (400 + this.z);
-        this.projected2D = {
-          x: this.x * scale + width / 2,
-          y: this.y * scale + height / 2,
-        };
-      }
-
-      draw() {
-        if (!ctx) return;
-
-        // Color based on z-position (depth)
-        const depth = (this.z + radius) / (2 * radius);
-        // Gold (35) to Red (10) gradient
-        const hue = 35 - depth * 25;
-        const opacity = 0.3 + depth * 0.7;
-        const size = 1 + depth * 2;
-
-        ctx.fillStyle = `hsla(${hue}, 90%, 60%, ${opacity})`;
-        ctx.beginPath();
-        ctx.arc(this.projected2D.x, this.projected2D.y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
     // Create particles
     for (let i = 0; i < particleCount; i++) {
-      particles.push(new Particle(i));
+      particles.push(new Particle(i, particleCount, radius, rotation, width, height));
     }
 
     // Animation loop
@@ -106,8 +106,8 @@ export default function AnimatedSphere() {
 
       // Update and draw particles
       particles.forEach(particle => {
-        particle.update();
-        particle.draw();
+        particle.update(radius, rotation, width, height);
+        particle.draw(ctx, radius);
       });
 
       // Draw connections between nearby particles

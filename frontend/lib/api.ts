@@ -232,7 +232,7 @@ export async function testGroqConnection() {
     return await apiCall<{ status: string; message: string; response: string }>(
       '/test-groq'
     );
-  } catch (error) {
+  } catch {
     // Return unavailable status instead of throwing
     return {
       status: 'unavailable',
