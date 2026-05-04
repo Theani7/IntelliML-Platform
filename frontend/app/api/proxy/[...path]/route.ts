@@ -34,16 +34,21 @@ async function forward(request: NextRequest, pathParts: string[]) {
   };
 
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    init.body = await request.arrayBuffer();
+    // Use the request body stream directly to avoid loading the whole file into memory
+    // and to bypass potential Next.js body size limits for arrayBuffer().
+    init.body = request.body;
+    // @ts-ignore - 'duplex' is required when body is a stream in some environments
+    init.duplex = 'half';
   }
 
   let upstream: Response;
   try {
     upstream = await fetch(targetUrl, init);
-  } catch {
+  } catch (error) {
+    console.error(`[Proxy] Fetch error to ${targetUrl}:`, error);
     return new Response(
       JSON.stringify({
-        detail: 'Backend service unavailable',
+        detail: 'Backend service unavailable or connection timeout',
         target: targetUrl,
       }),
       {
@@ -58,7 +63,7 @@ async function forward(request: NextRequest, pathParts: string[]) {
     responseHeaders.set('content-type', upstreamContentType);
   }
 
-  return new Response(await upstream.arrayBuffer(), {
+  return new Response(upstream.body, {
     status: upstream.status,
     headers: responseHeaders,
   });

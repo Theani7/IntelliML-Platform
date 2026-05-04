@@ -13,81 +13,64 @@ from app.api.data import router, get_current_dataset, data_service, logger, make
 from app.services.data_service import DataService
 from app.core.exceptions import ValidationError, NotFoundError, DataProcessingError
 
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
-
-class UploadResponse(BaseModel):
-    filename: str
-    rows: int
-    columns: list
-    dtypes: dict
-    preview: list
-
+from app.config import settings
 
 @router.post("/upload")
 async def upload_file(file: UploadFile = File(...), session_id: str = "default"):
     """
     Upload a CSV file and store it in session registry
     """
+    # Use FastAPI's file size attribute if available, otherwise read a bit to check
+    # But for simplicity and because we need content anyway, we'll read it once.
     content = await file.read()
+    file_size = len(content)
     
-    if len(content) > MAX_FILE_SIZE:
+    if file_size > settings.MAX_FILE_SIZE:
         raise ValidationError(
-            f"File too large. Maximum size is {MAX_FILE_SIZE // (1024*1024)}MB",
-            details={"max_size_mb": MAX_FILE_SIZE // (1024*1024)}
+            f"File too large. Maximum size is {settings.MAX_FILE_SIZE // (1024*1024)}MB",
+            details={"max_size_mb": settings.MAX_FILE_SIZE // (1024*1024)}
         )
 
     if not file.filename.endswith('.csv'):
-        raise ValidationError(
-            "Only CSV files are supported",
-            details={"supported_types": [".csv"]}
-        )
+        # For now, the endpoint logic below is CSV-centric, 
+        # but DataService supports Excel/JSON. 
+        # Let's keep it CSV-only for now as per original code or expand if needed.
+        if not file.filename.endswith(('.xlsx', '.xls', '.json')):
+             raise ValidationError(
+                "Unsupported file format",
+                details={"supported_types": [".csv", ".xlsx", ".xls", ".json"]}
+            )
 
-    logger.info(f"Uploading file: {file.filename} ({len(content)} bytes)")
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='wb') as temp_file:
-        temp_file.write(content)
-        temp_path = temp_file.name
+    logger.info(f"Uploading file: {file.filename} ({file_size} bytes)")
 
     try:
-        df = pd.read_csv(temp_path)
+        # Process once using DataService (which handles format detection and parsing)
+        info = data_service.process_uploaded_file(content, file.filename, session_id=session_id)
         
-        if df.empty:
-            raise ValidationError("The CSV file is empty")
-        
+        # Sync to local registry (used by other endpoints in this package)
+        df = data_service.get_dataframe(session_id)
         state = get_current_dataset(session_id)
         state["df"] = df
-
-        data_service.process_uploaded_file(content, file.filename, session_id=session_id)
-        logger.info("✓ DataFrame synced to DataService for session access")
-
-        preview_records = []
-        for _, row in df.head(10).iterrows():
-            safe_row = {col: make_json_safe(val) for col, val in row.items()}
-            preview_records.append(safe_row)
-
-        info = {
-            "filename": file.filename,
-            "rows": len(df),
-            "columns": df.columns.tolist(),
-            "dtypes": {col: str(dtype) for col, dtype in df.dtypes.items()},
-            "preview": preview_records
-        }
-
         state["info"] = info
-        logger.info(f"✓ File uploaded successfully: {info['rows']} rows")
+        
+        # Add preview records for UploadResponse compatibility if not already there
+        if "preview" not in info:
+            preview_records = []
+            if df is not None:
+                for _, row in df.head(10).iterrows():
+                    safe_row = {col: make_json_safe(val) for col, val in row.items()}
+                    preview_records.append(safe_row)
+            info["preview"] = preview_records
+
+        logger.info(f"✓ File uploaded and synced successfully: {info.get('rows', 'unknown')} rows")
 
         return info
 
     except (ValidationError, DataProcessingError):
         raise
-    except pd.errors.ParserError as e:
-        raise DataProcessingError(f"Failed to parse CSV: {str(e)}")
     except Exception as e:
         logger.error(f"Upload error: {str(e)}", exc_info=True)
         raise DataProcessingError(f"Upload failed: {str(e)}")
-    finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
 
 
 @router.get("/info")
