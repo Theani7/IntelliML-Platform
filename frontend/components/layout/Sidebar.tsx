@@ -68,11 +68,15 @@ export default function Sidebar({ mainTabs, activeTab, setActiveTab, datasetInfo
 
                             <div className="flex gap-2">
                                 <div className="flex-1 px-2 py-2 bg-black/40 border border-white/5 rounded-xl text-center">
-                                    <p className="text-[10px] font-black text-red-500">{datasetInfo.rows}</p>
+                                    <p className="text-[10px] font-black text-red-500">
+                                        {typeof datasetInfo.rows === 'number' ? datasetInfo.rows.toLocaleString() : (datasetInfo.rows || 0)}
+                                    </p>
                                     <p className="text-[8px] text-neutral-500 uppercase">Rows</p>
                                 </div>
                                 <div className="flex-1 px-2 py-2 bg-black/40 border border-white/5 rounded-xl text-center">
-                                    <p className="text-[10px] font-black text-red-500">{datasetInfo.columns?.length}</p>
+                                    <p className="text-[10px] font-black text-red-500">
+                                        {Array.isArray(datasetInfo.columns) ? datasetInfo.columns.length : (datasetInfo.columns || 0)}
+                                    </p>
                                     <p className="text-[8px] text-neutral-500 uppercase">Cols</p>
                                 </div>
                             </div>

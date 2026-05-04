@@ -104,8 +104,12 @@ export default function WorkflowNavigation({
                 </div>
               </div>
               <div className="flex gap-2 text-[10px] font-semibold">
-                <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">{datasetInfo.rows} rows</span>
-                <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">{datasetInfo.columns?.length} cols</span>
+                <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
+                  {typeof datasetInfo.rows === 'number' ? datasetInfo.rows.toLocaleString() : (datasetInfo.rows || 0)} rows
+                </span>
+                <span className="px-2 py-1 bg-[#FFF7EA] text-[#470102] rounded-lg border border-[#FFEDC1]">
+                  {Array.isArray(datasetInfo.columns) ? datasetInfo.columns.length : (datasetInfo.columns || 0)} cols
+                </span>
               </div>
             </div>
           )}
