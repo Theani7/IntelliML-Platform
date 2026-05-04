@@ -71,13 +71,12 @@ import joblib
 import os
 import platform
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Cross-platform model storage
-if platform.system() == "Windows":
-    MODEL_DIR = Path(os.environ.get("TEMP", ".")) / "intelliml_models"
-else:
-    MODEL_DIR = Path("/tmp/intelliml_models")
+MODEL_DIR = settings.MODEL_CACHE_DIR
 
 
 class ModelStore:
