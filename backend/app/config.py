@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 from typing import List
-import os
 import logging
 from pathlib import Path
 from dotenv import load_dotenv

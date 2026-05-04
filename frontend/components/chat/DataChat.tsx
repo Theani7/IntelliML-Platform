@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion } from '@/lib/api';
 
 interface Message {
@@ -209,10 +210,13 @@ export default function DataChat() {
                                 {msg.visualization && (
                                     <div className="mt-3">
                                         <p className="text-xs font-semibold text-gray-600 mb-1">Visualization:</p>
-                                        <img
+                                        <Image
                                             src={msg.visualization}
                                             alt="Data visualization"
+                                            width={800}
+                                            height={500}
                                             className="rounded-lg border border-gray-200 max-w-full"
+                                            unoptimized
                                         />
                                     </div>
                                 )}

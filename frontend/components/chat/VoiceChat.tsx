@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion, transcribeAudio } from '@/lib/api';
+import Image from 'next/image';
+import {
+ sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion, transcribeAudio } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 interface Message {
@@ -108,12 +110,6 @@ const StopIcon = () => (
 const SendIcon = () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-    </svg>
-);
-
-const SparklesIcon = () => (
-    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
     </svg>
 );
 
@@ -404,7 +400,6 @@ export default function VoiceChat() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState<VisualizationSuggestion[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [showCommandPalette, setShowCommandPalette] = useState(false);
     const [commandHighlightIndex, setCommandHighlightIndex] = useState(0);
@@ -437,14 +432,14 @@ export default function VoiceChat() {
         loadSuggestions();
     }, []);
 
-    const loadSuggestions = async () => {
+    const fetchSuggestions = async () => {
         try {
-            const result = await getVisualizationSuggestions();
-            setSuggestions(result.suggestions);
+            await getVisualizationSuggestions();
         } catch (error) {
             console.error('Failed to load suggestions:', error);
         }
     };
+
 
     const handleSend = async (text?: string) => {
         const rawMessage = text || input.trim();
@@ -532,7 +527,7 @@ export default function VoiceChat() {
             setIsRecording(true);
             setIsPreparing(false);
 
-        } catch (err: any) {
+        } catch {
             setVoiceError('Microphone access denied or not found');
             setIsPreparing(false);
         }
@@ -577,7 +572,7 @@ export default function VoiceChat() {
                     } else {
                         setVoiceError('Could not transcribe audio');
                     }
-                } catch (err: any) {
+                } catch {
                     setVoiceError('Transcription failed');
                 } finally {
                     setIsTranscribing(false);
@@ -649,7 +644,7 @@ export default function VoiceChat() {
         try {
             await clearChatHistory();
             setMessages([]);
-        } catch (error) {
+        } catch {
             console.error('Failed to clear');
         }
     };
@@ -657,13 +652,6 @@ export default function VoiceChat() {
     const formatTime = (date: Date) => {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
-
-    const quickQuestions = [
-        'Show data summary',
-        'Which columns have missing values?',
-        'What is the average of numeric columns?',
-        'Create a correlation heatmap'
-    ];
 
     return (
         <div className="h-full flex flex-col bg-[#FFF7EA] rounded-[24px] shadow-sm border border-[#FFEDC1] overflow-hidden relative">
@@ -791,10 +779,13 @@ export default function VoiceChat() {
                                                     </button>
                                                 </div>
                                                 <div className="rounded-lg overflow-hidden border border-[#FFEDC1] bg-white shadow-sm">
-                                                    <img
+                                                    <Image
                                                         src={msg.visualization}
                                                         alt="Data visualization"
+                                                        width={800}
+                                                        height={500}
                                                         className="w-full h-auto"
+                                                        unoptimized
                                                     />
                                                 </div>
                                             </div>

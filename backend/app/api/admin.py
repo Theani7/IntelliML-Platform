@@ -73,8 +73,6 @@ import json
 import os
 import logging
 
-logger = logging.getLogger(__name__)
-
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 
@@ -88,6 +86,8 @@ from app.services.ml_service import ml_service
 from app.services.data_chat_service import data_chat_service
 from app.api.data import _dataset_registry
 from app.core.exceptions import ValidationError, NotFoundError, ForbiddenError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

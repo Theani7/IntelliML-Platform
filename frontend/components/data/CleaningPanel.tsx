@@ -58,9 +58,9 @@ export default function CleaningPanel({ selectedColumn, onDataUpdate, fetchQuali
 
         setIsProcessing(true);
         try {
-            let finalParams = { ...params };
+            const finalParams = { ...params };
             if (['drop_column', 'fill_na', 'rename', 'cast', 'scale'].includes(activeOperation)) {
-                finalParams.column = selectedColumn;
+                (finalParams as any).column = selectedColumn;
             }
 
             const result = await cleanData(activeOperation, finalParams);
