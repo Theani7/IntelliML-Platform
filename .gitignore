@@ -65,3 +65,6 @@ uploads/
 *.h5
 *.pkl
 *.joblib
+
+# Gemini
+GEMINI.md
