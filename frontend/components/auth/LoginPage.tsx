@@ -38,7 +38,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToSignup, onBack }
                 const errData = await response.json();
                 setError(errData.detail || 'Login failed. Please check your credentials.');
             }
-        } catch (err) {
+        } catch {
             setError('Connection error. Please try again.');
         } finally {
             setIsSubmitting(false);

@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from typing import Dict, Any
 import pandas as pd
 import numpy as np
 
-from app.api.data import router, get_current_dataset, logger, make_json_safe
+from app.api.data import router, get_current_dataset, logger
 from app.services.ml_service import ml_service
 from app.core.exceptions import ValidationError, NotFoundError, MLTrainingError
 

@@ -36,12 +36,12 @@ GRACEFUL DEGRADATION:
 ================================================================================
 """
 
-# Suppress tabulate warnings from groq library internals
-import warnings
-warnings.filterwarnings('ignore')
-
 import logging
 from typing import Optional, Dict, Any
+import warnings
+
+# Suppress tabulate warnings from groq library internals
+warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
 

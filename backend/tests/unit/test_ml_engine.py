@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import numpy as np
 from app.ml.engines.model_trainer import ModelTrainer
 
 @pytest.fixture

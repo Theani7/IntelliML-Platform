@@ -56,7 +56,7 @@ import numpy as np
 from typing import Dict, List
 import json
 
-from app.api.data import router, get_current_dataset, data_service, logger
+from app.api.data import router, get_current_dataset, logger
 from app.core.cache import analysis_cache
 from app.core.exceptions import NotFoundError, DataProcessingError
 

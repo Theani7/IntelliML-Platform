@@ -8,8 +8,6 @@ import json
 import asyncio
 import logging
 import uuid
-import sys
-import os
 
 from app.api.data import router
 from app.core.model_store import model_store

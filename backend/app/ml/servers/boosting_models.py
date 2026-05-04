@@ -14,7 +14,7 @@ except Exception:
     LIGHTGBM_AVAILABLE = False
 
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import train_test_split
 import numpy as np
 from typing import Dict, Any, Optional
 import logging

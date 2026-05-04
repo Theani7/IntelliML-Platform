@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-from app.services.data_service import DataService
 from app.core.exceptions import ValidationError
 
 def test_process_uploaded_file_csv(data_service, sample_csv_content):

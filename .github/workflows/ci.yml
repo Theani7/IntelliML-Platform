@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   backend-test:
     name: Backend Tests & Lint
@@ -27,7 +30,7 @@ jobs:
           pip install ruff
 
       - name: Lint with Ruff
-        run: ruff check backend
+        run: ruff check backend --fix
 
       - name: Run Backend Tests
         env:
@@ -45,7 +48,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 

@@ -7,8 +7,7 @@ Split into sub-modules for easier debugging and maintenance.
 from fastapi import APIRouter
 import logging
 import pandas as pd
-import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any
 from app.services.data_service import DataService
 
 # Initialize DataService singleton to sync with MLService

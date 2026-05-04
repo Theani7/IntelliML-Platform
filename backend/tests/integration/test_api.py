@@ -1,6 +1,4 @@
-import pytest
 import io
-import os
 from app import main
 
 def test_health_check(client):

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { sendChatMessage, getVisualizationSuggestions, clearChatHistory, ChatResponse, VisualizationSuggestion } from '@/lib/api';
+import { sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion } from '@/lib/api';
 
 interface Message {
     role: 'user' | 'assistant';

@@ -100,38 +100,30 @@ DEPENDENCIES:
 
 import sys
 import time
+import os
+import logging
 from pathlib import Path
+from dotenv import load_dotenv
+from jose import jwt, JWTError
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # ================================================================================
 # PATH CONFIGURATION
 # ================================================================================
-# The backend directory structure is:
-# IntelliML-Platform/
-# ├── backend/
-# │   └── app/
-# │       ├── main.py           (this file)
-# │       ├── api/              (route handlers)
-# │       ├── services/         (business logic)
-# │       ├── ml/               (ML engines & models)
-# │       ├── core/             (auth, db, exceptions, config)
-# │       └── utils/            (helpers)
-# │
-# We add both backend_dir and project_root to sys.path so that:
-# - 'app' module imports work from any location
-# - relative imports within the package work correctly
-
 backend_dir = Path(__file__).parent.parent
 project_root = backend_dir.parent
 sys.path.insert(0, str(backend_dir))
 sys.path.insert(0, str(project_root))
 
-# ================================================================================
-# FASTAPI APPLICATION SETUP
-# ================================================================================
-
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-import logging
+from app.core.cors import setup_cors                    # noqa: E402
+from app.core.exceptions import register_exception_handlers  # noqa: E402
+from app.core.lifespan import register_lifecycle_events   # noqa: E402
+from app.core.routers import register_routers             # noqa: E402
+from app.core.db_utils import create_db_and_tables       # noqa: E402
+from app.core.auth_utils import SECRET_KEY as JWT_SECRET_KEY, ALGORITHM # noqa: E402
+from app.core.auth_utils import is_admin_username # noqa: E402
 
 # Configure logging format for consistent, readable log output
 # Format: TIMESTAMP | LEVEL    | MODULE   | MESSAGE
@@ -157,17 +149,6 @@ app = FastAPI(
     description="Voice-Controlled AutoML Platform API",
     version="1.0.0"
 )
-
-# ================================================================================
-# CORE INITIALIZATION
-# ================================================================================
-# These modules handle cross-cutting concerns (applicable to all routes)
-
-from app.core.cors import setup_cors                    # CORS configuration
-from app.core.exceptions import register_exception_handlers  # Global error handling
-from app.core.lifespan import register_lifecycle_events   # Startup/shutdown hooks
-from app.core.routers import register_routers             # Route registration
-from app.core.db_utils import create_db_and_tables       # Database initialization
 
 # Create database tables on startup (if using SQLite)
 @app.on_event("startup")
@@ -206,8 +187,6 @@ This helps identify:
 - Failed requests (errors)
 - Request patterns (usage monitoring)
 """
-
-from starlette.middleware.base import BaseHTTPMiddleware
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """
@@ -293,14 +272,6 @@ JWT Token Structure:
 }
 """
 
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-import os
-from dotenv import load_dotenv
-from jose import jwt, JWTError
-from app.core.auth_utils import SECRET_KEY as JWT_SECRET_KEY, ALGORITHM
-from app.core.auth_utils import is_admin_username
-
 # Load environment variables from .env file
 load_dotenv()
 API_KEY = os.getenv("INTELLIML_API_KEY")
@@ -371,7 +342,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
                 # Authentication successful - proceed with the request
                 return await call_next(request)
                 
-            except JWTError as e:
+            except JWTError:
                 # Token validation failed (expired, invalid signature, etc.)
                 return JSONResponse(
                     status_code=401,

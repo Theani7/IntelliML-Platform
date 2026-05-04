@@ -37,7 +37,7 @@ async function forward(request: NextRequest, pathParts: string[]) {
     // Use the request body stream directly to avoid loading the whole file into memory
     // and to bypass potential Next.js body size limits for arrayBuffer().
     init.body = request.body;
-    // @ts-ignore - 'duplex' is required when body is a stream in some environments
+    // @ts-expect-error - 'duplex' is required when body is a stream in some environments
     init.duplex = 'half';
   }
 

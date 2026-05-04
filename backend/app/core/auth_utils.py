@@ -51,7 +51,7 @@ ADMIN DETECTION:
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, Any, Union
+from typing import Optional, Union
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from passlib.exc import MissingBackendError, UnknownHashError
@@ -62,7 +62,7 @@ import os
 import logging
 from dotenv import load_dotenv
 from sqlmodel import Session, select
-from fastapi import Depends, status
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from app.models.user import User, TokenData
 from app.core.db_utils import get_session

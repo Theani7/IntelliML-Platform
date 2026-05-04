@@ -42,7 +42,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onSwitchToLogin, onSignu
                 const errData = await response.json();
                 setError(errData.detail || 'Registration failed. Please try again.');
             }
-        } catch (err) {
+        } catch {
             setError('Connection error. Please try again.');
         } finally {
             setIsSubmitting(false);

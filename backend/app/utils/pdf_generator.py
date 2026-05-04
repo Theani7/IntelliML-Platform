@@ -1,7 +1,7 @@
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from io import BytesIO
 import pandas as pd
@@ -96,7 +96,8 @@ def generate_eda_pdf(df: pd.DataFrame, analysis_results: dict) -> BytesIO:
         
         count = 0
         for col, stat_values in stats.items():
-            if count >= 20: break # Limit rows
+            if count >= 20:
+                break # Limit rows
             
             # Helper to safely get and format
             def fmt(key):
@@ -177,7 +178,7 @@ def generate_eda_pdf(df: pd.DataFrame, analysis_results: dict) -> BytesIO:
                 img = Image(img_buffer, width=6*inch, height=3*inch)
                 story.append(img)
                 story.append(Spacer(1, 8))
-            except Exception as e:
+            except Exception:
                 pass
     
     # 3. Categorical Counts (Top 2 Categorical Cols)
@@ -202,7 +203,7 @@ def generate_eda_pdf(df: pd.DataFrame, analysis_results: dict) -> BytesIO:
                 img = Image(img_buffer, width=6*inch, height=3*inch)
                 story.append(img)
                 story.append(Spacer(1, 8))
-            except Exception as e:
+            except Exception:
                 pass
 
     doc.build(story)

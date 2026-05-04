@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -65,7 +66,6 @@ settings.DATA_CACHE_DIR.mkdir(exist_ok=True, parents=True)
 settings.MODEL_CACHE_DIR.mkdir(exist_ok=True, parents=True)
 
 # Validation and warnings
-import logging
 logger = logging.getLogger(__name__)
 
 if not settings.GROQ_API_KEY:

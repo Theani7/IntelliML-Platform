@@ -61,7 +61,7 @@ from app.core.auth_utils import (
     is_admin_user,
     verify_password,
 )
-from app.core.exceptions import ValidationError, UnauthorizedError, ForbiddenError
+from app.core.exceptions import ValidationError, UnauthorizedError
 from app.core.db_utils import get_session
 
 router = APIRouter()

@@ -90,8 +90,7 @@ PROBLEM TYPE DETECTION:
 """
 
 import pandas as pd
-import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any
 import uuid
 
 from app.api.data import router, get_current_dataset, logger

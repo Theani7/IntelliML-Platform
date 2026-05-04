@@ -126,20 +126,15 @@ DATA LEAKAGE DETECTION:
 
 from app.ml.servers.linear_models import LinearModelsServer
 from app.ml.servers.tree_models import TreeModelsServer
-from app.ml.servers.boosting_models import BoostingModelsServer, CATBOOST_AVAILABLE
+from app.ml.servers.boosting_models import BoostingModelsServer
 from app.ml.servers.neural_models import NeuralModelsServer
 from app.core.exceptions import MLTrainingError
-from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Callable
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
-import time
-import os
-import sys
 
 # SMOTE for handling imbalanced datasets (optional)
 try:
@@ -543,7 +538,6 @@ class ModelTrainer:
 
         # Handle categorical features - only low-cardinality ones
         categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-        numeric_cols = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
 
         # Drop high-cardinality text columns (like names) - keep only numeric + useful categoricals
         cols_to_drop = []
@@ -1017,7 +1011,7 @@ class ModelTrainer:
                                 roc = roc_auc_score(y_test, server.predict_proba(X_test)[:, 1])
                             else:
                                 roc = None
-                        except:
+                        except Exception:
                             roc = None
 
                         result = {

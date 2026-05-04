@@ -1,5 +1,4 @@
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-from sklearn.model_selection import cross_val_score
 import numpy as np
 from typing import Dict, Any, Optional
 import logging

@@ -3,9 +3,7 @@ NLU Intent Parser
 Handles parsing user intent from text using LLM and fallback keyword matching.
 """
 
-from app.core.groq_client import groq_client
 from app.core.exceptions import DataProcessingError
-from app.services.nlu.handlers import NLUHandlersMixin
 import logging
 import json
 import re

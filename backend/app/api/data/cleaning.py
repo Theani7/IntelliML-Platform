@@ -239,8 +239,10 @@ async def analyze_quality(session_id: str = "default"):
                 missing_pct = round((missing_count / total_rows) * 100, 2)
 
                 recommendation = "impute"
-                if missing_pct > 50: recommendation = "drop_column"
-                elif missing_pct < 5: recommendation = "drop_rows"
+                if missing_pct > 50:
+                    recommendation = "drop_column"
+                elif missing_pct < 5:
+                    recommendation = "drop_rows"
 
                 missing_summary.append({
                     "column": col,

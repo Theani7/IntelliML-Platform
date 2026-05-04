@@ -2,11 +2,10 @@ from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge, La
 from sklearn.svm import SVC, SVR
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import cross_val_score
 import numpy as np
 from typing import Dict, Any, Optional
 import logging
-from app.core.exceptions import ValidationError, NotFoundError
+from app.core.exceptions import NotFoundError
 
 logger = logging.getLogger(__name__)
 

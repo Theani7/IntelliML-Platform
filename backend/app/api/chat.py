@@ -5,7 +5,7 @@ Handles AI-powered data chat functionality
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, List, Any
+from typing import Optional, Any
 import logging
 
 from app.services.data_chat_service import data_chat_service

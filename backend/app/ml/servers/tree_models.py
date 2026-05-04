@@ -1,6 +1,5 @@
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.model_selection import cross_val_score
 import numpy as np
 from typing import Dict, Any, Optional
 import logging

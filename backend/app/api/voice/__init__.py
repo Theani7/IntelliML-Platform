@@ -9,8 +9,6 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Optional, Dict, Any
-import time
 
 from app.services.voice_service import VoiceService
 from app.services.nlu_service import NLUService

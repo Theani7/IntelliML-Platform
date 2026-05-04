@@ -1,7 +1,7 @@
 from app.services.ml_service import MLService
 from app.ml.engines.explainer import ModelExplainer
 from app.core.groq_client import groq_client
-from app.core.exceptions import NotFoundError, MLTrainingError
+from app.core.exceptions import NotFoundError
 import logging
 
 logger = logging.getLogger(__name__)

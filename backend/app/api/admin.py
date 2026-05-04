@@ -71,6 +71,9 @@ from pathlib import Path
 from typing import Any, Dict, List
 import json
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select

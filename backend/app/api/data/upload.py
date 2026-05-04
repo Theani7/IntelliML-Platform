@@ -4,12 +4,8 @@ Handles file upload, dataset info, columns, and test-data.
 """
 
 from fastapi import File, UploadFile
-from pydantic import BaseModel
-import pandas as pd
-import tempfile
-import os
 
-from app.api.data import router, get_current_dataset, data_service, logger, make_json_safe
+from app.api.data import router, get_current_dataset, data_service, logger
 from app.services.data_service import DataService
 from app.core.exceptions import ValidationError, NotFoundError, DataProcessingError
 

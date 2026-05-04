@@ -68,7 +68,7 @@ import numpy as np
 from io import BytesIO
 from typing import Optional, Dict, Any
 import logging
-from app.core.exceptions import ValidationError, NotFoundError
+from app.core.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 

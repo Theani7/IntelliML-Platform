@@ -1,6 +1,5 @@
 from sqlmodel import Session, create_engine, SQLModel
 from typing import Generator
-import os
 
 sqlite_url = "sqlite:///./intellijml.db"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})

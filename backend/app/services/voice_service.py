@@ -76,7 +76,7 @@ class VoiceService:
                 'Authorization': f'Bearer {self.api_key}'
             }
             
-            logger.info(f"Sending to Groq Whisper API...")
+            logger.info("Sending to Groq Whisper API...")
             
             with httpx.Client(timeout=60.0) as client:
                 response = client.post(
