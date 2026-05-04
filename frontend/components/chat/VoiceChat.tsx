@@ -429,10 +429,6 @@ export default function VoiceChat() {
         scrollToBottom();
     }, [messages]);
 
-    useEffect(() => {
-        loadSuggestions();
-    }, []);
-
     const handleSend = async (text?: string) => {
         const rawMessage = text || input.trim();
         const messageText = resolveSlashCommand(rawMessage);

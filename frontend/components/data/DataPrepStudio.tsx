@@ -43,14 +43,11 @@ export default function DataPrepStudio({ data, onDataUpdate }: DataPrepStudioPro
     }, [data]);
 
     const fetchQuality = async () => {
-        setIsAnalyzing(true);
         try {
             const report = await getDataQuality();
             setQualityReport(report);
         } catch (err) {
             console.error("Failed to fetch quality report", err);
-        } finally {
-            setIsAnalyzing(false);
         }
     };
 
