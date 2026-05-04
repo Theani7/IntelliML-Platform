@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { detectOutliers as detectOutliersApi, removeOutliers as removeOutliersApi, getDatasetInfo } from '@/lib/api';
 // --- Icons ---
-interface OutlierPanelProps {
-
+interface OutlierResult {
     column: string;
     outlier_count: number;
     percentage: number;
