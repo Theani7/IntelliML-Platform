@@ -50,7 +50,6 @@ export default function DataPreview({ data }: DataPreviewProps) {
             {data.filename && (
               <p className="text-sm text-[#8A5A5A] font-medium">{data.filename}</p>
             )}
-            <p className="text-xs text-[#8A5A5A]/70 mt-1">Showing first 5 columns</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -65,66 +64,47 @@ export default function DataPreview({ data }: DataPreviewProps) {
         </div>
       </div>
 
-      <div className="w-full overflow-hidden">
-        <table className="w-full border-separate border-spacing-0 table-fixed">
+      <div className="w-full overflow-x-auto custom-scrollbar">
+        <table className="w-full border-separate border-spacing-0 min-w-full">
           <thead className="bg-[#FFF7EA]">
             <tr>
               <th className="w-12 px-4 py-3 text-left text-xs font-medium text-[#470102] uppercase tracking-wider sticky left-0 bg-[#FFF7EA] border-b border-[#FFEDC1] z-20 shadow-[2px_0_5px_-2px_rgba(71,1,2,0.1)]">
                 #
               </th>
-              {(() => {
-                // Logic to determine visible columns
-                const visibleCols = data.columns.length > 6
-                  ? [...data.columns.slice(0, 4), '...', data.columns[data.columns.length - 1]]
-                  : data.columns;
-
-                return visibleCols.map((col, idx) => (
-                  <th
-                    key={idx}
-                    className="px-4 py-3 text-left text-xs font-medium text-[#470102] uppercase tracking-wider border-b border-[#FFEDC1] bg-[#FFF7EA] truncate"
-                  >
-                    {col === '...' ? (
-                      <div className="text-[#8A5A5A] font-bold text-lg text-center">...</div>
-                    ) : (
-                      <>
-                        <div className="text-[#470102] font-semibold normal-case flex items-center gap-2 truncate" title={col}>
-                          {col}
-                        </div>
-                        <div className="text-xs text-[#8A5A5A] font-normal mt-0.5 truncate">
-                          {data.dtypes[col]}
-                        </div>
-                      </>
-                    )}
-                  </th>
-                ));
-              })()}
+              {data.columns.map((col, idx) => (
+                <th
+                  key={idx}
+                  className="px-4 py-3 text-left text-xs font-medium text-[#470102] uppercase tracking-wider border-b border-[#FFEDC1] bg-[#FFF7EA] whitespace-nowrap min-w-[120px]"
+                >
+                  <div className="text-[#470102] font-semibold normal-case flex items-center gap-2" title={col}>
+                    {col}
+                  </div>
+                  {data.dtypes[col] && (
+                    <div className="text-[10px] text-[#8A5A5A] font-normal mt-0.5 opacity-70">
+                      {data.dtypes[col]}
+                    </div>
+                  )}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#FFEDC1] bg-white">
-            {data.preview.slice(0, 5).map((row, rowIdx) => {
-              const visibleCols = data.columns.length > 6
-                ? [...data.columns.slice(0, 4), '...', data.columns[data.columns.length - 1]]
-                : data.columns;
-
+            {data.preview.slice(0, 10).map((row, rowIdx) => {
               return (
                 <tr key={rowIdx} className="hover:bg-[#FFF7EA] transition-colors group">
                   <td className="px-4 py-3 text-sm text-[#8A5A5A] group-hover:text-[#470102] sticky left-0 bg-white group-hover:bg-[#FFF7EA] z-10 shadow-[2px_0_5px_-2px_rgba(71,1,2,0.1)] transition-colors border-b border-[#FFEDC1]">
                     {rowIdx + 1}
                   </td>
-                  {visibleCols.map((col, cellIdx) => (
+                  {data.columns.map((col, cellIdx) => (
                     <td
                       key={cellIdx}
-                      className="px-4 py-3 text-sm text-[#470102] border-b border-[#FFEDC1] truncate max-w-[150px]"
-                      title={col !== '...' && row[col] ? String(row[col]) : undefined}
+                      className="px-4 py-3 text-sm text-[#470102] border-b border-[#FFEDC1] whitespace-nowrap max-w-[250px] overflow-hidden text-ellipsis"
+                      title={row[col] ? String(row[col]) : undefined}
                     >
-                      {col === '...' ? (
-                        <div className="text-[#8A5A5A] text-center">...</div>
+                      {row[col] === null || row[col] === undefined ? (
+                        <span className="text-red-400/70 italic text-[10px] px-2 py-0.5 bg-red-500/10 rounded">null</span>
                       ) : (
-                        row[col] === null || row[col] === undefined ? (
-                          <span className="text-red-400/70 italic text-xs px-2 py-0.5 bg-red-500/10 rounded">null</span>
-                        ) : (
-                          String(row[col])
-                        )
+                        String(row[col])
                       )}
                     </td>
                   ))}
@@ -135,13 +115,14 @@ export default function DataPreview({ data }: DataPreviewProps) {
         </table>
       </div>
 
-      {numRows > 5 && (
-        <div className="px-4 py-3 bg-[#FFF7EA] border-t border-[#FFEDC1] text-center">
-          <p className="text-sm text-[#8A5A5A]">
-            Showing first 5 rows of {numRows.toLocaleString()}
-          </p>
-        </div>
-      )}
+      <div className="px-4 py-3 bg-[#FFF7EA] border-t border-[#FFEDC1] flex items-center justify-between">
+        <p className="text-sm text-[#8A5A5A]">
+          Showing first {Math.min(10, data.preview.length)} rows of {numRows.toLocaleString()}
+        </p>
+        <p className="text-xs text-[#8A5A5A]/60 italic">
+          Scroll horizontally to see all columns
+        </p>
+      </div>
     </div>
   );
 }
