@@ -303,14 +303,16 @@ class DataService:
         dtypes = {col: str(dtype) for col, dtype in df.dtypes.items()}
         
         # Preview data: first 10 rows, NaN → None for JSON compatibility
-        preview_data = df.head(10).replace({np.nan: None}).values.tolist()
+        preview_data = df.head(10).replace({np.nan: None}).to_dict('records')
         
         info = {
             "filename": session["filename"],
+            "rows": int(df.shape[0]),
+            "cols": int(df.shape[1]),
             "shape": list(df.shape),
             "columns": df.columns.tolist(),
             "dtypes": dtypes,
-            "rows": preview_data,
+            "preview": preview_data,
             "missing_values": {str(k): int(v) for k, v in df.isnull().sum().to_dict().items()},
             "memory_usage": int(df.memory_usage(deep=True).sum()),
         }

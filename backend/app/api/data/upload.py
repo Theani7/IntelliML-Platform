@@ -53,15 +53,6 @@ async def upload_file(file: UploadFile = File(...), session_id: str = "default")
         state["df"] = df
         state["info"] = info
         
-        # Add preview records for UploadResponse compatibility if not already there
-        if "preview" not in info:
-            preview_records = []
-            if df is not None:
-                for _, row in df.head(10).iterrows():
-                    safe_row = {col: make_json_safe(val) for col, val in row.items()}
-                    preview_records.append(safe_row)
-            info["preview"] = preview_records
-
         logger.info(f"✓ File uploaded and synced successfully: {info.get('rows', 'unknown')} rows")
 
         return info
