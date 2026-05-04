@@ -99,7 +99,7 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
         try {
             const strategy = item.ai_recommendation;
             let op = '';
-            let p: any = { column: item.column };
+            const p: any = { column: item.column };
 
             if (type === 'missing') {
                 if (strategy === 'drop_column') {
@@ -144,9 +144,9 @@ export default function DataCleaning({ data, onDataUpdate }: DataCleaningProps) 
 
         setIsProcessing(true);
         try {
-            let finalParams = { ...params };
+            const finalParams = { ...params };
             if (['drop_column', 'fill_na', 'rename', 'cast'].includes(activeOperation)) {
-                finalParams.column = selectedColumn;
+                (finalParams as any).column = selectedColumn;
             }
 
             const result = await cleanData(activeOperation, finalParams);

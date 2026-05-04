@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import {
- sendChatMessage, getVisualizationSuggestions, clearChatHistory, VisualizationSuggestion, transcribeAudio } from '@/lib/api';
+    sendChatMessage, getVisualizationSuggestions, clearChatHistory, transcribeAudio } from '@/lib/api';
+
 import { useAuth } from '@/context/AuthContext';
 
 interface Message {
@@ -431,15 +432,6 @@ export default function VoiceChat() {
     useEffect(() => {
         loadSuggestions();
     }, []);
-
-    const fetchSuggestions = async () => {
-        try {
-            await getVisualizationSuggestions();
-        } catch (error) {
-            console.error('Failed to load suggestions:', error);
-        }
-    };
-
 
     const handleSend = async (text?: string) => {
         const rawMessage = text || input.trim();
