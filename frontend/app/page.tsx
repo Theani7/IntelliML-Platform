@@ -423,7 +423,7 @@ export default function Home() {
         />
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 bg-[var(--background)] pb-24 md:pb-8">
+        <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 lg:p-8 bg-[var(--background)] pb-24 md:pb-8">
           {/* Upload Tab */}
           {
             activeTab === 'upload' && !isAdmin && (

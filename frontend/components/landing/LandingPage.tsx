@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import DocumentationModal from './DocumentationModal';
 
@@ -106,24 +106,75 @@ interface LandingPageProps {
   onSignup?: () => void;
 }
 
-export default function LandingPage({ onGetStarted, onLogin, onSignup }: LandingPageProps) {
-  const [showDocs, setShowDocs] = useState(false);
+const NAV_LINKS = [
+  { id: 'home', label: 'Home' },
+  { id: 'features', label: 'Features' },
+  { id: 'use-cases', label: 'Use Cases' },
+];
+
+function NavBar({ onGetStarted, onLogin, onSignup }: LandingPageProps) {
+  const [scrolled, setScrolled] = useState(false);
+  const [active, setActive] = useState('home');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > 24);
+      const sections = NAV_LINKS.map((l) => document.getElementById(l.id)).filter(Boolean) as HTMLElement[];
+      const current = sections.reduce((acc, sec) => {
+        if (sec.getBoundingClientRect().top <= 120) return sec.id;
+        return acc;
+      }, 'home');
+      setActive(current);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const handleNav = (id: string) => {
+    setMenuOpen(false);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
-    <div className="min-h-screen bg-[#FFF7EA] text-[#470102] overflow-hidden font-sans selection:bg-[#FEB229]/30">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-[#FFF7EA]/90 backdrop-blur-xl border-b border-[#FFEDC1] shadow-sm py-2 sm:py-3'
+          : 'bg-transparent py-3 sm:py-5'
+      }`}
+    >
+      <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <button
+          onClick={() => handleNav('home')}
+          className="text-lg sm:text-xl font-display font-bold text-[#470102] tracking-tight"
+        >
+          IntelliML
+        </button>
 
-      {/* Background - Cream */}
-      <div className="fixed inset-0 pointer-events-none bg-[#FFF7EA] z-[-1]">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]"></div>
-      </div>
+        <nav className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => handleNav(link.id)}
+              className={`px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-colors ${
+                active === link.id
+                  ? 'text-[#470102] bg-[#FFEDC1]/60'
+                  : 'text-[#8A5A5A] hover:text-[#470102] hover:bg-[#FFEDC1]/40'
+              }`}
+            >
+              {link.label}
+            </button>
+          ))}
+        </nav>
 
-      {/* --- HERO SECTION --- */}
-      <section className="relative pt-6 pb-12 sm:pb-20 lg:pt-10 lg:pb-28 container mx-auto px-4 sm:px-6">
-        <div className="mb-4 sm:mb-6 flex justify-end gap-2 sm:gap-3">
+        <div className="hidden md:flex items-center gap-2 lg:gap-3">
           {onLogin && (
             <button
               onClick={onLogin}
-              className="rounded-xl border border-[#FFEDC1] bg-white px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-[#470102] transition-colors hover:border-[#FEB229]"
+              className="rounded-xl border border-[#FFEDC1] bg-white px-4 lg:px-5 py-2 text-xs lg:text-sm font-bold text-[#470102] transition-colors hover:border-[#FEB229]"
             >
               Log In
             </button>
@@ -131,12 +182,80 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
           {onSignup && (
             <button
               onClick={onSignup}
-              className="rounded-xl bg-[#470102] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-[#FFEDC1] transition-colors hover:bg-[#5D0203]"
+              className="rounded-xl bg-[#470102] px-4 lg:px-5 py-2 text-xs lg:text-sm font-bold text-[#FFEDC1] transition-colors hover:bg-[#5D0203]"
             >
               Sign Up
             </button>
           )}
         </div>
+
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          className="md:hidden flex h-10 w-10 items-center justify-center rounded-lg border border-[#FFEDC1] bg-white text-[#470102]"
+          aria-label="Toggle menu"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {menuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {menuOpen && (
+        <div className="md:hidden border-t border-[#FFEDC1] bg-[#FFF7EA]/95 backdrop-blur-xl px-4 py-3 space-y-1">
+          {NAV_LINKS.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => handleNav(link.id)}
+              className={`block w-full text-left px-3 py-2.5 text-sm font-bold rounded-lg ${
+                active === link.id ? 'text-[#470102] bg-[#FFEDC1]/60' : 'text-[#8A5A5A]'
+              }`}
+            >
+              {link.label}
+            </button>
+          ))}
+          <div className="flex gap-2 pt-2">
+            {onLogin && (
+              <button
+                onClick={() => { setMenuOpen(false); onLogin(); }}
+                className="flex-1 rounded-xl border border-[#FFEDC1] bg-white px-4 py-2 text-sm font-bold text-[#470102]"
+              >
+                Log In
+              </button>
+            )}
+            {onSignup && (
+              <button
+                onClick={() => { setMenuOpen(false); onSignup(); }}
+                className="flex-1 rounded-xl bg-[#470102] px-4 py-2 text-sm font-bold text-[#FFEDC1]"
+              >
+                Sign Up
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
+
+export default function LandingPage({ onGetStarted, onLogin, onSignup }: LandingPageProps) {
+  const [showDocs, setShowDocs] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[#FFF7EA] text-[#470102] overflow-hidden font-sans selection:bg-[#FEB229]/30">
+
+      <NavBar onGetStarted={onGetStarted} onLogin={onLogin} onSignup={onSignup} />
+
+      {/* Background - Cream */}
+      <div className="fixed inset-0 pointer-events-none bg-[#FFF7EA] z-[-1]">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]"></div>
+      </div>
+
+      {/* --- HERO SECTION --- */}
+      <section id="home" className="relative pt-28 pb-12 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-28 container mx-auto px-4 sm:px-6">
         <div className="flex flex-col lg:flex-row items-center gap-8 sm:gap-12 lg:gap-16">
 
           <div className="flex-1 space-y-6 sm:space-y-8 z-10 animate-fade-in-up">
@@ -227,7 +346,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
       </section>
 
       {/* --- DATA SCIENCE LIFECYCLE --- */}
-      <section className="py-12 sm:py-16 lg:py-24 bg-[#FFEDC1]/30 border-y border-[#FFEDC1] backdrop-blur-sm">
+      <section id="features" className="py-12 sm:py-16 lg:py-24 bg-[#FFEDC1]/30 border-y border-[#FFEDC1] backdrop-blur-sm">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 text-[#470102] font-display">Data Science, Democratized.</h2>
@@ -286,7 +405,7 @@ export default function LandingPage({ onGetStarted, onLogin, onSignup }: Landing
       </section>
 
       {/* --- USE CASES --- */}
-      <section className="py-12 sm:py-16 lg:py-24 container mx-auto px-4 sm:px-6 relative z-10">
+      <section id="use-cases" className="py-12 sm:py-16 lg:py-24 container mx-auto px-4 sm:px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
           <div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl md:text-5xl font-display font-bold mb-4 sm:mb-6 text-[#470102]">

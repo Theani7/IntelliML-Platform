@@ -43,8 +43,8 @@ export default function WorkflowNavigation({
   return (
     <>
       {/* Desktop Sidebar - Hidden on mobile/tablet */}
-      <aside className="hidden lg:block w-72 min-h-[calc(100vh-80px)] p-5 bg-[#FFF7EA] border-r border-[#FFEDC1]">
-        <div className="h-full rounded-[24px] border border-[#FFEDC1] bg-white shadow-sm p-4 flex flex-col">
+      <aside className="hidden lg:block w-72 shrink-0 p-5 bg-[#FFF7EA] border-r border-[#FFEDC1] sticky top-[80px] h-[calc(100vh-80px)]">
+        <div className="h-full rounded-[24px] border border-[#FFEDC1] bg-white shadow-sm p-4 flex flex-col overflow-y-auto">
           <div className="mb-4 px-1">
             <p className="text-[10px] font-black text-[#8A5A5A] uppercase tracking-[0.22em]">Workspace Flow</p>
           </div>
